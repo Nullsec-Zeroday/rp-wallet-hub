@@ -16,6 +16,10 @@ import SwapPage from "./app/(wallet)/swap/page";
 import SendModal from "./app/(wallet)/_components/modals/send-modal";
 import ReceiveModal from "./app/(wallet)/_components/modals/receive-modal";
 import BuyModal from "./app/(wallet)/_components/modals/buy-modal";
+import AccountModal from "./app/(wallet)/_components/modals/account-modal";
+import RecentActivityModal from "./app/(wallet)/_components/modals/recent-activity-modal";
+import SettingsPage from "./app/(wallet)/settings/page";
+import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { DEFAULT_BALANCES } from "./lib/wallet-data";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
 import { useWalletStore, type Transaction, type UserProfile } from "./lib/wallet-store";
@@ -102,6 +106,7 @@ function WalletRouteBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isTokenPage = pathname.startsWith("/token/");
+  const isSettingsPage = pathname.startsWith("/settings");
   const { baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost } = useWalletStore();
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const scrollRef = React.useRef<HTMLElement | null>(null);
@@ -118,6 +123,8 @@ function WalletRouteBody() {
   const rotatingIllusionLogged = React.useRef(false);
   const [scrolled, setScrolled] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [accountModalVisible, setAccountModalVisible] = React.useState(false);
+  const [activityVisible, setActivityVisible] = React.useState(false);
 
   const THRESHOLD = 110;
   const SETTLED_Y = 140;
@@ -350,6 +357,10 @@ function WalletRouteBody() {
     <BrowserPage />
   ) : pathname === "/swap" ? (
     <SwapPage />
+  ) : pathname === "/settings" ? (
+    <SettingsPage />
+  ) : pathname === "/settings/edit-profile" ? (
+    <EditProfilePage />
   ) : (
     <div className="px-4 pt-6 pb-32">
       <div className="rounded-[24px] bg-[#1c1c1e] px-5 py-6 text-[#a0a0a0]">
@@ -358,7 +369,12 @@ function WalletRouteBody() {
     </div>
   );
 
-  const isScaledDown = modal !== null;
+  const isScaledDown =
+    accountModalVisible ||
+    activityVisible ||
+    modal === "send" ||
+    modal === "receive" ||
+    modal === "buy";
 
   return (
     <div
@@ -379,8 +395,8 @@ function WalletRouteBody() {
           willChange: "transform, filter, border-radius, background-color",
         }}
       >
-        {!isTokenPage && <WalletHeader scrolled={scrolled} />}
-        {!isTokenPage && pathname !== "/browser" && (
+        {!isTokenPage && !isSettingsPage && <WalletHeader scrolled={scrolled} onAvatarPress={() => setAccountModalVisible(true)} onActivityPress={() => setActivityVisible(true)} />}
+        {!isTokenPage && !isSettingsPage && pathname !== "/browser" && (
           <div
             ref={spinnerWrapRef}
             style={{
@@ -419,7 +435,9 @@ function WalletRouteBody() {
               ? "overflow-hidden pb-0 pt-0"
               : pathname === "/browser"
                 ? "overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
-                : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+                : isSettingsPage
+                  ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
+                  : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
             }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
@@ -439,15 +457,25 @@ function WalletRouteBody() {
           ref={scrollbarRef}
           scrollRef={scrollRef}
           style={{
-            top: isTokenPage ? 0 : "calc(60px + env(safe-area-inset-top))",
-            bottom: "calc(65px + env(safe-area-inset-bottom, 0px))",
+            top: isTokenPage || isSettingsPage ? 0 : "calc(60px + env(safe-area-inset-top))",
+            bottom: isTokenPage || isSettingsPage ? "calc(env(safe-area-inset-bottom, 0px))" : "calc(65px + env(safe-area-inset-bottom, 0px))",
           }}
         />
-        <WalletFooterNavigation />
+        {!isSettingsPage && <WalletFooterNavigation />}
       </div>
       <SendModal initialTokenSymbol={symbol} onClose={closeModal} visible={modal === "send"} />
       <ReceiveModal onClose={closeModal} visible={modal === "receive"} />
       <BuyModal onClose={closeModal} visible={modal === "buy"} />
+      <AccountModal 
+        visible={accountModalVisible} 
+        onClose={() => setAccountModalVisible(false)}
+        onOpenProfile={() => { setAccountModalVisible(false); router.push("/settings/edit-profile"); }}
+        onOpenSettings={() => { setAccountModalVisible(false); router.push("/settings"); }}
+      />
+      <RecentActivityModal 
+        visible={activityVisible} 
+        onClose={() => setActivityVisible(false)} 
+      />
       <Toaster position="top-center" richColors />
     </div>
   );
