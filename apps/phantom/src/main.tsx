@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { AnimatePresence } from "framer-motion";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
 import {
@@ -13,6 +14,7 @@ import {
   writePendingToken,
 } from "@rp-wallet/wallet-core";
 import { StrictWalletApp } from "./strict-wallet";
+import SplashScreen from "./splash-screen";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -40,23 +42,23 @@ function PhantomApp() {
     setLoading(true);
     const loadWallet = pendingToken
       ? api
-          .exchangeWalletBootstrap({
-            deviceId: getPlatformDeviceId(),
-            token: pendingToken,
-          })
-          .then((response) => {
-            writeCachedBootstrap("phantom", response);
-            clearPendingToken("phantom");
-            setPayload(response);
-            setInstallReady(true);
-            setError("");
-          })
-      : api.getWalletState("phantom").then((response) => {
+        .exchangeWalletBootstrap({
+          deviceId: getPlatformDeviceId(),
+          token: pendingToken,
+        })
+        .then((response) => {
           writeCachedBootstrap("phantom", response);
+          clearPendingToken("phantom");
           setPayload(response);
           setInstallReady(true);
           setError("");
-        });
+        })
+      : api.getWalletState("phantom").then((response) => {
+        writeCachedBootstrap("phantom", response);
+        setPayload(response);
+        setInstallReady(true);
+        setError("");
+      });
 
     loadWallet
       .catch(() => {
@@ -90,21 +92,23 @@ function PhantomApp() {
     );
   }
 
-  if (loading) {
-    return <StatusPanel eyebrow="Phantom PWA" title="Preparing your wallet" body="Syncing your launch token and profile." />;
-  }
-
-  if (payload) {
-    return <StrictWalletApp payload={payload} />;
-  }
-
   return (
-    <ReconnectPanel
-      api={api}
-      body={error || "Launch Phantom from the RP Wallet hub to attach a session to this installed app."}
-      onErrorChange={setError}
-      onPayloadChange={setPayload}
-    />
+    <>
+      {payload ? (
+        <StrictWalletApp payload={payload} />
+      ) : !loading ? (
+        <ReconnectPanel
+          api={api}
+          body={error || "Launch Phantom from the RP Wallet hub to attach a session to this installed app."}
+          onErrorChange={setError}
+          onPayloadChange={setPayload}
+        />
+      ) : null}
+
+      <AnimatePresence>
+        {loading && <SplashScreen />}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -128,18 +132,6 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
             </div>
           ))}
         </div>
-      </section>
-    </main>
-  );
-}
-
-function StatusPanel({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
-  return (
-    <main className="walletShell">
-      <section className="balancePanel">
-        <p className="label">{eyebrow}</p>
-        <h1 className="statusTitle">{title}</h1>
-        <p className="muted">{body}</p>
       </section>
     </main>
   );

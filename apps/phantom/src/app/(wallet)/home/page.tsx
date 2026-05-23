@@ -152,7 +152,7 @@ export default function HomePage() {
   if (!mounted) return <HomeSkeleton />;
 
   return (
-    <div className="flex flex-col pb-32">
+    <div className="flex flex-col pb-24">
       <div className="px-4">
         {/* ── Balance Section ── */}
         <div className="pt-4 pb-4 walkthrough-balance">
@@ -211,9 +211,9 @@ export default function HomePage() {
           </div>
           <button
             onClick={() => router.push('/home?modal=buy')}
-            className="bg-[#ac9cf2] text-[#111111] font-semibold px-5 py-2 rounded-lg text-sm active:scale-95 transition-transform"
+            className="bg-[#ac9cf2] text-[#111111] px-5 py-2 rounded-lg text-sm active:scale-95 transition-transform"
           >
-            Add Cash
+            <span className="font-semibold">Add Cash</span>
           </button>
         </div>
 
@@ -287,11 +287,10 @@ export default function HomePage() {
                   >
                     {balance === 0
                       ? formatCurrency(0, baseCurrency)
-                      : `${isTokenPnlPositive ? "+" : "-"}${
-                          Math.abs(tokenPnl) > 0 && Math.abs(tokenPnl) < 0.01
-                            ? `<${formatCurrency(0.01, baseCurrency)}`
-                            : formatCurrency(Math.abs(tokenPnl), baseCurrency)
-                        }`}
+                      : `${isTokenPnlPositive ? "+" : "-"}${Math.abs(tokenPnl) > 0 && Math.abs(tokenPnl) < 0.01
+                        ? `<${formatCurrency(0.01, baseCurrency)}`
+                        : formatCurrency(Math.abs(tokenPnl), baseCurrency)
+                      }`}
                   </div>
                 </div>
               </Link>

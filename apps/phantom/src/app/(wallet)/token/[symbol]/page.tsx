@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, use, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, Share, SendIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -9,11 +9,11 @@ import { TOKEN_MAP, formatCurrency, CURRENCY_SYMBOLS } from "@/lib/wallet-data";
 import { getStaticPriceData, fetchLivePrices, getStaticPrices } from "@/lib/coingecko-service";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import WalletFooterNavigation from "@/app/(wallet)/_components/wallet-footer-navigation";
+import { apiDefaults } from "@rp-wallet/config";
 
 import InteractiveChart, { type ChartPoint } from "@/components/wallet/interactive-chart";
 // Eagerly imported: removes the ~200ms dynamic import delay on every token page visit
 import { LongIcon, ShortIcon, ReceiveIcon, MoreIcon } from "@/components/wallet/action-icons";
-import CustomScrollbar, { CustomScrollbarRef } from "@/app/(wallet)/_components/custom-scrollbar";
 
 
 const TIME_FRAMES = ["1H", "1D", "1W", "1M", "YTD", "ALL"];
@@ -74,8 +74,8 @@ function ActionButton({ Icon, label, onClick }: {
 
 
 // ── Main Page ──
-export default function TokenDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
-  const { symbol } = use(params);
+export default function TokenDetailPage({ params }: { params: { symbol: string } }) {
+  const { symbol } = params;
   const router = useRouter();
   const { prices } = useLivePrices();
 
@@ -107,7 +107,6 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
   const pulling = useRef(false);
   const startY = useRef(0);
   const currentPull = useRef(0);
-  const scrollbarRef = useRef<CustomScrollbarRef>(null);
 
   const THRESHOLD = 110;   // visual px to trigger
   const SETTLED_Y = 140;   // visual ceiling
@@ -200,7 +199,6 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
       ? `transform ${duration} cubic-bezier(0.16, 1, 0.3, 1)`
       : "none";
     el.style.transform = `translateY(${y}px)`;
-    scrollbarRef.current?.update(y);
   };
 
   useEffect(() => {
@@ -425,7 +423,7 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
       if (!token) return;
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/chart?symbol=${token.symbol}&id=${token.coingeckoId || ''}&timeframe=${activeTimeFrame}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
+        const res = await fetch(`${apiDefaults.localBaseUrl}/chart?symbol=${token.symbol}&id=${token.coingeckoId || ''}&timeframe=${activeTimeFrame}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
@@ -449,7 +447,7 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
     async function loadDetails() {
       if (!token) return;
       try {
-        const res = await fetch(`/api/token-details?symbol=${token.symbol}&id=${token.coingeckoId || ''}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
+        const res = await fetch(`${apiDefaults.localBaseUrl}/token-details?symbol=${token.symbol}&id=${token.coingeckoId || ''}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
         if (res.ok) {
           const data = await res.json();
           setTokenDetails(data);
@@ -472,17 +470,17 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
     return formatCurrency(val, baseCurrency);
   };
 
-  const handleScroll = () => {
-    scrollbarRef.current?.show();
-  };
-
-
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-pt-bg relative">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-pt-bg relative">
       <div className="flex-1 flex flex-col min-h-0 relative z-10">
 
-        {/* Header - Sticky and non-pullable */}
-        <div className="shrink-0 z-30 flex items-center gap-3 px-4 pb-3 pt-[calc(16px+env(safe-area-inset-top))] md:pt-4">
+        {/* Header - Strictly fixed to the viewport top */}
+        <div
+          className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 pb-3 pt-[calc(16px+env(safe-area-inset-top))] md:pt-4"
+          style={{
+            backgroundColor: "#111111",
+          }}
+        >
           <button className="text-white active:opacity-60 shrink-0" onClick={() => router.back()}>
             <ChevronLeft size={26} strokeWidth={2} />
           </button>
@@ -542,13 +540,10 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
           </div>
         </div>
 
-        {/* Content Body - Scrollable Area */}
         <div
           ref={scrollRef}
-          onScroll={handleScroll}
-          className={`flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-48 relative`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-48 relative pt-[calc(68px+env(safe-area-inset-top))]`}
         >
-
           <div
             ref={contentRef}
             className="h-full"
@@ -844,15 +839,7 @@ export default function TokenDetailPage({ params }: { params: Promise<{ symbol: 
           </div>
         </div>
       </div>
-      <CustomScrollbar
-        ref={scrollbarRef}
-        scrollRef={scrollRef}
-        style={{
-          top: "calc(60px + env(safe-area-inset-top))",
-          bottom: 0
-        }}
-      />
-      <WalletFooterNavigation activeTabOverride="/home" />
+      <WalletFooterNavigation activeTabOverride="/home" blurred={false} />
     </div>
 
   );

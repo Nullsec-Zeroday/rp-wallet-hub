@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
+import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 
 export type ChartPoint = {
   timestamp: number;
@@ -20,6 +20,7 @@ export default function InteractiveChart({
   color,
   onPointSelected,
   height = 220,
+  timeFrame = "1D",
 }: InteractiveChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -81,15 +82,34 @@ export default function InteractiveChart({
     if (!data) return [];
     return data.map((d) => {
       const date = new Date(d.timestamp);
-      let hours = date.getHours();
-      const minutes = date.getMinutes();
-      const ampm = hours >= 12 ? "PM" : "AM";
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const mins = minutes < 10 ? "0" + minutes : minutes;
-      return `${hours}:${mins} ${ampm}`;
+
+      const formatTime = () => {
+        let hours = date.getHours();
+        const minutes = date.getMinutes();
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const mins = minutes < 10 ? "0" + minutes : minutes;
+        return `${hours}:${mins}${ampm}`;
+      };
+
+      const formatDate = () => {
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      };
+
+      const formatYear = () => {
+        return date.getFullYear().toString();
+      };
+
+      if (timeFrame === "ALL" || timeFrame === "YTD") {
+        return `${formatDate()}, ${formatYear()}`;
+      } else if (timeFrame === "1M" || timeFrame === "1W") {
+        return `${formatTime()}, ${formatDate()}`;
+      } else {
+        return formatTime();
+      }
     });
-  }, [data]);
+  }, [data, timeFrame]);
 
   const pathData = useMemo(() => {
     if (!points.length) return "";
@@ -156,7 +176,7 @@ export default function InteractiveChart({
 
   // Time label
   const activeTimeStr = activeIndex !== null ? timeStrings[activeIndex] : "";
-  const LABEL_WIDTH = 80;
+  const LABEL_WIDTH = 120;
   let labelX = activePt ? activePt.x - LABEL_WIDTH / 2 : 0;
   if (labelX < PADDING_LEFT) labelX = PADDING_LEFT;
   if (labelX > containerWidth - PADDING_RIGHT - LABEL_WIDTH) labelX = containerWidth - PADDING_RIGHT - LABEL_WIDTH;

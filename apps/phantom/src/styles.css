@@ -132,6 +132,8 @@ html {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 body {
@@ -212,23 +214,43 @@ ion-content {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDown {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
 }
 
 @keyframes spinner-rotate-once {
@@ -298,23 +320,69 @@ ion-content {
   width: 13.5%;
 }
 
-.refresh-spinner .bar:nth-child(1) { transform: rotate(0deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(2) { transform: rotate(45deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(3) { transform: rotate(90deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(4) { transform: rotate(135deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(5) { transform: rotate(180deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(6) { transform: rotate(225deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(7) { transform: rotate(270deg) translate(0, -110%); }
-.refresh-spinner .bar:nth-child(8) { transform: rotate(315deg) translate(0, -110%); }
+.refresh-spinner .bar:nth-child(1) {
+  transform: rotate(0deg) translate(0, -110%);
+}
 
-.refresh-spinner.animating .bar:nth-child(1) { opacity: 1; }
-.refresh-spinner.animating .bar:nth-child(2) { opacity: 0.85; }
-.refresh-spinner.animating .bar:nth-child(3) { opacity: 0.7; }
-.refresh-spinner.animating .bar:nth-child(4) { opacity: 0.55; }
-.refresh-spinner.animating .bar:nth-child(5) { opacity: 0.4; }
-.refresh-spinner.animating .bar:nth-child(6) { opacity: 0.3; }
-.refresh-spinner.animating .bar:nth-child(7) { opacity: 0.2; }
-.refresh-spinner.animating .bar:nth-child(8) { opacity: 0.15; }
+.refresh-spinner .bar:nth-child(2) {
+  transform: rotate(45deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(3) {
+  transform: rotate(90deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(4) {
+  transform: rotate(135deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(5) {
+  transform: rotate(180deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(6) {
+  transform: rotate(225deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(7) {
+  transform: rotate(270deg) translate(0, -110%);
+}
+
+.refresh-spinner .bar:nth-child(8) {
+  transform: rotate(315deg) translate(0, -110%);
+}
+
+.refresh-spinner.animating .bar:nth-child(1) {
+  opacity: 1;
+}
+
+.refresh-spinner.animating .bar:nth-child(2) {
+  opacity: 0.85;
+}
+
+.refresh-spinner.animating .bar:nth-child(3) {
+  opacity: 0.7;
+}
+
+.refresh-spinner.animating .bar:nth-child(4) {
+  opacity: 0.55;
+}
+
+.refresh-spinner.animating .bar:nth-child(5) {
+  opacity: 0.4;
+}
+
+.refresh-spinner.animating .bar:nth-child(6) {
+  opacity: 0.3;
+}
+
+.refresh-spinner.animating .bar:nth-child(7) {
+  opacity: 0.2;
+}
+
+.refresh-spinner.animating .bar:nth-child(8) {
+  opacity: 0.15;
+}
 
 .walletFrame {
   min-height: 100vh;
@@ -324,9 +392,7 @@ ion-content {
 .walletViewport {
   min-height: 100vh;
   padding:
-    calc(env(safe-area-inset-top) + 76px)
-    16px
-    calc(env(safe-area-inset-bottom) + 92px);
+    calc(env(safe-area-inset-top) + 76px) 16px calc(env(safe-area-inset-bottom) + 92px);
 }
 
 .tokenViewport {

@@ -40,7 +40,7 @@ const navItems = [
   },
 ];
 
-const WalletFooterNavigation = ({ activeTabOverride }: { activeTabOverride?: string }) => {
+const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = false }: { activeTabOverride?: string; blurred?: boolean; hidden?: boolean }) => {
   const pathname = usePathname();
   const currentPath = activeTabOverride || pathname;
   const prevPathRef = useRef(currentPath);
@@ -61,15 +61,15 @@ const WalletFooterNavigation = ({ activeTabOverride }: { activeTabOverride?: str
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none border-t-0"
+      className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0 pointer-events-none"}`}
       style={{ height: "calc(60px + env(safe-area-inset-bottom, 0px))" }}
     >
       <div 
         className="absolute inset-0 pointer-events-auto"
         style={{
-          backgroundColor: "rgba(17, 17, 17, 0.82)",
-          backdropFilter: "blur(20px) saturate(150%)",
-          WebkitBackdropFilter: "blur(20px) saturate(150%)",
+          backgroundColor: blurred ? "rgba(17, 17, 17, 0.82)" : "#111111",
+          backdropFilter: blurred ? "blur(20px) saturate(150%)" : "none",
+          WebkitBackdropFilter: blurred ? "blur(20px) saturate(150%)" : "none",
         }}
       />
       

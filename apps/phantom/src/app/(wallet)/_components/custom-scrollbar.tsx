@@ -18,6 +18,7 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
   ({ scrollRef, className, style }, ref) => {
     const [visible, setVisible] = useState(false);
     const [hasHeight, setHasHeight] = useState(false);
+    const trackRef = useRef<HTMLDivElement | null>(null);
     const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Use MotionValues for high-performance updates without React renders
@@ -33,9 +34,10 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
       if (!scroll) return;
 
       const { scrollTop, scrollHeight, clientHeight } = scroll;
-
       const contentHeight = scrollHeight;
       const viewportHeight = clientHeight;
+
+      const trackHeight = trackRef.current?.clientHeight || viewportHeight;
 
       if (contentHeight <= viewportHeight) {
         setHasHeight(false);
@@ -43,12 +45,12 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
       }
 
       const heightRatio = viewportHeight / contentHeight;
-      let thumbHeightPx = Math.max(heightRatio * viewportHeight, 35);
+      let thumbHeightPx = Math.max(heightRatio * trackHeight, 35);
 
       const maxScrollTop = contentHeight - viewportHeight;
       const scrollRatio = Math.max(0, Math.min(1, scrollTop / maxScrollTop));
 
-      const availableHeight = viewportHeight - thumbHeightPx - 8; // 4px margin top/bottom
+      const availableHeight = trackHeight - thumbHeightPx - 8; // 4px margin top/bottom
       let thumbTopPx = scrollRatio * availableHeight + 4;
 
       // iOS Squeeze Effect during overscroll/pull
@@ -66,7 +68,7 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
         const overscroll = scrollTop - maxScrollTop;
         const shrink = Math.min(overscroll * 0.7, thumbHeightPx - 10);
         thumbHeightPx -= shrink;
-        thumbTopPx = viewportHeight - thumbHeightPx - 4;
+        thumbTopPx = trackHeight - thumbHeightPx - 4;
       }
 
       setHasHeight(true);
@@ -86,7 +88,7 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
 
     useImperativeHandle(ref, () => ({
       show,
-      update: (pullDownY?: number) => updateScrollbar(pullDownY),
+      update: (pullDownY?: number) => updateScrollbar(pullDownY ?? 0),
     }));
 
     useEffect(() => {
@@ -113,28 +115,28 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
       };
     }, [scrollRef]);
 
-    if (!hasHeight) return null;
-
     return (
-      <AnimatePresence>
-        {visible && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.5, ease: "easeOut" } }}
-            className={className}
-            style={{
-              position: "absolute",
-              right: "3px",
-              top: 0,
-              bottom: 0,
-              width: "3px",
-              zIndex: 40,
-              pointerEvents: "none",
-              ...style,
-            }}
-          >
+      <div
+        ref={trackRef}
+        className={className}
+        style={{
+          position: "absolute",
+          right: "3px",
+          top: 0,
+          bottom: 0,
+          width: "3px",
+          zIndex: 40,
+          pointerEvents: "none",
+          visibility: hasHeight ? "visible" : "hidden",
+          ...style,
+        }}
+      >
+        <AnimatePresence>
+          {visible && hasHeight && (
             <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.5, ease: "easeOut" } }}
               style={{
                 position: "absolute",
                 top: 0,
@@ -145,9 +147,9 @@ const CustomScrollbar = forwardRef<CustomScrollbarRef, CustomScrollbarProps>(
                 y: ySpring,
               }}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
     );
   }
 );

@@ -228,6 +228,7 @@ function WalletRouteBody() {
       const diff = clientY - startY.current;
       if (diff <= 0) {
         pulling.current = false;
+        currentPull.current = 0;
         return false;
       }
 
@@ -331,8 +332,10 @@ function WalletRouteBody() {
     };
   }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isTokenPage, setTranslateY, updateSpinner]);
 
+  const tokenSymbol = isTokenPage ? decodeURIComponent(pathname.split("/").pop() || "SOL") : "SOL";
+
   const content = isTokenPage ? (
-    <TokenDetailPage params={Promise.resolve({ symbol: pathname.split("/").pop() || "SOL" })} />
+    <TokenDetailPage params={{ symbol: tokenSymbol }} />
   ) : pathname === "/home" ? (
     <HomePage />
   ) : (
@@ -346,9 +349,9 @@ function WalletRouteBody() {
   return (
     <div
       className="flex w-full flex-col overflow-hidden relative"
-      style={{ backgroundColor: "#111111", height: "100dvh", minHeight: "100dvh" }}
+      style={{ backgroundColor: "#111111" }}
     >
-      <div className="flex min-h-0 flex-1 w-full flex-col overflow-hidden relative" style={{ backgroundColor: "#111111" }}>
+      <div className="flex h-screen overflow-hidden relative" style={{ backgroundColor: "#111111" }}>
         {!isTokenPage && <WalletHeader scrolled={scrolled} />}
         {!isTokenPage && (
           <div
@@ -385,16 +388,21 @@ function WalletRouteBody() {
         )}
         <main
           ref={scrollRef}
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-y-contain wallet-scroll relative ${
-            isTokenPage ? "pb-0 pt-0" : "pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
-          }`}
+          className={`min-h-0 flex-1 wallet-scroll relative ${isTokenPage
+              ? "overflow-hidden pb-0 pt-0"
+              : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+            }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
             setScrolled((current) => (current === nextScrolled ? current : nextScrolled));
             scrollbarRef.current?.show();
           }}
         >
-          <div ref={contentRef} className="h-full will-change-transform" style={{ transform: "translateZ(0)" }}>
+          <div
+            ref={contentRef}
+            className={`h-full ${isTokenPage ? "" : "will-change-transform"}`}
+            style={isTokenPage ? undefined : { transform: "translateZ(0)" }}
+          >
             {content}
           </div>
         </main>
@@ -403,10 +411,10 @@ function WalletRouteBody() {
           scrollRef={scrollRef}
           style={{
             top: isTokenPage ? 0 : "calc(60px + env(safe-area-inset-top))",
-            bottom: 0,
+            bottom: "calc(65px + env(safe-area-inset-bottom, 0px))",
           }}
         />
-        {!isTokenPage ? <WalletFooterNavigation /> : null}
+        <WalletFooterNavigation />
       </div>
       <SendModal initialTokenSymbol={symbol} onClose={closeModal} visible={modal === "send"} />
       <ReceiveModal onClose={closeModal} visible={modal === "receive"} />
