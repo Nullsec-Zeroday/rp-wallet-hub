@@ -1,0 +1,26 @@
+{
+  "name": "rp-wallet-platform",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:api",
+    "dev:hub": "npm run dev -w apps/hub",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:phantom": "npm run dev -w apps/phantom",
+    "dev:trust": "npm run dev -w apps/trust",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
+  },
+  "devDependencies": {
+    "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.1",
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@rp-wallet/api-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@rp-wallet/auth": "*",
+    "@rp-wallet/config": "*",
+    "@rp-wallet/types": "*"
+  }
+}

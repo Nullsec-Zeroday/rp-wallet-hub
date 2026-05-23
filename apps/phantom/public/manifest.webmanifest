@@ -1,0 +1,28 @@
+{
+  "name": "Phantom",
+  "short_name": "Phantom",
+  "description": "RP Wallet Phantom wallet PWA.",
+  "start_url": "/home",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/logos/icon_128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/logos/icon_512x512.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": ["src/*"],
+      "next/dynamic": ["src/shims/next-dynamic.tsx"],
+      "next/image": ["src/shims/next-image.tsx"],
+      "next/link": ["src/shims/next-link.tsx"],
+      "next/navigation": ["src/shims/next-navigation.ts"]
+    },
+    "types": ["vite/client"]
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@rp-wallet/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts --local --port 8787",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "@rp-wallet/auth": "*",
+    "@rp-wallet/db": "*",
+    "@rp-wallet/types": "*",
+    "@rp-wallet/wallet-core": "*",
+    "drizzle-orm": "^0.44.2",
+    "hono": "^4.7.10"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250523.0",
+    "wrangler": "^4.18.0"
+  }
+}

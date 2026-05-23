@@ -1,0 +1,5 @@
+DATABASE_URL=
+SESSION_COOKIE_NAME=rp_session
+HUB_ORIGIN=http://localhost:3000
+PHANTOM_ORIGIN=http://localhost:5173
+TRUST_ORIGIN=http://localhost:5174

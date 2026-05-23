@@ -1,0 +1,23 @@
+{
+  "name": "@rp-wallet/trust",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5174",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ionic/react": "^8.6.5",
+    "@rp-wallet/api-client": "*",
+    "@rp-wallet/types": "*",
+    "ionicons": "^7.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "vite": "^6.3.5"
+  }
+}

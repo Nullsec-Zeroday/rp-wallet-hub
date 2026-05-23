@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "rp-wallet-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "SESSION_COOKIE_NAME": "rp_session",
+    "HUB_ORIGIN": "http://localhost:3000",
+    "PHANTOM_ORIGIN": "http://localhost:5173",
+    "TRUST_ORIGIN": "http://localhost:5174"
+  }
+}
