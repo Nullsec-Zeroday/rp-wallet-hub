@@ -1,6 +1,7 @@
 import React from "react";
 import { Toaster } from "sonner";
-import type { WalletBootstrapPayload } from "@rp-wallet/types";
+import { RpWalletApiClient } from "@rp-wallet/api-client";
+import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent } from "@rp-wallet/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { RouterProvider } from "./shims/router-context";
 import { RiveAssetProvider } from "./app/(wallet)/_components/rive-asset-provider";
@@ -20,85 +21,38 @@ import AccountModal from "./app/(wallet)/_components/modals/account-modal";
 import RecentActivityModal from "./app/(wallet)/_components/modals/recent-activity-modal";
 import SettingsPage from "./app/(wallet)/settings/page";
 import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
-import { DEFAULT_BALANCES } from "./lib/wallet-data";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
-import { useWalletStore, type Transaction, type UserProfile } from "./lib/wallet-store";
+import { syncStoreFromPayload } from "./lib/backend-sync";
+import { createBackendWalletTransactionsBatch, updateBackendNotificationSettings } from "./lib/backend-wallet";
+import { requestNotificationPermission, showSystemNotification } from "./lib/notifications";
+import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
 
 type WalletModal = "send" | "receive" | "buy" | null;
+const api = new RpWalletApiClient();
+const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:phantom:notification-permission-prompted";
 
-function mapProfile(payload: WalletBootstrapPayload): UserProfile {
-  const account = payload.accounts[0];
-  const displayName = payload.profile.displayName || account?.name || "Account 1";
+function maxIsoDate(left: string, right: string) {
+  return Date.parse(right) > Date.parse(left) ? right : left;
+}
+
+async function showWalletEventNotification(event: WalletEvent) {
+  await showSystemNotification(event.title || "Received", event.body || "Received funds");
+}
+
+function buildSimulatedReceive(settings: NotificationSettings) {
+  const enabledCoins = settings.coins.filter((coin) => coin.enabled);
+  if (enabledCoins.length === 0) return null;
+
+  const coin = enabledCoins[Math.floor(Math.random() * enabledCoins.length)];
+  const rawAmount = settings.mode === "Fixed" ? coin.min : Math.random() * (coin.max - coin.min) + coin.min;
+  const decimals = coin.symbol === "SOL" || coin.symbol === "ETH" ? 5 : 2;
+  const amount = Number(rawAmount.toFixed(decimals));
+  if (!Number.isFinite(amount) || amount <= 0) return null;
 
   return {
-    avatarType: "emoji",
-    bio: "",
-    discord: "",
-    email: "",
-    iconIndex: 1,
-    name: displayName,
-    twitter: "",
-    username: payload.profile.username || "",
-    walletAddress: account?.address || "",
+    amount,
+    symbol: coin.symbol.toUpperCase(),
   };
-}
-
-function mapTransactions(payload: WalletBootstrapPayload): Transaction[] {
-  return payload.recentTransactions
-    .map((tx) => ({
-      amount: Number(tx.amount),
-      from: tx.fromAddress || "External Wallet",
-      id: tx.id,
-      status: "confirmed" as const,
-      timestamp: new Date(tx.createdAt).getTime(),
-      to: tx.toAddress || "Your Wallet",
-      token: tx.tokenSymbol,
-      type: (
-        tx.type === "send"
-          ? "send"
-          : tx.type === "same_wallet_transfer"
-            ? "swap"
-            : tx.type === "manual_adjustment"
-              ? "buy"
-              : "receive"
-      ) as Transaction["type"],
-    }))
-    .sort((a, b) => b.timestamp - a.timestamp);
-}
-
-function syncStoreFromPayload(payload: WalletBootstrapPayload) {
-  const account = payload.accounts[0];
-  const tokenBalances = (payload.balances.length ? payload.balances : []).map((balance) => ({
-    balance: Number(balance.amount),
-    symbol: balance.tokenSymbol,
-  }));
-
-  useWalletStore.setState((state) => {
-    const profile = {
-      ...state.profile,
-      ...mapProfile(payload),
-    };
-
-    return {
-      accounts: [
-        {
-          avatarIconIndex: profile.iconIndex,
-          cashBalance: state.cashBalance,
-          id: account?.id || "initial-account",
-          name: account?.name || profile.name,
-          profile,
-          tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
-          transactions: mapTransactions(payload),
-          walletName: account?.name || profile.name,
-        },
-      ],
-      currentAccountIndex: 0,
-      profile,
-      tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
-      transactions: mapTransactions(payload),
-      walletName: account?.name || profile.name,
-    };
-  });
 }
 
 function WalletRouteBody() {
@@ -107,7 +61,17 @@ function WalletRouteBody() {
   const searchParams = useSearchParams();
   const isTokenPage = pathname.startsWith("/token/");
   const isSettingsPage = pathname.startsWith("/settings");
-  const { baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost } = useWalletStore();
+  const {
+    addTransaction,
+    baseCurrency,
+    coingeckoApiKey,
+    customTokens,
+    handleRefreshBoost,
+    notificationSettings,
+    profile,
+    updateBalance,
+    updateNotificationSettings,
+  } = useWalletStore();
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const scrollRef = React.useRef<HTMLElement | null>(null);
   const scrollbarRef = React.useRef<CustomScrollbarRef>(null);
@@ -115,6 +79,9 @@ function WalletRouteBody() {
   const startY = React.useRef(0);
   const currentPull = React.useRef(0);
   const refreshingRef = React.useRef(false);
+  const notificationSettingsRef = React.useRef(notificationSettings);
+  const walletEventCursorRef = React.useRef(new Date().toISOString());
+  const seenWalletEventIdsRef = React.useRef(new Set<string>());
   const spinnerRef = React.useRef<HTMLDivElement | null>(null);
   const spinnerWrapRef = React.useRef<HTMLDivElement | null>(null);
   const spinnerRotationWrapRef = React.useRef<HTMLDivElement | null>(null);
@@ -131,10 +98,173 @@ function WalletRouteBody() {
   const SPINNER_PULL_SENSITIVITY = 0.00001;
 
   React.useEffect(() => {
+    notificationSettingsRef.current = notificationSettings;
+  }, [notificationSettings]);
+
+  React.useEffect(() => {
     if (pathname === "/" || pathname === "/bootstrap") {
       router.replace("/home");
     }
   }, [pathname, router]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (window.Notification.permission !== "default") return;
+    if (window.localStorage.getItem(NOTIFICATION_PERMISSION_PROMPT_KEY)) return;
+
+    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
+    requestNotificationPermission()
+      .then((granted) => {
+        if (!granted) return;
+
+        const nextSettings = { ...notificationSettings, pushEnabled: true };
+        updateNotificationSettings(nextSettings);
+        updateBackendNotificationSettings(nextSettings).catch((error) => {
+          console.warn("Unable to persist notification permission preference", error);
+        });
+      })
+      .catch((error) => {
+        console.warn("Unable to request notification permission", error);
+      });
+  }, [notificationSettings, updateNotificationSettings]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const pollWalletEvents = async () => {
+      try {
+        const events = await api.getWalletEvents("phantom", walletEventCursorRef.current);
+        if (cancelled || events.length === 0) return;
+
+        let shouldRefresh = false;
+        for (const event of events) {
+          walletEventCursorRef.current = maxIsoDate(walletEventCursorRef.current, event.createdAt);
+          if (seenWalletEventIdsRef.current.has(event.id)) continue;
+          seenWalletEventIdsRef.current.add(event.id);
+          if (event.type === "wallet_received") {
+            shouldRefresh = true;
+            if (notificationSettings.pushEnabled) {
+              await showWalletEventNotification(event);
+            }
+          }
+        }
+
+        if (shouldRefresh) {
+          const response = await api.getWalletState("phantom");
+          if (!cancelled) syncStoreFromPayload(response);
+        }
+      } catch (error) {
+        console.warn("Unable to poll wallet events", error);
+      }
+    };
+
+    pollWalletEvents();
+    const intervalId = window.setInterval(pollWalletEvents, 2500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [notificationSettings.pushEnabled]);
+
+  React.useEffect(() => {
+    if (!notificationSettings.isActive || notificationSettings.remainingTimes <= 0) return;
+
+    const startSettings = notificationSettingsRef.current;
+    const intervalMs = getNotificationIntervalMs(startSettings.frequency, startSettings.unit);
+    const initialDelay = getNotificationIntervalMs(startSettings.initialDelay, startSettings.unit);
+    const pendingTransactions: Array<Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">> = [];
+    let intervalId: number | undefined;
+    let cancelled = false;
+    let flushed = false;
+
+    const flushPendingTransactions = async () => {
+      if (flushed) return;
+      flushed = true;
+
+      const finalSettings = notificationSettingsRef.current;
+      try {
+        if (pendingTransactions.length > 0) {
+          await createBackendWalletTransactionsBatch(pendingTransactions);
+        }
+        await updateBackendNotificationSettings(finalSettings);
+      } catch (error) {
+        console.warn("Simulated notification batch persist failed", error);
+      }
+    };
+
+    const run = async () => {
+      try {
+        const settings = notificationSettingsRef.current;
+        if (!settings.isActive || settings.remainingTimes <= 0) {
+          await flushPendingTransactions();
+          return;
+        }
+
+        const simulated = buildSimulatedReceive(settings);
+        if (!simulated) {
+          const stoppedSettings = { ...settings, isActive: false, remainingTimes: 0 };
+          updateNotificationSettings(stoppedSettings);
+          notificationSettingsRef.current = stoppedSettings;
+          await flushPendingTransactions();
+          return;
+        }
+
+        const fromAddress = settings.senderAddress || "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j";
+        const toAddress = profile.walletAddress || "Your Wallet";
+        pendingTransactions.push({
+          type: "receive",
+          tokenSymbol: simulated.symbol,
+          amount: String(simulated.amount),
+          fromAddress,
+          toAddress,
+          source: "notification_simulation",
+        });
+
+        const currentBalance = useWalletStore.getState().tokenBalances.find((balance) => balance.symbol === simulated.symbol)?.balance ?? 0;
+        updateBalance(simulated.symbol, currentBalance + simulated.amount);
+        addTransaction({
+          type: "receive",
+          token: simulated.symbol,
+          amount: simulated.amount,
+          status: "confirmed",
+          from: fromAddress,
+          to: toAddress,
+        });
+
+        const nextRemaining = settings.remainingTimes - 1;
+        const nextSettings = {
+          ...settings,
+          remainingTimes: nextRemaining,
+          isActive: nextRemaining > 0,
+        };
+        updateNotificationSettings(nextSettings);
+        notificationSettingsRef.current = nextSettings;
+
+        if (!cancelled && settings.pushEnabled) {
+          await showSystemNotification("Notification", `Received ${simulated.amount} ${simulated.symbol}`);
+        }
+
+        if (nextRemaining <= 0) {
+          await flushPendingTransactions();
+        }
+      } catch (error) {
+        console.warn("Simulated notification failed", error);
+      }
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      run();
+      intervalId = window.setInterval(run, intervalMs);
+    }, initialDelay);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      if (intervalId) window.clearInterval(intervalId);
+      void flushPendingTransactions();
+    };
+  }, [addTransaction, notificationSettings.isActive, profile.walletAddress, updateBalance, updateNotificationSettings]);
 
   const modal = searchParams.get("modal") as WalletModal;
   const symbol = searchParams.get("symbol") || undefined;
@@ -432,12 +562,12 @@ function WalletRouteBody() {
         <main
           ref={scrollRef}
           className={`min-h-0 flex-1 wallet-scroll relative ${isTokenPage
-              ? "overflow-hidden pb-0 pt-0"
-              : pathname === "/browser"
-                ? "overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
-                : isSettingsPage
-                  ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
-                  : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+            ? "overflow-hidden pb-0 pt-0"
+            : pathname === "/browser"
+              ? "overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
+              : isSettingsPage
+                ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
+                : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
             }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
@@ -466,19 +596,43 @@ function WalletRouteBody() {
       <SendModal initialTokenSymbol={symbol} onClose={closeModal} visible={modal === "send"} />
       <ReceiveModal onClose={closeModal} visible={modal === "receive"} />
       <BuyModal onClose={closeModal} visible={modal === "buy"} />
-      <AccountModal 
-        visible={accountModalVisible} 
+      <AccountModal
+        visible={accountModalVisible}
         onClose={() => setAccountModalVisible(false)}
         onOpenProfile={() => { setAccountModalVisible(false); router.push("/settings/edit-profile"); }}
         onOpenSettings={() => { setAccountModalVisible(false); router.push("/settings"); }}
       />
-      <RecentActivityModal 
-        visible={activityVisible} 
-        onClose={() => setActivityVisible(false)} 
+      <RecentActivityModal
+        visible={activityVisible}
+        onClose={() => setActivityVisible(false)}
       />
-      <Toaster position="top-center" richColors />
+      <Toaster
+        expand={false}
+        position="bottom-center"
+        richColors={false}
+        toastOptions={{
+          classNames: {
+            actionButton: "phantom-swap-toast-action",
+            cancelButton: "phantom-swap-toast-cancel",
+            closeButton: "phantom-swap-toast-close",
+            description: "phantom-swap-toast-description",
+            icon: "phantom-swap-toast-icon",
+            title: "phantom-swap-toast-title",
+            toast: "phantom-swap-toast",
+          },
+          duration: 2600,
+        }}
+      />
     </div>
   );
+}
+
+function getNotificationIntervalMs(value: number, unit: "ms" | "sec" | "min" | "hr") {
+  const safeValue = Math.max(0, Number(value) || 0);
+  if (unit === "hr") return safeValue * 60 * 60 * 1000;
+  if (unit === "min") return safeValue * 60 * 1000;
+  if (unit === "sec") return safeValue * 1000;
+  return Math.max(250, safeValue);
 }
 
 export function StrictWalletApp({ payload }: { payload: WalletBootstrapPayload }) {

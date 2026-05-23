@@ -73,6 +73,52 @@ export interface WalletTransaction {
   createdAt: string;
 }
 
+export interface WalletNotificationCoin {
+  symbol: string;
+  enabled: boolean;
+  min: number;
+  max: number;
+}
+
+export interface WalletNotificationSettings {
+  pushEnabled: boolean;
+  coins: WalletNotificationCoin[];
+  mode: "Manual" | "Auto" | "Random" | "Fixed";
+  frequency: number;
+  unit: "ms" | "sec" | "min" | "hr";
+  initialDelay: number;
+  isActive: boolean;
+  totalTimes: number;
+  remainingTimes: number;
+  senderAddress: string;
+}
+
+export interface WalletNotification {
+  id: string;
+  walletAppId: WalletAppId;
+  accountId: string;
+  type: "transaction_received" | "simulation_started" | "simulation_stopped";
+  title: string;
+  body: string;
+  transactionId?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface WalletEvent {
+  id: string;
+  userId: string;
+  walletAppId: WalletAppId;
+  accountId: string;
+  type: "wallet_received" | "transaction_created" | "balance_updated";
+  title: string;
+  body: string;
+  transactionId?: string;
+  notificationId?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
 export interface SessionSummary {
   id: string;
   expiresAt: string;
@@ -93,9 +139,11 @@ export interface WalletBootstrapPayload {
   accounts: WalletAccount[];
   balances: WalletBalance[];
   recentTransactions: WalletTransaction[];
+  notificationSettings?: WalletNotificationSettings;
+  recentNotifications?: WalletNotification[];
 }
 
-export type WalletMutationType = "receive" | "same_wallet_transfer" | "manual_adjustment";
+export type WalletMutationType = "send" | "receive" | "same_wallet_transfer" | "cross_wallet_transfer" | "manual_adjustment";
 
 export interface CreateWalletTransactionRequest {
   walletAppId: WalletAppId;
@@ -105,4 +153,46 @@ export interface CreateWalletTransactionRequest {
   amount: string;
   fromAddress?: string;
   toAddress?: string;
+  counterpartWalletAppId?: WalletAppId;
+  counterpartAccountId?: string;
+  source?: "user" | "notification_simulation" | "system";
+}
+
+export interface CreateWalletTransactionsBatchRequest {
+  walletAppId: WalletAppId;
+  accountId: string;
+  transactions: Array<Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">>;
+}
+
+export interface UpdateWalletNotificationSettingsRequest {
+  walletAppId: WalletAppId;
+  accountId: string;
+  settings: WalletNotificationSettings;
+}
+
+export interface TriggerWalletNotificationRequest {
+  walletAppId: WalletAppId;
+  accountId: string;
+}
+
+export interface TriggerWalletNotificationResponse {
+  payload: WalletBootstrapPayload;
+  notification: WalletNotification;
+  transaction: WalletTransaction;
+}
+
+export interface UpdateWalletStateRequest {
+  walletAppId: WalletAppId;
+  accountId: string;
+  profile?: {
+    displayName?: string;
+    username?: string;
+    avatarUrl?: string;
+  };
+  accountName?: string;
+  accountAddress?: string;
+  balances?: Array<{
+    tokenSymbol: string;
+    amount: string;
+  }>;
 }

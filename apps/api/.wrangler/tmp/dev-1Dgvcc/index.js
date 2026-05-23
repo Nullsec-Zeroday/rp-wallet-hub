@@ -15560,6 +15560,7 @@ __export(src_exports, {
   devices: () => devices,
   licenseStatus: () => licenseStatus,
   licenses: () => licenses,
+  notificationType: () => notificationType,
   sessions: () => sessions,
   transactionStatus: () => transactionStatus,
   transactionType: () => transactionType,
@@ -15568,7 +15569,11 @@ __export(src_exports, {
   walletAppId: () => walletAppId,
   walletApps: () => walletApps,
   walletBalances: () => walletBalances,
+  walletEventType: () => walletEventType,
+  walletEvents: () => walletEvents,
   walletLaunchTokens: () => walletLaunchTokens,
+  walletNotificationSettings: () => walletNotificationSettings,
+  walletNotifications: () => walletNotifications,
   walletProfiles: () => walletProfiles,
   walletTransactions: () => walletTransactions
 });
@@ -15586,6 +15591,8 @@ var transactionType = pgEnum("transaction_type", [
   "manual_adjustment"
 ]);
 var transactionStatus = pgEnum("transaction_status", ["pending", "confirmed", "failed"]);
+var notificationType = pgEnum("notification_type", ["transaction_received", "simulation_started", "simulation_stopped"]);
+var walletEventType = pgEnum("wallet_event_type", ["wallet_received", "transaction_created", "balance_updated"]);
 var users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email"),
@@ -15653,7 +15660,7 @@ var walletAccounts = pgTable("wallet_accounts", {
   name: text("name").notNull(),
   address: text("address").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
-});
+}, (table) => [uniqueIndex("wallet_accounts_address_unique").on(table.address)]);
 var walletBalances = pgTable(
   "wallet_balances",
   {
@@ -15675,6 +15682,44 @@ var walletTransactions = pgTable("wallet_transactions", {
   fromAddress: text("from_address"),
   toAddress: text("to_address"),
   counterpartWalletAppId: walletAppId("counterpart_wallet_app_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+var walletNotificationSettings = pgTable("wallet_notification_settings", {
+  walletProfileId: text("wallet_profile_id").primaryKey().references(() => walletProfiles.id),
+  pushEnabled: boolean("push_enabled").default(false).notNull(),
+  coinsJson: text("coins_json").notNull(),
+  mode: text("mode").default("Auto").notNull(),
+  frequency: integer("frequency").default(2).notNull(),
+  unit: text("unit").default("sec").notNull(),
+  initialDelay: integer("initial_delay").default(0).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  totalTimes: integer("total_times").default(10).notNull(),
+  remainingTimes: integer("remaining_times").default(0).notNull(),
+  senderAddress: text("sender_address").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+});
+var walletNotifications = pgTable("wallet_notifications", {
+  id: text("id").primaryKey(),
+  walletAppId: walletAppId("wallet_app_id").notNull().references(() => walletApps.id),
+  accountId: text("account_id").notNull().references(() => walletAccounts.id),
+  type: notificationType("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  transactionId: text("transaction_id").references(() => walletTransactions.id),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+var walletEvents = pgTable("wallet_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  walletAppId: walletAppId("wallet_app_id").notNull().references(() => walletApps.id),
+  accountId: text("account_id").notNull().references(() => walletAccounts.id),
+  type: walletEventType("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  transactionId: text("transaction_id").references(() => walletTransactions.id),
+  notificationId: text("notification_id").references(() => walletNotifications.id),
+  readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 var walletLaunchTokens = pgTable(
@@ -15721,6 +15766,9 @@ var InMemoryPlatformStore = class {
   walletAccounts = /* @__PURE__ */ new Map();
   walletBalances = /* @__PURE__ */ new Map();
   walletTransactions = /* @__PURE__ */ new Map();
+  walletNotificationSettings = /* @__PURE__ */ new Map();
+  walletNotifications = /* @__PURE__ */ new Map();
+  walletEvents = /* @__PURE__ */ new Map();
   async activateLicense(input) {
     const now = /* @__PURE__ */ new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
@@ -15781,6 +15829,47 @@ var InMemoryPlatformStore = class {
     if (!user || !license) return null;
     return this.buildWalletBootstrap(user, license, walletAppId2);
   }
+  async updateWalletState(sessionId, input) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === input.accountId);
+    if (!account) return null;
+    if (input.profile) {
+      const nextProfile = {
+        ...profile,
+        displayName: input.profile.displayName?.trim() || profile.displayName,
+        username: normalizeOptionalString(input.profile.username),
+        avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+        updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      this.walletProfiles.set(`${user.id}:${input.walletAppId}`, nextProfile);
+    }
+    if (input.accountName?.trim()) {
+      this.walletAccounts.set(
+        profile.id,
+        accounts.map((entry) => entry.id === input.accountId ? { ...entry, name: input.accountName.trim() } : entry)
+      );
+    }
+    if (input.accountAddress?.trim()) {
+      const nextAddress = input.accountAddress.trim();
+      if (this.isAddressInUse(nextAddress, input.accountId)) return null;
+      this.walletAccounts.set(
+        profile.id,
+        (this.walletAccounts.get(profile.id) || accounts).map((entry) => entry.id === input.accountId ? { ...entry, address: nextAddress } : entry)
+      );
+    }
+    for (const balance of input.balances || []) {
+      const amount = Number(balance.amount);
+      if (!Number.isFinite(amount) || amount < 0) continue;
+      this.walletBalances.set(getBalanceKey(input.accountId, balance.tokenSymbol), createBalanceRow(input.accountId, balance.tokenSymbol, formatAmount(amount)));
+    }
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
   async getWalletTransactions(sessionId, walletAppId2) {
     const session = this.sessions.get(sessionId);
     if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
@@ -15800,37 +15889,190 @@ var InMemoryPlatformStore = class {
     if (!account) return null;
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) return null;
-    const balanceKey = getBalanceKey(input.accountId, input.tokenSymbol);
-    const current = this.walletBalances.get(balanceKey) || createBalanceRow(input.accountId, input.tokenSymbol, "0");
-    const currentAmount = Number(current.amount);
-    let nextAmount = currentAmount;
-    if (input.type === "receive") nextAmount = currentAmount + amount;
-    if (input.type === "manual_adjustment") nextAmount = currentAmount + amount;
-    if (input.type === "same_wallet_transfer") {
-      if (currentAmount < amount) return null;
-      nextAmount = currentAmount - amount;
+    const counterpartAccount = this.findCounterpartAccount(user.id, input);
+    const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
+    if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) return null;
+    if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
+      this.applyBalanceMutation(counterpartAccount.id, input.tokenSymbol, amount, "credit");
     }
-    const nextBalance = {
-      ...current,
-      amount: formatAmount(nextAmount),
-      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    this.walletBalances.set(balanceKey, nextBalance);
     const transaction = {
       id: createId("wtx"),
       walletAppId: input.walletAppId,
       accountId: input.accountId,
-      type: input.type,
+      type: effectiveType,
       status: "confirmed",
       tokenSymbol: input.tokenSymbol.toUpperCase(),
       amount: formatAmount(amount),
       fromAddress: input.fromAddress,
       toAddress: input.toAddress,
+      counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId,
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     const existing = this.walletTransactions.get(profile.id) || [];
     this.walletTransactions.set(profile.id, [transaction, ...existing]);
+    if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount && counterpartAccount.id !== account.id) {
+      const counterpartProfile = [...this.walletProfiles.values()].find((entry) => entry.id === counterpartAccount.walletProfileId);
+      if (counterpartProfile) {
+        const counterpartTx = {
+          ...transaction,
+          id: createId("wtx"),
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          type: "receive",
+          fromAddress: account.address,
+          toAddress: counterpartAccount.address,
+          counterpartWalletAppId: input.walletAppId
+        };
+        const counterpartExisting = this.walletTransactions.get(counterpartProfile.id) || [];
+        this.walletTransactions.set(counterpartProfile.id, [counterpartTx, ...counterpartExisting]);
+        const notification = this.createWalletNotificationRecord(counterpartProfile.id, {
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          transactionId: counterpartTx.id,
+          title: "Received",
+          body: `Received ${counterpartTx.amount} ${counterpartTx.tokenSymbol}`
+        });
+        this.createWalletEventRecord(counterpartProfile.id, {
+          userId: counterpartProfile.userId,
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          type: "wallet_received",
+          title: notification.title,
+          body: notification.body,
+          transactionId: counterpartTx.id,
+          notificationId: notification.id
+        });
+      }
+    }
     return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async createWalletTransactionsBatch(sessionId, input) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const account = this.getOrCreateWalletAccounts(profile).find((entry) => entry.id === input.accountId);
+    if (!account) return null;
+    for (const transactionInput of input.transactions) {
+      if (transactionInput.type !== "receive" && transactionInput.type !== "manual_adjustment") return null;
+      const amount = Number(transactionInput.amount);
+      if (!Number.isFinite(amount) || amount <= 0) return null;
+      this.applyBalanceMutation(input.accountId, transactionInput.tokenSymbol, amount, "credit");
+      const transaction = {
+        id: createId("wtx"),
+        walletAppId: input.walletAppId,
+        accountId: input.accountId,
+        type: transactionInput.type,
+        status: "confirmed",
+        tokenSymbol: transactionInput.tokenSymbol.toUpperCase(),
+        amount: formatAmount(amount),
+        fromAddress: transactionInput.fromAddress,
+        toAddress: transactionInput.toAddress,
+        counterpartWalletAppId: transactionInput.counterpartWalletAppId,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      const existing = this.walletTransactions.get(profile.id) || [];
+      this.walletTransactions.set(profile.id, [transaction, ...existing]);
+      if (transactionInput.source === "notification_simulation") {
+        this.createWalletNotificationRecord(profile.id, {
+          walletAppId: input.walletAppId,
+          accountId: input.accountId,
+          transactionId: transaction.id,
+          title: "Notification",
+          body: `Received ${transaction.amount} ${transaction.tokenSymbol}`
+        });
+      }
+    }
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async deleteWalletTransaction(sessionId, walletAppId2, transactionId) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, walletAppId2, walletRegistry[walletAppId2].name);
+    const transactions = this.walletTransactions.get(profile.id) || [];
+    this.walletTransactions.set(profile.id, transactions.filter((transaction) => transaction.id !== transactionId));
+    this.walletNotifications.set(profile.id, (this.walletNotifications.get(profile.id) || []).filter((notification) => notification.transactionId !== transactionId));
+    this.walletEvents.set(profile.id, (this.walletEvents.get(profile.id) || []).filter((event) => event.transactionId !== transactionId));
+    return this.buildWalletBootstrap(user, license, walletAppId2);
+  }
+  async clearWalletTransactions(sessionId, walletAppId2) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, walletAppId2, walletRegistry[walletAppId2].name);
+    this.walletTransactions.set(profile.id, []);
+    this.walletNotifications.set(profile.id, []);
+    this.walletEvents.set(profile.id, []);
+    return this.buildWalletBootstrap(user, license, walletAppId2);
+  }
+  async getWalletEvents(sessionId, walletAppId2, after) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const profile = this.getOrCreateWalletProfile(session.userId, walletAppId2, walletRegistry[walletAppId2].name);
+    const afterMs = after ? Date.parse(after) : Number.NaN;
+    return (this.walletEvents.get(profile.id) || []).filter((event) => !Number.isFinite(afterMs) || Date.parse(event.createdAt) > afterMs).sort((a2, b2) => Date.parse(a2.createdAt) - Date.parse(b2.createdAt)).slice(-50);
+  }
+  async updateWalletNotificationSettings(sessionId, input) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const account = this.getOrCreateWalletAccounts(profile).find((entry) => entry.id === input.accountId);
+    if (!account) return null;
+    this.walletNotificationSettings.set(profile.id, sanitizeNotificationSettings(input.settings));
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async triggerWalletNotification(sessionId, walletAppId2, accountId) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    if (!user) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, walletAppId2, walletRegistry[walletAppId2].name);
+    const account = this.getOrCreateWalletAccounts(profile).find((entry) => entry.id === accountId);
+    if (!account) return null;
+    const settings = this.walletNotificationSettings.get(profile.id) || createDefaultNotificationSettings();
+    const simulated = buildSimulatedReceive(settings);
+    if (!simulated) return null;
+    const payload = await this.createWalletTransaction(sessionId, {
+      walletAppId: walletAppId2,
+      accountId,
+      type: "receive",
+      tokenSymbol: simulated.symbol,
+      amount: String(simulated.amount),
+      fromAddress: settings.senderAddress,
+      toAddress: account.address,
+      source: "notification_simulation"
+    });
+    if (!payload) return null;
+    const transaction = payload.recentTransactions[0];
+    const nextSettings = decrementNotificationSettings(settings);
+    this.walletNotificationSettings.set(profile.id, nextSettings);
+    const notification = {
+      id: createId("ntf"),
+      walletAppId: walletAppId2,
+      accountId,
+      type: "transaction_received",
+      title: "Notification",
+      body: `Received ${simulated.amount} ${simulated.symbol}`,
+      transactionId: transaction.id,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const existing = this.walletNotifications.get(profile.id) || [];
+    this.walletNotifications.set(profile.id, [notification, ...existing]);
+    return {
+      payload: await this.buildWalletBootstrap(user, this.licenses.get(session.licenseId), walletAppId2),
+      notification,
+      transaction
+    };
   }
   buildHubSession(user, license, session) {
     return {
@@ -15849,6 +16091,8 @@ var InMemoryPlatformStore = class {
     const accounts = this.getOrCreateWalletAccounts(profile);
     const balances = this.getWalletBalances(accounts);
     const recentTransactions = this.walletTransactions.get(profile.id) || [];
+    const notificationSettings = this.walletNotificationSettings.get(profile.id) || createDefaultNotificationSettings();
+    const recentNotifications = this.walletNotifications.get(profile.id) || [];
     return {
       user,
       license: toLicenseSummary(license),
@@ -15856,7 +16100,9 @@ var InMemoryPlatformStore = class {
       profile,
       accounts,
       balances,
-      recentTransactions
+      recentTransactions,
+      notificationSettings,
+      recentNotifications
     };
   }
   createUser(email) {
@@ -15917,7 +16163,7 @@ var InMemoryPlatformStore = class {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: "Account 1",
-      address: createDemoAddress(profile.walletAppId),
+      address: this.createUniqueDemoAddress(profile.walletAppId),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     this.walletAccounts.set(profile.id, [account]);
@@ -15926,6 +16172,72 @@ var InMemoryPlatformStore = class {
   getWalletBalances(accounts) {
     const accountIds = new Set(accounts.map((account) => account.id));
     return [...this.walletBalances.values()].filter((balance) => accountIds.has(balance.accountId));
+  }
+  isAddressInUse(address, currentAccountId) {
+    return [...this.walletAccounts.values()].flat().some((account) => account.address === address && account.id !== currentAccountId);
+  }
+  createUniqueDemoAddress(walletAppId2) {
+    let address = createDemoAddress(walletAppId2);
+    while (this.isAddressInUse(address)) {
+      address = createDemoAddress(walletAppId2);
+    }
+    return address;
+  }
+  applyBalanceMutation(accountId, tokenSymbol, amount, direction) {
+    const balanceKey = getBalanceKey(accountId, tokenSymbol);
+    const current = this.walletBalances.get(balanceKey) || createBalanceRow(accountId, tokenSymbol, "0");
+    const currentAmount = Number(current.amount);
+    const nextAmount = direction === "credit" ? currentAmount + amount : currentAmount - amount;
+    if (nextAmount < 0) return false;
+    this.walletBalances.set(balanceKey, {
+      ...current,
+      amount: formatAmount(nextAmount),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    return true;
+  }
+  createWalletNotificationRecord(walletProfileId, input) {
+    const notification = {
+      id: createId("ntf"),
+      walletAppId: input.walletAppId,
+      accountId: input.accountId,
+      type: "transaction_received",
+      title: input.title,
+      body: input.body,
+      transactionId: input.transactionId,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const existing = this.walletNotifications.get(walletProfileId) || [];
+    this.walletNotifications.set(walletProfileId, [notification, ...existing]);
+    return notification;
+  }
+  createWalletEventRecord(walletProfileId, input) {
+    const event = {
+      id: createId("wev"),
+      userId: input.userId,
+      walletAppId: input.walletAppId,
+      accountId: input.accountId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      transactionId: input.transactionId,
+      notificationId: input.notificationId,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const existing = this.walletEvents.get(walletProfileId) || [];
+    this.walletEvents.set(walletProfileId, [event, ...existing]);
+    return event;
+  }
+  findCounterpartAccount(userId, input) {
+    const profiles = [...this.walletProfiles.values()].filter(
+      (profile) => input.counterpartWalletAppId ? profile.walletAppId === input.counterpartWalletAppId : true
+    );
+    for (const targetProfile of profiles) {
+      const accounts = this.walletAccounts.get(targetProfile.id) || [];
+      const account = accounts.find((entry) => entry.id === input.counterpartAccountId || entry.address === input.toAddress);
+      if (account) return { ...account, userId: targetProfile.userId, walletAppId: targetProfile.walletAppId };
+    }
+    return null;
   }
   recordDevice(userId, deviceId) {
     const id = `${userId}:${deviceId}`;
@@ -16004,6 +16316,49 @@ var NeonPlatformStore = class {
     const license = await this.getLicense(session.licenseId);
     return this.buildWalletBootstrap(user, license, walletAppId2);
   }
+  async updateWalletState(sessionId, input) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === input.accountId);
+    if (!account) return null;
+    if (input.profile) {
+      await this.db.update(walletProfiles).set({
+        displayName: input.profile.displayName?.trim() || profile.displayName,
+        username: normalizeOptionalString(input.profile.username),
+        avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(eq(walletProfiles.id, profile.id));
+    }
+    if (input.accountName?.trim()) {
+      await this.db.update(walletAccounts).set({ name: input.accountName.trim() }).where(eq(walletAccounts.id, input.accountId));
+    }
+    if (input.accountAddress?.trim()) {
+      const nextAddress = input.accountAddress.trim();
+      const [existingAddress] = await this.db.select({ id: walletAccounts.id }).from(walletAccounts).where(eq(walletAccounts.address, nextAddress)).limit(1);
+      if (existingAddress && existingAddress.id !== input.accountId) return null;
+      await this.db.update(walletAccounts).set({ address: nextAddress }).where(eq(walletAccounts.id, input.accountId));
+    }
+    for (const balance of input.balances || []) {
+      const amount = Number(balance.amount);
+      if (!Number.isFinite(amount) || amount < 0) continue;
+      await this.db.insert(walletBalances).values({
+        accountId: input.accountId,
+        tokenSymbol: balance.tokenSymbol.toUpperCase(),
+        amount: formatAmount(amount)
+      }).onConflictDoUpdate({
+        target: [walletBalances.accountId, walletBalances.tokenSymbol],
+        set: {
+          amount: formatAmount(amount),
+          updatedAt: /* @__PURE__ */ new Date()
+        }
+      });
+    }
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
   async getWalletTransactions(sessionId, walletAppId2) {
     const session = await this.getSession(sessionId);
     if (!session) return null;
@@ -16026,38 +16381,234 @@ var NeonPlatformStore = class {
     if (!account) return null;
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) return null;
-    const [existingBalance] = await this.db.select().from(walletBalances).where(and(eq(walletBalances.accountId, input.accountId), eq(walletBalances.tokenSymbol, input.tokenSymbol.toUpperCase()))).limit(1);
-    const currentAmount = Number(existingBalance?.amount || "0");
-    let nextAmount = currentAmount;
-    if (input.type === "receive") nextAmount = currentAmount + amount;
-    if (input.type === "manual_adjustment") nextAmount = currentAmount + amount;
-    if (input.type === "same_wallet_transfer") {
-      if (currentAmount < amount) return null;
-      nextAmount = currentAmount - amount;
+    const counterpartAccount = await this.findCounterpartAccount(user.id, input);
+    const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
+    if (!await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) return null;
+    if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
+      await this.applyBalanceMutation(counterpartAccount.id, input.tokenSymbol, amount, "credit");
     }
-    await this.db.insert(walletBalances).values({
-      accountId: input.accountId,
-      tokenSymbol: input.tokenSymbol.toUpperCase(),
-      amount: formatAmount(nextAmount)
-    }).onConflictDoUpdate({
-      target: [walletBalances.accountId, walletBalances.tokenSymbol],
-      set: {
-        amount: formatAmount(nextAmount),
-        updatedAt: /* @__PURE__ */ new Date()
-      }
-    });
+    const transactionId = createId("wtx");
     await this.db.insert(walletTransactions).values({
-      id: createId("wtx"),
+      id: transactionId,
       walletAppId: input.walletAppId,
       accountId: input.accountId,
-      type: input.type,
+      type: effectiveType,
       status: "confirmed",
       tokenSymbol: input.tokenSymbol.toUpperCase(),
       amount: formatAmount(amount),
       fromAddress: input.fromAddress,
-      toAddress: input.toAddress
+      toAddress: input.toAddress,
+      counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId
+    });
+    if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount && counterpartAccount.id !== account.id) {
+      const counterpartProfile = await this.getWalletProfileById(counterpartAccount.walletProfileId);
+      if (counterpartProfile) {
+        const counterpartTransactionId = createId("wtx");
+        await this.db.insert(walletTransactions).values({
+          id: counterpartTransactionId,
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          type: "receive",
+          status: "confirmed",
+          tokenSymbol: input.tokenSymbol.toUpperCase(),
+          amount: formatAmount(amount),
+          fromAddress: account.address,
+          toAddress: counterpartAccount.address,
+          counterpartWalletAppId: input.walletAppId
+        });
+        const notification = await this.createWalletNotification({
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          transactionId: counterpartTransactionId,
+          title: "Received",
+          body: `Received ${formatAmount(amount)} ${input.tokenSymbol.toUpperCase()}`
+        });
+        await this.createWalletEvent({
+          userId: counterpartProfile.userId,
+          walletAppId: counterpartProfile.walletAppId,
+          accountId: counterpartAccount.id,
+          type: "wallet_received",
+          title: notification.title,
+          body: notification.body,
+          transactionId: counterpartTransactionId,
+          notificationId: notification.id
+        });
+      }
+    }
+    if (input.source === "notification_simulation") {
+      await this.createWalletNotification({
+        walletAppId: input.walletAppId,
+        accountId: input.accountId,
+        transactionId,
+        title: "Notification",
+        body: `Received ${formatAmount(amount)} ${input.tokenSymbol.toUpperCase()}`
+      });
+    }
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async createWalletTransactionsBatch(sessionId, input) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === input.accountId);
+    if (!account) return null;
+    const rows = [];
+    const notificationRows = [];
+    const balanceCredits = /* @__PURE__ */ new Map();
+    for (const transactionInput of input.transactions) {
+      if (transactionInput.type !== "receive" && transactionInput.type !== "manual_adjustment") return null;
+      const amount = Number(transactionInput.amount);
+      if (!Number.isFinite(amount) || amount <= 0) return null;
+      const tokenSymbol = transactionInput.tokenSymbol.toUpperCase();
+      balanceCredits.set(tokenSymbol, (balanceCredits.get(tokenSymbol) || 0) + amount);
+      const transactionId = createId("wtx");
+      rows.push({
+        id: transactionId,
+        walletAppId: input.walletAppId,
+        accountId: input.accountId,
+        type: transactionInput.type,
+        status: "confirmed",
+        tokenSymbol,
+        amount: formatAmount(amount),
+        fromAddress: transactionInput.fromAddress,
+        toAddress: transactionInput.toAddress,
+        counterpartWalletAppId: transactionInput.counterpartWalletAppId
+      });
+      if (transactionInput.source === "notification_simulation") {
+        notificationRows.push({
+          id: createId("ntf"),
+          walletAppId: input.walletAppId,
+          accountId: input.accountId,
+          type: "transaction_received",
+          title: "Notification",
+          body: `Received ${formatAmount(amount)} ${tokenSymbol}`,
+          transactionId
+        });
+      }
+    }
+    for (const [tokenSymbol, amount] of balanceCredits) {
+      if (!await this.applyBalanceMutation(input.accountId, tokenSymbol, amount, "credit")) return null;
+    }
+    if (rows.length > 0) {
+      await this.db.insert(walletTransactions).values(rows);
+    }
+    if (notificationRows.length > 0) {
+      await this.db.insert(walletNotifications).values(notificationRows);
+    }
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async deleteWalletTransaction(sessionId, walletAppId2, transactionId) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getWalletProfileByUserAndApp(user.id, walletAppId2);
+    if (!profile) return this.buildWalletBootstrap(user, license, walletAppId2);
+    const accounts = await this.getOrCreateWalletAccounts(toWalletProfile(profile));
+    const accountIds = new Set(accounts.map((account) => account.id));
+    const [transaction] = await this.db.select().from(walletTransactions).where(eq(walletTransactions.id, transactionId)).limit(1);
+    if (!transaction || !accountIds.has(transaction.accountId)) return null;
+    await this.db.delete(walletEvents).where(eq(walletEvents.transactionId, transactionId));
+    await this.db.delete(walletNotifications).where(eq(walletNotifications.transactionId, transactionId));
+    await this.db.delete(walletTransactions).where(eq(walletTransactions.id, transactionId));
+    return this.buildWalletBootstrap(user, license, walletAppId2);
+  }
+  async clearWalletTransactions(sessionId, walletAppId2) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getWalletProfileByUserAndApp(user.id, walletAppId2);
+    if (!profile) return this.buildWalletBootstrap(user, license, walletAppId2);
+    const accounts = await this.getOrCreateWalletAccounts(toWalletProfile(profile));
+    const accountIds = accounts.map((account) => account.id);
+    if (accountIds.length === 0) return this.buildWalletBootstrap(user, license, walletAppId2);
+    const transactions = await this.db.select({ id: walletTransactions.id }).from(walletTransactions).where(inArray(walletTransactions.accountId, accountIds));
+    const transactionIds = transactions.map((transaction) => transaction.id);
+    if (transactionIds.length === 0) return this.buildWalletBootstrap(user, license, walletAppId2);
+    await this.db.delete(walletEvents).where(inArray(walletEvents.transactionId, transactionIds));
+    await this.db.delete(walletNotifications).where(inArray(walletNotifications.transactionId, transactionIds));
+    await this.db.delete(walletTransactions).where(inArray(walletTransactions.id, transactionIds));
+    return this.buildWalletBootstrap(user, license, walletAppId2);
+  }
+  async getWalletEvents(sessionId, walletAppId2, after) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const profile = await this.getWalletProfileByUserAndApp(session.userId, walletAppId2);
+    if (!profile) return [];
+    const accounts = await this.getOrCreateWalletAccounts(toWalletProfile(profile));
+    const accountIds = new Set(accounts.map((account) => account.id));
+    const afterMs = after ? Date.parse(after) : Number.NaN;
+    const events = await this.db.select().from(walletEvents).orderBy(desc(walletEvents.createdAt)).limit(50);
+    return events.filter((event) => accountIds.has(event.accountId)).filter((event) => !Number.isFinite(afterMs) || event.createdAt.getTime() > afterMs).map(toWalletEvent).sort((a2, b2) => Date.parse(a2.createdAt) - Date.parse(b2.createdAt));
+  }
+  async updateWalletNotificationSettings(sessionId, input) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    if (!accounts.some((account) => account.id === input.accountId)) return null;
+    const settings = sanitizeNotificationSettings(input.settings);
+    await this.db.insert(walletNotificationSettings).values(toWalletNotificationSettingsRow(profile.id, settings)).onConflictDoUpdate({
+      target: walletNotificationSettings.walletProfileId,
+      set: {
+        pushEnabled: settings.pushEnabled,
+        coinsJson: JSON.stringify(settings.coins),
+        mode: settings.mode,
+        frequency: settings.frequency,
+        unit: settings.unit,
+        initialDelay: settings.initialDelay,
+        isActive: settings.isActive,
+        totalTimes: settings.totalTimes,
+        remainingTimes: settings.remainingTimes,
+        senderAddress: settings.senderAddress,
+        updatedAt: /* @__PURE__ */ new Date()
+      }
     });
     return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+  async triggerWalletNotification(sessionId, walletAppId2, accountId) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const profile = await this.getOrCreateWalletProfile(user.id, walletAppId2, walletRegistry[walletAppId2].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === accountId);
+    if (!account) return null;
+    const settings = await this.getNotificationSettings(profile.id);
+    const simulated = buildSimulatedReceive(settings);
+    if (!simulated) return null;
+    const payload = await this.createWalletTransaction(sessionId, {
+      walletAppId: walletAppId2,
+      accountId,
+      type: "receive",
+      tokenSymbol: simulated.symbol,
+      amount: String(simulated.amount),
+      fromAddress: settings.senderAddress,
+      toAddress: account.address,
+      source: "notification_simulation"
+    });
+    if (!payload) return null;
+    const nextSettings = decrementNotificationSettings(settings);
+    await this.updateWalletNotificationSettings(sessionId, {
+      walletAppId: walletAppId2,
+      accountId,
+      settings: nextSettings
+    });
+    const refreshed = await this.buildWalletBootstrap(user, await this.getLicense(session.licenseId), walletAppId2);
+    const notification = refreshed.recentNotifications?.[0];
+    const transaction = refreshed.recentTransactions[0];
+    if (!notification || !transaction) return null;
+    return {
+      payload: refreshed,
+      notification,
+      transaction
+    };
   }
   async buildHubSession(user, license, session) {
     const activatedWallets = await this.getActivatedWallets(user.id);
@@ -16080,6 +16631,8 @@ var NeonPlatformStore = class {
     const accounts = await this.getOrCreateWalletAccounts(profile);
     const balances = await this.getWalletBalances(accounts);
     const recentTransactions = await this.getRecentWalletTransactions(accounts);
+    const notificationSettings = await this.getNotificationSettings(profile.id);
+    const recentNotifications = await this.getRecentWalletNotifications(accounts);
     return {
       user,
       license: toLicenseSummary({
@@ -16090,7 +16643,9 @@ var NeonPlatformStore = class {
       profile,
       accounts,
       balances,
-      recentTransactions
+      recentTransactions,
+      notificationSettings,
+      recentNotifications
     };
   }
   async getUser(userId) {
@@ -16180,13 +16735,17 @@ var NeonPlatformStore = class {
     const [profile] = await this.db.select().from(walletProfiles).where(and(eq(walletProfiles.userId, userId), eq(walletProfiles.walletAppId, walletAppId2))).limit(1);
     return profile;
   }
+  async getWalletProfileById(walletProfileId) {
+    const [profile] = await this.db.select().from(walletProfiles).where(eq(walletProfiles.id, walletProfileId)).limit(1);
+    return profile ?? null;
+  }
   async getOrCreateWalletAccounts(profile) {
-    const existing = await this.db.select().from(walletAccounts).where(eq(walletAccounts.walletProfileId, profile.id));
+    const existing = await this.db.select().from(walletAccounts).where(eq(walletAccounts.walletProfileId, profile.id)).orderBy(desc(walletAccounts.createdAt));
     const accounts = existing.length > 0 ? existing : await this.db.insert(walletAccounts).values({
       id: createId("wac"),
       walletProfileId: profile.id,
       name: "Account 1",
-      address: createDemoAddress(profile.walletAppId)
+      address: await this.createUniqueDemoAddress(profile.walletAppId)
     }).returning();
     return accounts.map((account) => ({
       id: account.id,
@@ -16210,6 +16769,79 @@ var NeonPlatformStore = class {
       updatedAt: balance.updatedAt.toISOString()
     }));
   }
+  async applyBalanceMutation(accountId, tokenSymbol, amount, direction) {
+    const normalizedSymbol = tokenSymbol.toUpperCase();
+    const [existingBalance] = await this.db.select().from(walletBalances).where(and(eq(walletBalances.accountId, accountId), eq(walletBalances.tokenSymbol, normalizedSymbol))).limit(1);
+    const currentAmount = Number(existingBalance?.amount || "0");
+    const nextAmount = direction === "credit" ? currentAmount + amount : currentAmount - amount;
+    if (nextAmount < 0) return false;
+    await this.db.insert(walletBalances).values({
+      accountId,
+      tokenSymbol: normalizedSymbol,
+      amount: formatAmount(nextAmount)
+    }).onConflictDoUpdate({
+      target: [walletBalances.accountId, walletBalances.tokenSymbol],
+      set: {
+        amount: formatAmount(nextAmount),
+        updatedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    return true;
+  }
+  async findCounterpartAccount(userId, input) {
+    const profiles = input.counterpartWalletAppId ? await this.db.select().from(walletProfiles).where(eq(walletProfiles.walletAppId, input.counterpartWalletAppId)) : await this.db.select().from(walletProfiles);
+    for (const profile of profiles) {
+      const accounts = await this.db.select().from(walletAccounts).where(eq(walletAccounts.walletProfileId, profile.id));
+      const account = accounts.find((entry) => entry.id === input.counterpartAccountId || entry.address === input.toAddress);
+      if (account) return { ...account, userId: profile.userId, walletAppId: profile.walletAppId };
+    }
+    return null;
+  }
+  async createUniqueDemoAddress(walletAppId2) {
+    for (let attempts = 0; attempts < 10; attempts++) {
+      const address = createDemoAddress(walletAppId2);
+      const [existing] = await this.db.select({ id: walletAccounts.id }).from(walletAccounts).where(eq(walletAccounts.address, address)).limit(1);
+      if (!existing) return address;
+    }
+    throw new Error("Unable to generate a unique wallet address");
+  }
+  async getNotificationSettings(walletProfileId) {
+    const [settings] = await this.db.select().from(walletNotificationSettings).where(eq(walletNotificationSettings.walletProfileId, walletProfileId)).limit(1);
+    return settings ? toWalletNotificationSettings(settings) : createDefaultNotificationSettings();
+  }
+  async getRecentWalletNotifications(accounts) {
+    if (accounts.length === 0) return [];
+    const accountIds = new Set(accounts.map((account) => account.id));
+    const notifications = await this.db.select().from(walletNotifications).orderBy(desc(walletNotifications.createdAt)).limit(50);
+    return notifications.filter((notification) => accountIds.has(notification.accountId)).map(toWalletNotification);
+  }
+  async createWalletNotification(input) {
+    const [notification] = await this.db.insert(walletNotifications).values({
+      id: createId("ntf"),
+      walletAppId: input.walletAppId,
+      accountId: input.accountId,
+      type: "transaction_received",
+      title: input.title,
+      body: input.body,
+      transactionId: input.transactionId
+    }).returning();
+    return toWalletNotification(notification);
+  }
+  async createWalletEvent(input) {
+    const [event] = await this.db.insert(walletEvents).values({
+      id: createId("wev"),
+      userId: input.userId,
+      walletAppId: input.walletAppId,
+      accountId: input.accountId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      transactionId: input.transactionId,
+      notificationId: input.notificationId
+    }).returning();
+    const walletEvent = toWalletEvent(event);
+    return walletEvent;
+  }
   async getRecentWalletTransactions(accounts) {
     if (accounts.length === 0) return [];
     const accountIds = new Set(accounts.map((account) => account.id));
@@ -16229,6 +16861,22 @@ var NeonPlatformStore = class {
     });
   }
 };
+var DEFAULT_NOTIFICATION_COINS = [
+  { symbol: "SOL", enabled: true, min: 5, max: 95 },
+  { symbol: "USDT", enabled: false, min: 1, max: 10 },
+  { symbol: "ETH", enabled: false, min: 0.1, max: 1.5 },
+  { symbol: "BTC", enabled: false, min: 1, max: 10 },
+  { symbol: "SUI", enabled: false, min: 1, max: 10 },
+  { symbol: "MATIC", enabled: false, min: 1, max: 10 },
+  { symbol: "HYPE", enabled: false, min: 1, max: 10 },
+  { symbol: "BNB", enabled: false, min: 1, max: 10 },
+  { symbol: "AVAX", enabled: false, min: 1, max: 10 },
+  { symbol: "LINK", enabled: false, min: 1, max: 10 },
+  { symbol: "UNI", enabled: false, min: 1, max: 10 },
+  { symbol: "USDC", enabled: false, min: 1, max: 10 },
+  { symbol: "DOGE", enabled: false, min: 1, max: 10 },
+  { symbol: "MON", enabled: false, min: 1, max: 10 }
+];
 function toLicenseSummary(license) {
   return {
     id: license.id,
@@ -16243,6 +16891,11 @@ function normalizeLicenseKey(key) {
   return key.trim().toUpperCase().replace(/-/g, "");
 }
 __name(normalizeLicenseKey, "normalizeLicenseKey");
+function normalizeOptionalString(value) {
+  const normalized = value?.trim();
+  return normalized ? normalized : void 0;
+}
+__name(normalizeOptionalString, "normalizeOptionalString");
 async function hashToken(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -16271,10 +16924,33 @@ function createBalanceRow(accountId, tokenSymbol, amount) {
   };
 }
 __name(createBalanceRow, "createBalanceRow");
+function getBalanceDirection(type) {
+  return type === "receive" || type === "manual_adjustment" ? "credit" : "debit";
+}
+__name(getBalanceDirection, "getBalanceDirection");
+function getEffectiveTransactionType(input, counterpartWalletAppId) {
+  if (input.type !== "send") return input.type;
+  if (!counterpartWalletAppId) return "send";
+  return counterpartWalletAppId === input.walletAppId ? "same_wallet_transfer" : "cross_wallet_transfer";
+}
+__name(getEffectiveTransactionType, "getEffectiveTransactionType");
 function formatAmount(value) {
   return value.toFixed(6).replace(/\.?0+$/, "");
 }
 __name(formatAmount, "formatAmount");
+function toWalletProfile(profile) {
+  return {
+    id: profile.id,
+    userId: profile.userId,
+    walletAppId: profile.walletAppId,
+    displayName: profile.displayName,
+    username: profile.username ?? void 0,
+    avatarUrl: profile.avatarUrl ?? void 0,
+    createdAt: profile.createdAt.toISOString(),
+    updatedAt: profile.updatedAt.toISOString()
+  };
+}
+__name(toWalletProfile, "toWalletProfile");
 function toWalletTransaction(tx) {
   return {
     id: tx.id,
@@ -16291,6 +16967,134 @@ function toWalletTransaction(tx) {
   };
 }
 __name(toWalletTransaction, "toWalletTransaction");
+function createDefaultNotificationSettings() {
+  return {
+    pushEnabled: false,
+    coins: DEFAULT_NOTIFICATION_COINS,
+    mode: "Auto",
+    frequency: 2,
+    unit: "sec",
+    initialDelay: 0,
+    isActive: false,
+    totalTimes: 10,
+    remainingTimes: 0,
+    senderAddress: "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j"
+  };
+}
+__name(createDefaultNotificationSettings, "createDefaultNotificationSettings");
+function sanitizeNotificationSettings(settings) {
+  const fallback = createDefaultNotificationSettings();
+  const coins = (settings.coins?.length ? settings.coins : fallback.coins).map((coin) => ({
+    symbol: coin.symbol.toUpperCase(),
+    enabled: Boolean(coin.enabled),
+    min: Math.max(0, Number(coin.min) || 0),
+    max: Math.max(Number(coin.min) || 0, Number(coin.max) || 0)
+  }));
+  return {
+    pushEnabled: Boolean(settings.pushEnabled),
+    coins,
+    mode: ["Manual", "Auto", "Random", "Fixed"].includes(settings.mode) ? settings.mode : fallback.mode,
+    frequency: Math.max(0, Number(settings.frequency) || fallback.frequency),
+    unit: ["ms", "sec", "min", "hr"].includes(settings.unit) ? settings.unit : fallback.unit,
+    initialDelay: Math.max(0, Number(settings.initialDelay) || 0),
+    isActive: Boolean(settings.isActive),
+    totalTimes: Math.max(0, Math.floor(Number(settings.totalTimes) || fallback.totalTimes)),
+    remainingTimes: Math.max(0, Math.floor(Number(settings.remainingTimes) || 0)),
+    senderAddress: settings.senderAddress?.trim() || fallback.senderAddress
+  };
+}
+__name(sanitizeNotificationSettings, "sanitizeNotificationSettings");
+function buildSimulatedReceive(settings) {
+  if (settings.isActive && settings.remainingTimes <= 0) return null;
+  const enabledCoins = settings.coins.filter((coin2) => coin2.enabled);
+  if (enabledCoins.length === 0) return null;
+  const coin = enabledCoins[Math.floor(Math.random() * enabledCoins.length)];
+  const rawAmount = settings.mode === "Fixed" ? coin.min : Math.random() * (coin.max - coin.min) + coin.min;
+  const decimals = coin.symbol === "SOL" || coin.symbol === "ETH" ? 5 : 2;
+  return {
+    symbol: coin.symbol,
+    amount: Number(rawAmount.toFixed(decimals))
+  };
+}
+__name(buildSimulatedReceive, "buildSimulatedReceive");
+function decrementNotificationSettings(settings) {
+  if (!settings.isActive) return settings;
+  const remainingTimes = Math.max(0, settings.remainingTimes - 1);
+  return {
+    ...settings,
+    remainingTimes,
+    isActive: remainingTimes > 0
+  };
+}
+__name(decrementNotificationSettings, "decrementNotificationSettings");
+function toWalletNotificationSettingsRow(walletProfileId, settings) {
+  return {
+    walletProfileId,
+    pushEnabled: settings.pushEnabled,
+    coinsJson: JSON.stringify(settings.coins),
+    mode: settings.mode,
+    frequency: settings.frequency,
+    unit: settings.unit,
+    initialDelay: settings.initialDelay,
+    isActive: settings.isActive,
+    totalTimes: settings.totalTimes,
+    remainingTimes: settings.remainingTimes,
+    senderAddress: settings.senderAddress
+  };
+}
+__name(toWalletNotificationSettingsRow, "toWalletNotificationSettingsRow");
+function toWalletNotificationSettings(settings) {
+  let coins = createDefaultNotificationSettings().coins;
+  try {
+    const parsed = JSON.parse(settings.coinsJson);
+    if (Array.isArray(parsed)) coins = parsed;
+  } catch {
+    coins = createDefaultNotificationSettings().coins;
+  }
+  return sanitizeNotificationSettings({
+    pushEnabled: settings.pushEnabled,
+    coins,
+    mode: settings.mode,
+    frequency: settings.frequency,
+    unit: settings.unit,
+    initialDelay: settings.initialDelay,
+    isActive: settings.isActive,
+    totalTimes: settings.totalTimes,
+    remainingTimes: settings.remainingTimes,
+    senderAddress: settings.senderAddress
+  });
+}
+__name(toWalletNotificationSettings, "toWalletNotificationSettings");
+function toWalletNotification(notification) {
+  return {
+    id: notification.id,
+    walletAppId: notification.walletAppId,
+    accountId: notification.accountId,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body,
+    transactionId: notification.transactionId ?? void 0,
+    readAt: notification.readAt?.toISOString(),
+    createdAt: notification.createdAt.toISOString()
+  };
+}
+__name(toWalletNotification, "toWalletNotification");
+function toWalletEvent(event) {
+  return {
+    id: event.id,
+    userId: event.userId,
+    walletAppId: event.walletAppId,
+    accountId: event.accountId,
+    type: event.type,
+    title: event.title,
+    body: event.body,
+    transactionId: event.transactionId ?? void 0,
+    notificationId: event.notificationId ?? void 0,
+    readAt: event.readAt?.toISOString(),
+    createdAt: event.createdAt.toISOString()
+  };
+}
+__name(toWalletEvent, "toWalletEvent");
 
 // src/index.ts
 var DEFAULT_SESSION_COOKIE = "rp_session";
@@ -16676,6 +17480,21 @@ app.get("/wallet-state/:walletAppId", async (c) => {
   }
   return c.json(response);
 });
+app.get("/wallet-events", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const walletAppId2 = c.req.query("walletAppId");
+  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).getWalletEvents(sessionId, walletAppId2, c.req.query("after"));
+  if (!response) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  return c.json(response);
+});
 app.get("/wallet-transactions", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
   if (!sessionId) {
@@ -16703,6 +17522,96 @@ app.post("/wallet-transactions", async (c) => {
   const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
   if (!response) {
     return c.json({ error: "Unable to create wallet transaction" }, 400);
+  }
+  return c.json(response);
+});
+app.post("/wallet-transactions/batch", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransactionsBatch(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to create wallet transactions" }, 400);
+  }
+  return c.json(response);
+});
+app.delete("/wallet-transactions/:transactionId", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const walletAppId2 = c.req.query("walletAppId");
+  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).deleteWalletTransaction(sessionId, walletAppId2, c.req.param("transactionId"));
+  if (!response) {
+    return c.json({ error: "Unable to delete wallet transaction" }, 400);
+  }
+  return c.json(response);
+});
+app.delete("/wallet-transactions", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const walletAppId2 = c.req.query("walletAppId");
+  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).clearWalletTransactions(sessionId, walletAppId2);
+  if (!response) {
+    return c.json({ error: "Unable to clear wallet transactions" }, 400);
+  }
+  return c.json(response);
+});
+app.put("/wallet-state", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletState(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to update wallet state" }, 400);
+  }
+  return c.json(response);
+});
+app.put("/wallet-notification-settings", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletNotificationSettings(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to update wallet notification settings" }, 400);
+  }
+  return c.json(response);
+});
+app.post("/wallet-notifications/trigger", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).triggerWalletNotification(sessionId, body.walletAppId, body.accountId);
+  if (!response) {
+    return c.json({ error: "Unable to trigger wallet notification" }, 400);
   }
   return c.json(response);
 });
@@ -16786,7 +17695,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-1kg3z8/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-xLf0dN/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -16818,7 +17727,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-1kg3z8/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-xLf0dN/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

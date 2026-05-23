@@ -10,6 +10,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import {
+  clearBackendWalletTransactions,
+  createBackendWalletTransaction,
+  deleteBackendWalletTransaction,
+  updateBackendNotificationSettings,
+  updateBackendWalletState,
+} from "@/lib/backend-wallet";
 
 interface SearchResult {
   id: string;
@@ -36,6 +43,15 @@ const formatDate = (timestamp: number) => {
   return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 };
 
+const normalizeNotificationSettings = (settings: typeof DEFAULT_NOTIFICATION_SETTINGS) =>
+  JSON.stringify({
+    ...settings,
+    coins: [...(settings.coins || [])].map((coin) => ({
+      ...coin,
+      symbol: coin.symbol.toUpperCase(),
+    })).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+  });
+
 // Removed PwaGate import
 
 function EditProfileContent() {
@@ -48,19 +64,16 @@ function EditProfileContent() {
     updateAllBalances,
     cashBalance,
     updateCashBalance,
-    addTransaction,
     boostConfig,
     updateBoostConfig,
     notificationSettings,
     updateNotificationSettings,
-    toggleNotificationActive,
     transactions,
     deleteTransaction,
     clearTransactions,
     baseCurrency,
     updateBaseCurrency,
     customTokens,
-    updateBalance,
     addCustomToken,
     removeCustomToken,
     dexscreenerApiKey
@@ -218,54 +231,51 @@ function EditProfileContent() {
     updateAllBalances(newBalances);
     updateBoostConfig(localBoostConfig);
     updateNotificationSettings(localNotificationSettings);
-    updateBaseCurrency(localBaseCurrency);
-
-    // ── BACKGROUND BACKEND PERSISTENCE ──
-    const key = typeof window !== 'undefined' ? localStorage.getItem("wallet_key") : null;
-    if (key) {
-      fetch("/api/user/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: key.replace(/-/g, ""),
-          username: localProfile.username,
-          accountName: localWalletName,
-          bio: localProfile.bio,
-          email: localProfile.email,
-          twitter: localProfile.twitter,
-          discord: localProfile.discord,
-          walletAddress: localProfile.walletAddress,
-         }),
-      }).catch(err => {
-        console.error("Background persist failed:", err);
+    if (normalizeNotificationSettings(localNotificationSettings) !== normalizeNotificationSettings(notificationSettings || DEFAULT_NOTIFICATION_SETTINGS)) {
+      updateBackendNotificationSettings(localNotificationSettings).catch((err) => {
+        console.error("Notification settings persist failed:", err);
       });
     }
+    updateBaseCurrency(localBaseCurrency);
+
+    updateBackendWalletState({
+      accountAddress: localProfile.walletAddress,
+      accountName: localWalletName,
+      balances: newBalances.map((balance) => ({
+        amount: String(balance.balance),
+        tokenSymbol: balance.symbol,
+      })),
+      profile: {
+        displayName: localWalletName,
+        username: localProfile.username,
+      },
+    }).catch((err) => {
+      console.error("Wallet state persist failed:", err);
+      toast.error(err instanceof Error ? err.message : "Saved locally, but backend sync failed.");
+    });
 
     router.push("/home");
   };
 
-  const handleAddTransaction = () => {
+  const handleAddTransaction = async () => {
     const amount = parseFloat(txAmount);
     if (!amount || amount <= 0) {
       toast.error('Please enter a valid amount.');
       return;
     }
 
-    const currentStoreBal = tokenBalances.find(b => b.symbol === txToken)?.balance ?? 0;
-    let newStoreBal = currentStoreBal;
-    if (txType === 'receive') newStoreBal += amount;
-    else if (txType === 'send') newStoreBal = Math.max(0, newStoreBal - amount);
-
-    updateBalance(txToken, newStoreBal);
-
-    addTransaction({
-      type: txType,
-      token: txToken,
-      amount,
-      status: 'confirmed',
-      from: txType === 'receive' ? (txFrom || 'External Wallet') : 'Self',
-      to: txType === 'send' ? (txFrom || 'External Wallet') : 'Self',
-    });
+    try {
+      await createBackendWalletTransaction({
+        type: txType,
+        tokenSymbol: txToken,
+        amount: String(amount),
+        fromAddress: txType === 'receive' ? (txFrom || 'External Wallet') : profile.walletAddress,
+        toAddress: txType === 'send' ? (txFrom || 'External Wallet') : profile.walletAddress,
+      });
+    } catch {
+      toast.error("Unable to add transaction. Check the balance and backend session.");
+      return;
+    }
 
     setLocalBalances(prev => {
       const currentVal = parseFloat(prev[txToken] || "0");
@@ -289,6 +299,27 @@ function EditProfileContent() {
       setLocalNotificationSettings({ ...localNotificationSettings, pushEnabled: true });
     } else {
       setLocalNotificationSettings({ ...localNotificationSettings, pushEnabled: false });
+    }
+  };
+
+  const handleDeleteTransaction = async (transactionId: string) => {
+    deleteTransaction(transactionId);
+    try {
+      await deleteBackendWalletTransaction(transactionId);
+    } catch (error) {
+      console.error("Transaction delete failed:", error);
+      toast.error("Deleted locally, but backend sync failed.");
+    }
+  };
+
+  const handleClearTransactions = async () => {
+    clearTransactions();
+    try {
+      await clearBackendWalletTransactions();
+      toast.success("All transactions cleared");
+    } catch (error) {
+      console.error("Transaction clear failed:", error);
+      toast.error("Cleared locally, but backend sync failed.");
     }
   };
 
@@ -792,8 +823,7 @@ function EditProfileContent() {
                 <button
                   onClick={() => {
                     if (window.confirm("Are you sure you want to clear all transactions?")) {
-                      clearTransactions();
-                      toast.success("All transactions cleared");
+                      void handleClearTransactions();
                     }
                   }}
                   className="text-[11px] font-bold text-[#E84142] active:opacity-60 uppercase tracking-wider flex items-center gap-1"
@@ -819,7 +849,7 @@ function EditProfileContent() {
                       </div>
                     </div>
                     <button
-                      onClick={() => deleteTransaction(tx.id)}
+                      onClick={() => void handleDeleteTransaction(tx.id)}
                       className="text-[#E84142] active:opacity-60 p-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors"
                     >
                       <Trash2 size={15} />

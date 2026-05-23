@@ -12,6 +12,8 @@ export const transactionType = pgEnum("transaction_type", [
   "manual_adjustment",
 ]);
 export const transactionStatus = pgEnum("transaction_status", ["pending", "confirmed", "failed"]);
+export const notificationType = pgEnum("notification_type", ["transaction_received", "simulation_started", "simulation_stopped"]);
+export const walletEventType = pgEnum("wallet_event_type", ["wallet_received", "transaction_created", "balance_updated"]);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -100,7 +102,7 @@ export const walletAccounts = pgTable("wallet_accounts", {
   name: text("name").notNull(),
   address: text("address").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [uniqueIndex("wallet_accounts_address_unique").on(table.address)]);
 
 export const walletBalances = pgTable(
   "wallet_balances",
@@ -130,6 +132,59 @@ export const walletTransactions = pgTable("wallet_transactions", {
   fromAddress: text("from_address"),
   toAddress: text("to_address"),
   counterpartWalletAppId: walletAppId("counterpart_wallet_app_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const walletNotificationSettings = pgTable("wallet_notification_settings", {
+  walletProfileId: text("wallet_profile_id")
+    .primaryKey()
+    .references(() => walletProfiles.id),
+  pushEnabled: boolean("push_enabled").default(false).notNull(),
+  coinsJson: text("coins_json").notNull(),
+  mode: text("mode").default("Auto").notNull(),
+  frequency: integer("frequency").default(2).notNull(),
+  unit: text("unit").default("sec").notNull(),
+  initialDelay: integer("initial_delay").default(0).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
+  totalTimes: integer("total_times").default(10).notNull(),
+  remainingTimes: integer("remaining_times").default(0).notNull(),
+  senderAddress: text("sender_address").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const walletNotifications = pgTable("wallet_notifications", {
+  id: text("id").primaryKey(),
+  walletAppId: walletAppId("wallet_app_id")
+    .notNull()
+    .references(() => walletApps.id),
+  accountId: text("account_id")
+    .notNull()
+    .references(() => walletAccounts.id),
+  type: notificationType("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  transactionId: text("transaction_id").references(() => walletTransactions.id),
+  readAt: timestamp("read_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const walletEvents = pgTable("wallet_events", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  walletAppId: walletAppId("wallet_app_id")
+    .notNull()
+    .references(() => walletApps.id),
+  accountId: text("account_id")
+    .notNull()
+    .references(() => walletAccounts.id),
+  type: walletEventType("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  transactionId: text("transaction_id").references(() => walletTransactions.id),
+  notificationId: text("notification_id").references(() => walletNotifications.id),
+  readAt: timestamp("read_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

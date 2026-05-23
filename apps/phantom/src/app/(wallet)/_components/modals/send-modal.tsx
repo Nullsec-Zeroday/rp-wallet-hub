@@ -10,6 +10,7 @@ import TokenLogo from "../token-logo";
 import { toast } from "sonner";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../rive-asset-provider";
+import { createBackendWalletTransaction } from "@/lib/backend-wallet";
 
 const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
   const src = "/rive/progress-send.riv";
@@ -58,8 +59,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const {
     tokenBalances,
     customTokens,
-    addTransaction,
-    updateBalance,
     profile,
     baseCurrency,
     addressBook,
@@ -148,25 +147,23 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const handleSend = () => {
     setStep("SENDING");
 
-    // Simulate network delay
-    setTimeout(() => {
+    setTimeout(async () => {
       const numAmount = parseFloat(amount) || 0;
       if (selectedToken) {
-        // Update balance
-        updateBalance(selectedToken.symbol, selectedTokenBalance - numAmount);
-
-        // Update recent addresses
-        addRecentAddress(recipientAddress);
-
-        // Add transaction record
-        addTransaction({
-          type: 'send',
-          token: selectedToken.symbol,
-          amount: numAmount,
-          status: 'confirmed',
-          from: profile.walletAddress,
-          to: recipientAddress || "Unknown Recipient",
-        });
+        try {
+          addRecentAddress(recipientAddress);
+          await createBackendWalletTransaction({
+            type: "send",
+            tokenSymbol: selectedToken.symbol,
+            amount: String(numAmount),
+            fromAddress: profile.walletAddress,
+            toAddress: recipientAddress || "Unknown Recipient",
+          });
+        } catch {
+          toast.error("Transaction failed. Check your balance and try again.");
+          setStep("CONFIRM");
+          return;
+        }
       }
       setStep("SUCCESS");
     }, 2500);

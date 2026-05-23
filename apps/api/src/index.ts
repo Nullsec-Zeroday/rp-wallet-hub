@@ -2,7 +2,14 @@ import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { getCookie, setCookie } from "hono/cookie";
 import type { LicenseActivationRequest, WalletBootstrapExchangeRequest, WalletLaunchRequest } from "@rp-wallet/auth";
-import type { CreateWalletTransactionRequest, WalletAppId } from "@rp-wallet/types";
+import type {
+  CreateWalletTransactionsBatchRequest,
+  CreateWalletTransactionRequest,
+  TriggerWalletNotificationRequest,
+  UpdateWalletNotificationSettingsRequest,
+  UpdateWalletStateRequest,
+  WalletAppId,
+} from "@rp-wallet/types";
 import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
@@ -500,6 +507,25 @@ app.get("/wallet-state/:walletAppId", async (c) => {
   return c.json(response);
 });
 
+app.get("/wallet-events", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const walletAppId = c.req.query("walletAppId") as WalletAppId | undefined;
+  if (!walletAppId || !walletRegistry[walletAppId]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).getWalletEvents(sessionId, walletAppId, c.req.query("after"));
+  if (!response) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  return c.json(response);
+});
+
 app.get("/wallet-transactions", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
   if (!sessionId) {
@@ -533,6 +559,120 @@ app.post("/wallet-transactions", async (c) => {
   const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
   if (!response) {
     return c.json({ error: "Unable to create wallet transaction" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.post("/wallet-transactions/batch", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json<CreateWalletTransactionsBatchRequest>();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransactionsBatch(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to create wallet transactions" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.delete("/wallet-transactions/:transactionId", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const walletAppId = c.req.query("walletAppId") as WalletAppId | undefined;
+  if (!walletAppId || !walletRegistry[walletAppId]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).deleteWalletTransaction(sessionId, walletAppId, c.req.param("transactionId"));
+  if (!response) {
+    return c.json({ error: "Unable to delete wallet transaction" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.delete("/wallet-transactions", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const walletAppId = c.req.query("walletAppId") as WalletAppId | undefined;
+  if (!walletAppId || !walletRegistry[walletAppId]) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).clearWalletTransactions(sessionId, walletAppId);
+  if (!response) {
+    return c.json({ error: "Unable to clear wallet transactions" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.put("/wallet-state", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json<UpdateWalletStateRequest>();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletState(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to update wallet state" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.put("/wallet-notification-settings", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json<UpdateWalletNotificationSettingsRequest>();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletNotificationSettings(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to update wallet notification settings" }, 400);
+  }
+
+  return c.json(response);
+});
+
+app.post("/wallet-notifications/trigger", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json<TriggerWalletNotificationRequest>();
+  if (!walletRegistry[body.walletAppId]) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).triggerWalletNotification(sessionId, body.walletAppId, body.accountId);
+  if (!response) {
+    return c.json({ error: "Unable to trigger wallet notification" }, 400);
   }
 
   return c.json(response);

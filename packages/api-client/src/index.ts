@@ -6,10 +6,16 @@ import type {
   WalletLaunchResponse,
 } from "@rp-wallet/auth";
 import type {
+  CreateWalletTransactionsBatchRequest,
   CreateWalletTransactionRequest,
   HubSessionResponse,
+  TriggerWalletNotificationRequest,
+  TriggerWalletNotificationResponse,
+  UpdateWalletStateRequest,
+  UpdateWalletNotificationSettingsRequest,
   WalletAppId,
   WalletBootstrapPayload,
+  WalletEvent,
   WalletTransaction,
 } from "@rp-wallet/types";
 
@@ -57,8 +63,54 @@ export class RpWalletApiClient {
     return this.request<WalletTransaction[]>(`/wallet-transactions?walletAppId=${encodeURIComponent(walletAppId)}`);
   }
 
+  async getWalletEvents(walletAppId: WalletAppId, after?: string) {
+    const params = new URLSearchParams({ walletAppId });
+    if (after) params.set("after", after);
+    return this.request<WalletEvent[]>(`/wallet-events?${params.toString()}`);
+  }
+
   async createWalletTransaction(body: CreateWalletTransactionRequest) {
     return this.request<WalletBootstrapPayload>("/wallet-transactions", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async createWalletTransactionsBatch(body: CreateWalletTransactionsBatchRequest) {
+    return this.request<WalletBootstrapPayload>("/wallet-transactions/batch", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async deleteWalletTransaction(walletAppId: WalletAppId, transactionId: string) {
+    return this.request<WalletBootstrapPayload>(`/wallet-transactions/${encodeURIComponent(transactionId)}?walletAppId=${encodeURIComponent(walletAppId)}`, {
+      method: "DELETE",
+    });
+  }
+
+  async clearWalletTransactions(walletAppId: WalletAppId) {
+    return this.request<WalletBootstrapPayload>(`/wallet-transactions?walletAppId=${encodeURIComponent(walletAppId)}`, {
+      method: "DELETE",
+    });
+  }
+
+  async updateWalletState(body: UpdateWalletStateRequest) {
+    return this.request<WalletBootstrapPayload>("/wallet-state", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async updateWalletNotificationSettings(body: UpdateWalletNotificationSettingsRequest) {
+    return this.request<WalletBootstrapPayload>("/wallet-notification-settings", {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async triggerWalletNotification(body: TriggerWalletNotificationRequest) {
+    return this.request<TriggerWalletNotificationResponse>("/wallet-notifications/trigger", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -75,7 +127,14 @@ export class RpWalletApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`RP Wallet API request failed: ${response.status}`);
+      let detail = "";
+      try {
+        const body = (await response.json()) as { error?: string };
+        detail = body.error ? `: ${body.error}` : "";
+      } catch {
+        detail = "";
+      }
+      throw new Error(`RP Wallet API request failed: ${response.status}${detail}`);
     }
 
     return response.json() as Promise<T>;
