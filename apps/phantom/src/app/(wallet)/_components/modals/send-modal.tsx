@@ -492,7 +492,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                                   }
                                 }}
                                 onBlur={() => setTimeout(() => window.scrollTo(0, 0), 100)}
-                                style={{ width: `${amount.length || 1}ch`, minWidth: "1ch" }}
+                                style={{ width: `${amount.length || 1}ch`, minWidth: "1ch", fontSize: "52px", lineHeight: "62px" }}
                                 className="bg-transparent border-none outline-none shadow-none p-0 m-0 text-[#eeeeee] text-[52px] leading-[62px] font-semibold text-right caret-[#ab9ff2] appearance-none rounded-none font-tabular-nums flex-shrink-0 focus:ring-0"
                               />
                             </div>

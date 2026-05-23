@@ -577,7 +577,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
             <div className="w-full">
               {isLoading ? (
                 <div className="relative flex-1 w-full flex items-center justify-center pointer-events-none" style={{ height: "200px" }}>
-                  <div className="absolute left-0 right-0 border-t border-dashed border-[#333] w-full" />
+                  <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 border-t border-dashed border-[#333] w-full" />
                 </div>
               ) : (
                 <div className="w-full relative select-none interactive-chart-container" style={{ height: "200px" }}>

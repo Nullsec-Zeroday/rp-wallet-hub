@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Rive Inspector</title>
+  <script src="https://unpkg.com/@rive-app/canvas@latest/rive.js"></script>
+</head>
+<body>
+  <h1>Rive File Inspector</h1>
+  <pre id="output">Loading...</pre>
+  <canvas id="canvas" width="100" height="100" style="display:none"></canvas>
+  <script>
+    const files = [
+      '/rive/progress-send.riv',
+    ];
+
+    const output = document.getElementById('output');
+    let results = '';
+
+    async function inspectFile(src) {
+      return new Promise((resolve) => {
+        const r = new rive.Rive({
+          src: src,
+          canvas: document.getElementById('canvas'),
+          autoplay: false,
+          onLoad: () => {
+            const info = {
+              file: src,
+              artboards: [],
+            };
+
+            // Get artboard names
+            const contents = r.contents;
+            if (contents) {
+              info.artboards = contents.artboards.map(ab => ({
+                name: ab.name,
+                animations: ab.animations || [],
+                stateMachines: (ab.stateMachines || []).map(sm => ({
+                  name: sm.name,
+                  inputs: (sm.inputs || []).map(inp => ({
+                    name: inp.name,
+                    type: inp.type,
+                  })),
+                })),
+              }));
+            }
+
+            results += JSON.stringify(info, null, 2) + '\n\n';
+            output.textContent = results;
+            r.cleanup();
+            resolve();
+          },
+          onLoadError: (e) => {
+            results += `ERROR loading ${src}: ${e}\n\n`;
+            output.textContent = results;
+            resolve();
+          }
+        });
+      });
+    }
+
+    (async () => {
+      for (const f of files) {
+        await inspectFile(f);
+      }
+      results += '\n--- DONE ---';
+      output.textContent = results;
+    })();
+  </script>
+</body>
+</html>

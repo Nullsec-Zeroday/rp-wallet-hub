@@ -8,7 +8,11 @@ import WalletHeader from "./app/(wallet)/_components/wallet-header";
 import WalletFooterNavigation from "./app/(wallet)/_components/wallet-footer-navigation";
 import CustomScrollbar, { type CustomScrollbarRef } from "./app/(wallet)/_components/custom-scrollbar";
 import HomePage from "./app/(wallet)/home/page";
+import TokensPage from "./app/(wallet)/tokens/page";
 import TokenDetailPage from "./app/(wallet)/token/[symbol]/page";
+import ActivityPage from "./app/(wallet)/activity/page";
+import BrowserPage from "./app/(wallet)/browser/page";
+import SwapPage from "./app/(wallet)/swap/page";
 import SendModal from "./app/(wallet)/_components/modals/send-modal";
 import ReceiveModal from "./app/(wallet)/_components/modals/receive-modal";
 import BuyModal from "./app/(wallet)/_components/modals/buy-modal";
@@ -216,7 +220,7 @@ function WalletRouteBody() {
     const rubberBand = (x: number) => x * (1 / (1 + x * 0.002));
 
     const beginPull = (clientY: number) => {
-      if (isTokenPage || refreshingRef.current) return;
+      if (isTokenPage || pathname === "/browser" || refreshingRef.current) return;
       if (scroll.scrollTop === 0) {
         pulling.current = true;
         startY.current = clientY;
@@ -338,6 +342,14 @@ function WalletRouteBody() {
     <TokenDetailPage params={{ symbol: tokenSymbol }} />
   ) : pathname === "/home" ? (
     <HomePage />
+  ) : pathname === "/tokens" ? (
+    <TokensPage />
+  ) : pathname === "/activity" ? (
+    <ActivityPage />
+  ) : pathname === "/browser" ? (
+    <BrowserPage />
+  ) : pathname === "/swap" ? (
+    <SwapPage />
   ) : (
     <div className="px-4 pt-6 pb-32">
       <div className="rounded-[24px] bg-[#1c1c1e] px-5 py-6 text-[#a0a0a0]">
@@ -346,14 +358,29 @@ function WalletRouteBody() {
     </div>
   );
 
+  const isScaledDown = modal !== null;
+
   return (
     <div
       className="flex w-full flex-col overflow-hidden relative"
       style={{ backgroundColor: "#111111" }}
     >
-      <div className="flex h-screen overflow-hidden relative" style={{ backgroundColor: "#111111" }}>
+      <div
+        className="flex h-screen w-full overflow-hidden relative"
+        style={{
+          backgroundColor: isScaledDown ? "#1c1c1e" : "#111111",
+          transformOrigin: "bottom center",
+          transform: isScaledDown ? "scale(0.93) translateY(-24px)" : "scale(1) translateY(0px)",
+          borderRadius: isScaledDown ? "20px" : "0px",
+          filter: isScaledDown ? "brightness(1.15)" : "brightness(1)",
+          transition: isScaledDown
+            ? "transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1)"
+            : "transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+          willChange: "transform, filter, border-radius, background-color",
+        }}
+      >
         {!isTokenPage && <WalletHeader scrolled={scrolled} />}
-        {!isTokenPage && (
+        {!isTokenPage && pathname !== "/browser" && (
           <div
             ref={spinnerWrapRef}
             style={{
@@ -390,7 +417,9 @@ function WalletRouteBody() {
           ref={scrollRef}
           className={`min-h-0 flex-1 wallet-scroll relative ${isTokenPage
               ? "overflow-hidden pb-0 pt-0"
-              : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+              : pathname === "/browser"
+                ? "overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
+                : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
             }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
