@@ -3,10 +3,11 @@ import React from "react";
 type NextImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   fill?: boolean;
   priority?: boolean;
+  unoptimized?: boolean;
 };
 
 const NextImage = React.forwardRef<HTMLImageElement, NextImageProps>(function NextImage(
-  { alt, fill, sizes: _sizes, priority: _priority, style, ...props },
+  { alt, fill, sizes: _sizes, priority: _priority, style, unoptimized: _unoptimized, ...props },
   ref,
 ) {
   return (

@@ -505,12 +505,12 @@ export default function SwapPage() {
             </div>
             <button
               onClick={() => setPickerTarget("pay")}
-              className="flex items-center rounded-full px-2 py-1.5 active:opacity-70 bg-[#2c2c2e] ml-3 flex-shrink-0"
+              className="flex items-center rounded-full pl-1.5 pr-2.5 py-1.5 active:opacity-70 bg-[#2c2c2e] ml-3 flex-shrink-0"
             >
-              <TokenLogo token={payTokenInfo} size={24} liveImage={prices[payToken]?.image} />
-              <span className="text-[#eeeeee] font-bold text-[16px] mx-2">{payToken}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-0.5"><path fill="#AB9FF2" fillRule="evenodd" clipRule="evenodd" d="M12.737 1.271a1.136 1.136 0 0 0-1.473 0l-2.46 2.097a1.136 1.136 0 0 1-.647.268l-3.222.257a1.136 1.136 0 0 0-1.042 1.041l-.257 3.223a1.136 1.136 0 0 1-.268.646l-2.097 2.46a1.136 1.136 0 0 0 0 1.474l2.097 2.46c.155.182.249.408.268.646l.257 3.223c.044.556.486.997 1.042 1.041l3.222.257c.238.02.464.113.646.268l2.46 2.097a1.136 1.136 0 0 0 1.474 0l2.46-2.097c.182-.155.408-.249.646-.268l3.223-.257a1.136 1.136 0 0 0 1.041-1.041l.258-3.223c.019-.238.112-.464.267-.646l2.097-2.46a1.136 1.136 0 0 0 0-1.474l-2.097-2.46a1.136 1.136 0 0 1-.267-.646l-.258-3.223a1.136 1.136 0 0 0-1.041-1.041l-3.223-.257a1.136 1.136 0 0 1-.646-.268zm4.077 8.31a1 1 0 1 0-1.628-1.162l-4.314 6.04-2.165-2.166a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.52-.126z"></path></svg>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9 7 7 7-7"></path></svg>
+              <TokenLogo token={payTokenInfo} size={32} liveImage={prices[payToken]?.image} />
+              <span className="text-[#eeeeee] font-bold text-[18px] mx-2">{payToken}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-0.5"><path fill="#AB9FF2" fillRule="evenodd" clipRule="evenodd" d="M12.737 1.271a1.136 1.136 0 0 0-1.473 0l-2.46 2.097a1.136 1.136 0 0 1-.647.268l-3.222.257a1.136 1.136 0 0 0-1.042 1.041l-.257 3.223a1.136 1.136 0 0 1-.268.646l-2.097 2.46a1.136 1.136 0 0 0 0 1.474l2.097 2.46c.155.182.249.408.268.646l.257 3.223c.044.556.486.997 1.042 1.041l3.222.257c.238.02.464.113.646.268l2.46 2.097a1.136 1.136 0 0 0 1.474 0l2.46-2.097c.182-.155.408-.249.646-.268l3.223-.257a1.136 1.136 0 0 0 1.041-1.041l.258-3.223c.019-.238.112-.464.267-.646l2.097-2.46a1.136 1.136 0 0 0 0-1.474l-2.097-2.46a1.136 1.136 0 0 1-.267-.646l-.258-3.223a1.136 1.136 0 0 0-1.041-1.041l-3.223-.257a1.136 1.136 0 0 1-.646-.268zm4.077 8.31a1 1 0 1 0-1.628-1.162l-4.314 6.04-2.165-2.166a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.52-.126z"></path></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9 7 7 7-7"></path></svg>
             </button>
           </div>
           <div className="flex items-center justify-between mt-2 text-[#b4b4b4] text-[15px] font-semibold h-[28px]">
@@ -552,7 +552,7 @@ export default function SwapPage() {
         <div className="flex justify-center -my-3 relative z-10">
           <button
             onClick={handleFlip}
-            className="w-10 h-10 bg-[#AD9CF2] rounded-full flex items-center justify-center active:scale-95 transition-transform border-[4px] border-[#111111]"
+            className="w-10 h-10 bg-[#AD9CF2] rounded-full flex items-center justify-center active:scale-95 transition-transform"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m14 15 4 4m0 0 4-4m-4 4V8a4 4 0 0 0-4-4m-4 5L6 5m0 0L2 9m4-4v11a4 4 0 0 0 4 4" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
           </button>
@@ -572,12 +572,12 @@ export default function SwapPage() {
             />
             <button
               onClick={() => setPickerTarget("receive")}
-              className="flex items-center rounded-full px-2 py-1.5 active:opacity-70 bg-[#2c2c2e] ml-3"
+              className="flex items-center rounded-full pl-1.5 pr-2.5 py-1.5 active:opacity-70 bg-[#2c2c2e] ml-3"
             >
-              <TokenLogo token={receiveTokenInfo} size={24} liveImage={prices[receiveToken]?.image} />
-              <span className="text-[#eeeeee] font-bold text-[16px] mx-2">{receiveToken}</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mr-0.5"><path fill="#AB9FF2" fillRule="evenodd" clipRule="evenodd" d="M12.737 1.271a1.136 1.136 0 0 0-1.473 0l-2.46 2.097a1.136 1.136 0 0 1-.647.268l-3.222.257a1.136 1.136 0 0 0-1.042 1.041l-.257 3.223a1.136 1.136 0 0 1-.268.646l-2.097 2.46a1.136 1.136 0 0 0 0 1.474l2.097 2.46c.155.182.249.408.268.646l.257 3.223c.044.556.486.997 1.042 1.041l3.222.257c.238.02.464.113.646.268l2.46 2.097a1.136 1.136 0 0 0 1.474 0l2.46-2.097c.182-.155.408-.249.646-.268l3.223-.257a1.136 1.136 0 0 0 1.041-1.041l.258-3.223c.019-.238.112-.464.267-.646l2.097-2.46a1.136 1.136 0 0 0 0-1.474l-2.097-2.46a1.136 1.136 0 0 1-.267-.646l-.258-3.223a1.136 1.136 0 0 0-1.041-1.041l-3.223-.257a1.136 1.136 0 0 1-.646-.268zm4.077 8.31a1 1 0 1 0-1.628-1.162l-4.314 6.04-2.165-2.166a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.52-.126z"></path></svg>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9 7 7 7-7"></path></svg>
+              <TokenLogo token={receiveTokenInfo} size={32} liveImage={prices[receiveToken]?.image} />
+              <span className="text-[#eeeeee] font-semibold text-[17px] mx-2">{receiveToken}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="mr-0.5"><path fill="#AB9FF2" fillRule="evenodd" clipRule="evenodd" d="M12.737 1.271a1.136 1.136 0 0 0-1.473 0l-2.46 2.097a1.136 1.136 0 0 1-.647.268l-3.222.257a1.136 1.136 0 0 0-1.042 1.041l-.257 3.223a1.136 1.136 0 0 1-.268.646l-2.097 2.46a1.136 1.136 0 0 0 0 1.474l2.097 2.46c.155.182.249.408.268.646l.257 3.223c.044.556.486.997 1.042 1.041l3.222.257c.238.02.464.113.646.268l2.46 2.097a1.136 1.136 0 0 0 1.474 0l2.46-2.097c.182-.155.408-.249.646-.268l3.223-.257a1.136 1.136 0 0 0 1.041-1.041l.258-3.223c.019-.238.112-.464.267-.646l2.097-2.46a1.136 1.136 0 0 0 0-1.474l-2.097-2.46a1.136 1.136 0 0 1-.267-.646l-.258-3.223a1.136 1.136 0 0 0-1.041-1.041l-3.223-.257a1.136 1.136 0 0 1-.646-.268zm4.077 8.31a1 1 0 1 0-1.628-1.162l-4.314 6.04-2.165-2.166a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.52-.126z"></path></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m5 9 7 7 7-7"></path></svg>
             </button>
           </div>
           <div className="flex items-center justify-between mt-2 text-[#b4b4b4] text-[15px] font-semibold h-[28px]">
@@ -754,7 +754,7 @@ export default function SwapPage() {
                           <div className="relative flex-shrink-0">
                             <div className="relative rounded-full overflow-hidden flex items-center justify-center text-white font-bold" style={{ width: "48px", height: "48px", background: getRankBadgeColor(token.rank), fontSize: "14px" }}>
                               {getTokenInitials(token.name)}
-                              <Image alt={token.name} width={48} height={48} className="absolute inset-0 rounded-full object-cover" src={token.image} />
+                              <Image alt={token.name} width={48} height={48} className="absolute inset-0 rounded-full object-cover" src={token.image} unoptimized />
                             </div>
                             <div
                               className="absolute flex items-center justify-center rounded-[6px] bg-white border-[#111] border-2 shadow-sm"

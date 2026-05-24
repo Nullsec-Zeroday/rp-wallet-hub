@@ -57,15 +57,17 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
       {!hideChainIcon && token.chainId && CHAIN_ICONS[token.chainId] && (
         <div
           className={`absolute flex items-center justify-center border ${token.chainId === 'solana'
-            ? 'rounded-[8px] bg-white border-[#111] border-2'
-            : 'rounded-[8px] bg-[#1a1a1a] border-[#333]'
+            ? 'bg-white border-[#111]'
+            : 'bg-[#1a1a1a] border-[#333]'
             }`}
           style={{
             width: Math.max(18, size * 0.42),
             height: Math.max(18, size * 0.42),
             bottom: -1,
             right: -1,
-            padding: token.chainId === 'solana' ? '3.5px' : '2px'
+            padding: token.chainId === 'solana' ? '3.5px' : '2px',
+            borderRadius: 8,
+            borderWidth: '2px'
           }}
         >
           <img

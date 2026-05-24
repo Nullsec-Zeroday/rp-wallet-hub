@@ -6,6 +6,7 @@ import type {
   WalletLaunchResponse,
 } from "@rp-wallet/auth";
 import type {
+  CreateWalletTransactionResponse,
   CreateWalletTransactionsBatchRequest,
   CreateWalletTransactionRequest,
   HubSessionResponse,
@@ -70,7 +71,7 @@ export class RpWalletApiClient {
   }
 
   async createWalletTransaction(body: CreateWalletTransactionRequest) {
-    return this.request<WalletBootstrapPayload>("/wallet-transactions", {
+    return this.request<CreateWalletTransactionResponse>("/wallet-transactions", {
       method: "POST",
       body: JSON.stringify(body),
     });

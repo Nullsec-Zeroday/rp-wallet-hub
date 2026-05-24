@@ -53,6 +53,12 @@ export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
     };
     const currentAccount = state.accounts[state.currentAccountIndex];
 
+    const backendNotificationSettings = payload.notificationSettings;
+    const keepLocalStoppedNotifications =
+      backendNotificationSettings?.isActive &&
+      !state.notificationSettings.isActive &&
+      state.notificationSettings.remainingTimes <= 0;
+
     return {
       accounts: [
         {
@@ -67,7 +73,9 @@ export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
         },
       ],
       currentAccountIndex: 0,
-      notificationSettings: payload.notificationSettings || state.notificationSettings,
+      notificationSettings: keepLocalStoppedNotifications
+        ? state.notificationSettings
+        : backendNotificationSettings || state.notificationSettings,
       profile,
       tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
       transactions,

@@ -179,24 +179,62 @@ app.get("/prices", async (c) => {
 
 app.get("/trending", async (c) => {
   try {
-    const limit = c.req.query("limit") || "10";
-    const currency = (c.req.query("currency") || "usd").toLowerCase();
+    const limit = Math.max(1, Math.min(50, Number.parseInt(c.req.query("limit") || "10", 10) || 10));
+    const boostsResponse = await fetch("https://api.dexscreener.com/token-boosts/top/v1", {
+      headers: { Accept: "application/json" },
+    });
 
-    const response = await fetch(
-      `${CG_BASE_URL}/coins/markets?vs_currency=${currency}&category=solana-meme-coins&order=volume_desc&per_page=${limit}&page=1&sparkline=false&price_change_percentage=24h`,
-      {
-        headers: {
-          Accept: "application/json",
-          "x-cg-demo-api-key": c.env.COINGECKO_API_KEY || "",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      return c.json({ error: "Failed to fetch trending from CoinGecko" }, response.status as 400 | 401 | 403 | 404 | 429 | 500);
+    if (!boostsResponse.ok) {
+      return c.json({ error: "Failed to fetch trending" }, boostsResponse.status as 400 | 401 | 403 | 404 | 429 | 500);
     }
 
-    const data = await response.json();
+    const boosts = (await boostsResponse.json()) as Array<{ chainId?: string; tokenAddress?: string }>;
+    const solanaAddresses = Array.from(
+      new Set(boosts.filter((boost) => boost.chainId === "solana" && boost.tokenAddress).map((boost) => boost.tokenAddress as string)),
+    ).slice(0, limit);
+
+    if (solanaAddresses.length === 0) {
+      c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+      return c.json([]);
+    }
+
+    const tokensResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${solanaAddresses.join(",")}`, {
+      headers: { Accept: "application/json" },
+    });
+
+    if (!tokensResponse.ok) {
+      return c.json({ error: "Failed to fetch token details" }, tokensResponse.status as 400 | 401 | 403 | 404 | 429 | 500);
+    }
+
+    const tokensData = (await tokensResponse.json()) as {
+      pairs?: Array<{
+        baseToken?: { address?: string; name?: string; symbol?: string };
+        fdv?: number;
+        info?: { imageUrl?: string };
+        marketCap?: number;
+        priceChange?: { h24?: number };
+        priceUsd?: string;
+      }>;
+    };
+    const seen = new Set<string>();
+    const data = [];
+
+    for (const pair of tokensData.pairs || []) {
+      const address = pair.baseToken?.address;
+      if (!address || seen.has(address)) continue;
+      seen.add(address);
+      data.push({
+        current_price: Number.parseFloat(pair.priceUsd || "0") || 0,
+        id: address,
+        image: pair.info?.imageUrl || "",
+        market_cap: pair.marketCap || pair.fdv || 0,
+        name: pair.baseToken?.name || pair.baseToken?.symbol || "Unknown",
+        price_change_percentage_24h: pair.priceChange?.h24 || 0,
+        symbol: pair.baseToken?.symbol || "",
+      });
+      if (data.length >= limit) break;
+    }
+
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
     return c.json(data);
   } catch (error) {
@@ -556,12 +594,17 @@ app.post("/wallet-transactions", async (c) => {
     return c.json({ error: "Unknown wallet app" }, 400);
   }
 
-  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
-  if (!response) {
-    return c.json({ error: "Unable to create wallet transaction" }, 400);
-  }
+  try {
+    const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
+    if (!response) {
+      return c.json({ error: "Unable to create wallet transaction" }, 400);
+    }
 
-  return c.json(response);
+    return c.json(response);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to create wallet transaction";
+    return c.json({ error: message }, 400);
+  }
 });
 
 app.post("/wallet-transactions/batch", async (c) => {

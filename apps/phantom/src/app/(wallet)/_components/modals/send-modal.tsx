@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../rive-asset-provider";
 import { createBackendWalletTransaction } from "@/lib/backend-wallet";
+import { logWalletDebug } from "@/lib/wallet-debug";
+import type { CreateWalletTransactionResponse } from "@rp-wallet/types";
 
 const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
   const src = "/rive/progress-send.riv";
@@ -54,6 +56,23 @@ interface SendModalProps {
 }
 
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
+const DEMO_WALLET_ADDRESS_PATTERN = /^(?:Ph|Tw)[a-f0-9]{30}$/;
+const GENERIC_WALLET_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,64}$/;
+
+function getRecipientAddressError(value: string, ownAddress: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "Enter a wallet address.";
+  if (trimmed === ownAddress) return "Choose a different wallet address. Sending to your own address is not supported.";
+  if (DEMO_WALLET_ADDRESS_PATTERN.test(trimmed) || GENERIC_WALLET_ADDRESS_PATTERN.test(trimmed)) return null;
+  return "Enter a valid wallet address.";
+}
+
+function getTransferSummary(result: CreateWalletTransactionResponse | null) {
+  if (!result) return null;
+  if (result.delivery === "same_wallet") return "Internal Phantom transfer";
+  if (result.delivery === "cross_wallet") return "Internal ecosystem transfer";
+  return "External transfer";
+}
 
 export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity }: SendModalProps) {
   const {
@@ -73,6 +92,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const [amount, setAmount] = useState("");
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [transferResult, setTransferResult] = useState<CreateWalletTransactionResponse | null>(null);
   const hasPlayedConfetti = useRef(false);
 
   // Handle initial token
@@ -94,6 +114,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
       // Reset inputs
       setRecipientAddress("");
       setAmount("");
+      setTransferResult(null);
       hasPlayedConfetti.current = false;
     }
   }, [visible, initialTokenSymbol, customTokens]);
@@ -144,29 +165,69 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     return numAmount * selectedTokenPrice;
   }, [amount, selectedTokenPrice]);
 
-  const handleSend = () => {
-    setStep("SENDING");
+  const recipientAddressError = useMemo(
+    () => getRecipientAddressError(recipientAddress, profile.walletAddress),
+    [profile.walletAddress, recipientAddress],
+  );
+  const normalizedRecipientAddress = recipientAddress.trim();
+  const canAdvanceAddress = normalizedRecipientAddress.length > 0 && !recipientAddressError;
 
-    setTimeout(async () => {
-      const numAmount = parseFloat(amount) || 0;
-      if (selectedToken) {
-        try {
-          addRecentAddress(recipientAddress);
-          await createBackendWalletTransaction({
-            type: "send",
-            tokenSymbol: selectedToken.symbol,
-            amount: String(numAmount),
-            fromAddress: profile.walletAddress,
-            toAddress: recipientAddress || "Unknown Recipient",
-          });
-        } catch {
-          toast.error("Transaction failed. Check your balance and try again.");
-          setStep("CONFIRM");
-          return;
-        }
-      }
+  const handleSend = async () => {
+    if (!selectedToken) return;
+    if (recipientAddressError) {
+      toast.error(recipientAddressError);
+      setStep("ADDRESS");
+      return;
+    }
+
+    const numAmount = parseFloat(amount) || 0;
+    if (!numAmount || numAmount <= 0) {
+      toast.error("Enter a valid amount.");
+      setStep("AMOUNT");
+      return;
+    }
+    if (numAmount > selectedTokenBalance) {
+      toast.error("Insufficient balance for this transfer.");
+      setStep("AMOUNT");
+      return;
+    }
+
+    setStep("SENDING");
+    setTransferResult(null);
+
+    const minimumAnimation = new Promise((resolve) => window.setTimeout(resolve, 1800));
+
+    try {
+      const [result] = await Promise.all([
+        createBackendWalletTransaction({
+          type: "send",
+          tokenSymbol: selectedToken.symbol,
+          amount: String(numAmount),
+          fromAddress: profile.walletAddress,
+          toAddress: normalizedRecipientAddress,
+        }),
+        minimumAnimation,
+      ]);
+
+      setTransferResult(result);
+      addRecentAddress(normalizedRecipientAddress);
+      logWalletDebug("send:ui-success", {
+        delivery: result.delivery,
+        recipientFound: result.recipientFound,
+        transactionId: result.transaction.id,
+      });
       setStep("SUCCESS");
-    }, 2500);
+    } catch (error) {
+      await minimumAnimation;
+      const message = error instanceof Error ? error.message : "Transaction failed. Check your balance and try again.";
+      logWalletDebug("send:ui-error", {
+        message,
+        toAddress: normalizedRecipientAddress,
+        tokenSymbol: selectedToken.symbol,
+      });
+      toast.error(message);
+      setStep("CONFIRM");
+    }
   };
 
   const getTimeAgo = (timestamp?: number) => {
@@ -322,7 +383,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                   </button>
                   <span className="text-[17px] font-semibold text-[#eeeeee]">{selectedToken.symbol}</span>
                   <button
-                    disabled={!recipientAddress}
+                    disabled={!canAdvanceAddress}
                     onClick={() => setStep("AMOUNT")}
                     className="bg-transparent border-none p-1 cursor-pointer text-[15px] font-semibold text-[#ab9ff2] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -345,6 +406,13 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       </svg>
                     </button>
                   </div>
+                  {normalizedRecipientAddress ? (
+                    <div className="px-4 pt-2 text-[13px] leading-5">
+                      <span className={recipientAddressError ? "text-[#F97373]" : "text-[#7FDBB6]"}>
+                        {recipientAddressError || "Wallet address looks valid."}
+                      </span>
+                    </div>
+                  ) : null}
 
                   <div className="px-4 pt-5 pb-2 flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b4b4b4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -414,7 +482,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
 
                 <div className="flex-shrink-0 px-4 py-3 pb-6 mt-auto">
                   <button
-                    disabled={!recipientAddress}
+                    disabled={!canAdvanceAddress}
                     onClick={() => setStep("AMOUNT")}
                     className="w-full h-[52px] rounded-2xl border-none bg-[#ab9ff2] text-black text-[17px] font-semibold cursor-pointer active:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -615,6 +683,11 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       <span className="text-[17px] leading-[22px] font-semibold text-[#eeeeee]">$0.000447</span>
                     </div>
                   </div>
+                  {!recipientAddressError ? (
+                    <div className="mt-4 rounded-[20px] bg-[#1b1b1b] px-4 py-3 text-[14px] leading-5 text-[#b4b4b4]">
+                      Transfers to wallets in our database will arrive live and create a receiver notification. Unknown addresses are treated as external sends.
+                    </div>
+                  ) : null}
 
                   <div className="flex-1 min-h-[24px]" />
                 </div>
@@ -667,6 +740,11 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         <p className="text-[#888] font-medium text-[15px] leading-snug">
                           sent to {recipientAddress.length > 12 ? `${recipientAddress.slice(0, 12)} (${recipientAddress.slice(0, 4)}...${recipientAddress.slice(-4)})` : recipientAddress}
                         </p>
+                        {transferResult ? (
+                          <p className="text-[#ac9cf2] font-semibold text-[14px] leading-snug pt-2">
+                            {getTransferSummary(transferResult)}
+                          </p>
+                        ) : null}
                       </>
                     )}
                   </div>

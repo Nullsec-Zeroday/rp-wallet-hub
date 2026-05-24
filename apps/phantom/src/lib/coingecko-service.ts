@@ -108,23 +108,72 @@ export async function fetchTrendingSolanaTokens(limit: number = 10, currency?: s
 
     if (!response.ok) {
       console.warn(`[CoinGecko] Trending Proxy error: ${response.status}`);
-      return [];
+      return fetchTrendingSolanaTokensDirect(limit);
     }
 
     const data = await response.json();
 
-    return data.map((coin: any, index: number) => ({
-      id: coin.id,
-      rank: index + 1,
-      name: coin.name,
-      symbol: coin.symbol?.toUpperCase() ?? '',
-      image: coin.image ? `https://api.phantom.app/image-proxy/?image=${encodeURIComponent(coin.image)}&anim=false&fit=cover&width=128&height=128` : '',
-      marketCap: coin.market_cap ?? 0,
-      price: coin.current_price ?? 0,
-      priceChange24h: coin.price_change_percentage_24h ?? 0,
-    }));
+    return mapTrendingTokenResponse(data);
   } catch (error) {
     console.error('[CoinGecko] Error fetching trending Solana tokens via proxy:', error);
+    return fetchTrendingSolanaTokensDirect(limit);
+  }
+}
+
+async function fetchTrendingSolanaTokensDirect(limit: number): Promise<TrendingToken[]> {
+  try {
+    const boostsResponse = await fetch("https://api.dexscreener.com/token-boosts/top/v1");
+    if (!boostsResponse.ok) return [];
+
+    const boosts = await boostsResponse.json();
+    const solanaAddresses = Array.from(
+      new Set(
+        (Array.isArray(boosts) ? boosts : [])
+          .filter((boost: any) => boost.chainId === "solana" && boost.tokenAddress)
+          .map((boost: any) => boost.tokenAddress),
+      ),
+    ).slice(0, limit);
+
+    if (solanaAddresses.length === 0) return [];
+
+    const tokensResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${solanaAddresses.join(",")}`);
+    if (!tokensResponse.ok) return [];
+
+    const tokensData = await tokensResponse.json();
+    const seen = new Set<string>();
+    const tokens = [];
+    for (const pair of tokensData.pairs || []) {
+      const address = pair.baseToken?.address;
+      if (!address || seen.has(address)) continue;
+      seen.add(address);
+      tokens.push({
+        current_price: Number.parseFloat(pair.priceUsd || "0") || 0,
+        id: address,
+        image: pair.info?.imageUrl || "",
+        market_cap: pair.marketCap || pair.fdv || 0,
+        name: pair.baseToken?.name || pair.baseToken?.symbol || "Unknown",
+        price_change_percentage_24h: pair.priceChange?.h24 || 0,
+        symbol: pair.baseToken?.symbol || "",
+      });
+      if (tokens.length >= limit) break;
+    }
+
+    return mapTrendingTokenResponse(tokens);
+  } catch (error) {
+    console.error('[CoinGecko] Direct trending fallback failed:', error);
     return [];
   }
+}
+
+function mapTrendingTokenResponse(data: any[]): TrendingToken[] {
+  return data.map((coin: any, index: number) => ({
+    id: coin.id,
+    rank: index + 1,
+    name: coin.name,
+    symbol: coin.symbol?.toUpperCase() ?? '',
+    image: coin.image ? (coin.image.includes('dexscreener.com') ? coin.image : `https://api.phantom.app/image-proxy/?image=${encodeURIComponent(coin.image)}&anim=false&fit=cover&width=128&height=128`) : '',
+    marketCap: coin.market_cap ?? 0,
+    price: coin.current_price ?? 0,
+    priceChange24h: coin.price_change_percentage_24h ?? 0,
+  }));
 }

@@ -198,11 +198,14 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                           hideChainIcon
                         />
                       </div>
-                      <div className={`absolute -bottom-1 -right-1 w-[28px] h-[28px] rounded-full border-[2.5px] border-[#111111] flex items-center justify-center ${selectedTx.type === 'receive' ? 'bg-[#30a46c]' : 'bg-blue-400'}`}>
+                      <div
+                        className="absolute -bottom-1 -right-1 w-[28px] h-[28px] rounded-full border-[2.5px] border-[#111111] flex items-center justify-center"
+                        style={{ backgroundColor: selectedTx.type === 'receive' ? "#ab9ff2" : "#3b82f6" }}
+                      >
                         {selectedTx.type === 'receive' ? (
-                          <ArrowDown size={14} className="text-white" strokeWidth={3} />
+                          <ArrowDown size={16} color="#000000" strokeWidth={2.5} />
                         ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="-ml-[1px] mt-[1px]">
                             <path d="m10 14 1.086 3.802c.831 2.909 4.958 2.898 5.774-.015L20.04 6.424c.42-1.502-.963-2.886-2.465-2.465L6.213 7.14c-2.913.816-2.924 4.943-.015 5.774zm0 0 3-3" />
                           </svg>
                         )}
@@ -213,25 +216,25 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
 
                 {/* Large Amount */}
                 <div className="text-center mb-6">
-                  <h1
-                    className="text-4xl font-medium tracking-tight text-white"
+                  <div
+                    className={`text-4xl font-medium tracking-tight ${selectedTx.type === 'receive' ? 'text-[#30A46C]' : 'text-white'}`}
                   >
                     {showBalances ? (
                       selectedTx.type === 'receive'
                         ? `+${selectedTx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${selectedTx.token}`
                         : `-${selectedTx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${selectedTx.token}`
                     ) : "••••••"}
-                  </h1>
+                  </div>
                 </div>
 
                 {/* Details Table */}
-                <div className="bg-[#1c1c1e] rounded-[24px] overflow-hidden mb-6">
+                <div className="bg-[#222222] rounded-[24px] overflow-hidden mb-6">
                   {[
                     { label: "Date", value: formatFullDate(selectedTx.timestamp), className: "text-[#eeeeee] font-medium" },
                     { label: "Status", value: "Succeeded", color: "rgb(48, 164, 108)", className: "font-semibold" },
                     { label: selectedTx.type === 'receive' ? "From" : "To", value: selectedTx.type === 'receive' ? selectedTx.from : selectedTx.to, isAddress: true, className: "text-[#888888] font-semibold" },
                     { label: "Network", value: "Solana", className: "text-[#eeeeee] font-semibold" },
-                    { label: "Network Fee", value: "-0.00008 SOL", className: "text-[#eeeeee] font-semibold" }
+                    ...(selectedTx.type !== 'receive' ? [{ label: "Network Fee", value: "-0.00008 SOL", className: "text-[#eeeeee] font-semibold" }] : [])
                   ].map((row, i) => (
                     <div key={row.label} className={`flex items-center justify-between p-4 px-5 ${i !== 0 ? "border-t border-white/[0.03]" : ""}`}>
                       <span className="text-[15px] font-medium text-[#888]">{row.label}</span>
@@ -411,7 +414,7 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                     {/* Detail Rows */}
                     {[
                       { label: "Block", value: "40,63,55,001", isLink: true },
-                      { label: "Timestamp", value: "May 16, 2026 at 01:13 AM (UTC)", isLink: false },
+                      { label: "Timestamp", value: selectedTx ? new Date(selectedTx.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : "—", isLink: false },
                       { label: "Result", value: "SUCCESS", isSuccess: true },
                       { label: "Fee", value: "0.000006975 SOL", isLink: false },
                       { label: "Priority Fee", value: "0.000000541 SOL", isLink: false },
@@ -569,7 +572,7 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                         <button
                           key={tx.id}
                           onClick={() => setSelectedTx(tx)}
-                          className="flex items-center px-4 py-[14px] text-left active:scale-[0.98] transition-transform w-full bg-[#1c1c1e] rounded-[20px]"
+                          className="flex items-center px-4 py-[14px] text-left active:scale-[0.98] transition-transform w-full bg-[#222222] rounded-[20px]"
                         >
                           <div className="flex items-center flex-1 min-w-0">
                             {isSwap ? (
@@ -582,7 +585,7 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                                     hideChainIcon
                                   />
                                 </div>
-                                <div className="absolute bottom-0 right-0 z-10 rounded-full border-[2.5px] border-[#1c1c1e] bg-[#1c1c1e]">
+                                <div className="absolute -bottom-1 -right-1 z-10 rounded-full border-[2.5px] border-[#222222] bg-[#222222]">
                                   <TokenLogo
                                     token={tokenInfo}
                                     size={30}
@@ -600,13 +603,15 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                                   hideChainIcon
                                 />
                                 <div
-                                  className="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center"
-                                  style={{ backgroundColor: isReceive ? "#8B5CF6" : "#ab9ff2" }}
+                                  className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center border-[2.5px] border-[#222222]"
+                                  style={{ backgroundColor: isReceive ? "#ab9ff2" : "#3b82f6" }}
                                 >
                                   {isReceive ? (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#ffffff"><path d="M11.0737 19.4932L4.89026 13.7049L6.76695 11.9256L10.6888 15.6193V3.75H13.3354V15.6193L17.2572 11.9256L19.1339 13.7049L12.9504 19.4932L12.0121 20.3265L11.0737 19.4932Z"></path></svg>
+                                    <ArrowDown size={12} color="#000000" strokeWidth={3} />
                                   ) : (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#000000"><path d="M5.70147 4.0003C5.58476 4.00441 5.47074 4.03658 5.36909 4.0941C5.26743 4.15162 5.18113 4.23278 5.11747 4.33074C5.05382 4.42869 5.01469 4.54054 5.0034 4.65682C4.99212 4.7731 5.009 4.89039 5.05262 4.99876L7.56284 11.2736H13.0007C13.1937 11.2736 13.3788 11.3503 13.5152 11.4868C13.6517 11.6233 13.7283 11.8084 13.7283 12.0015C13.7283 12.1945 13.6517 12.3797 13.5152 12.5162C13.3788 12.6527 13.1937 12.7294 13.0007 12.7294H7.56142L5.05262 19.0042C4.99813 19.1414 4.98666 19.2919 5.01974 19.4358C5.05283 19.5797 5.1289 19.71 5.23785 19.8096C5.3468 19.9092 5.48346 19.9733 5.62968 19.9933C5.77589 20.0133 5.92474 19.9883 6.05642 19.9217L20.5938 12.6541C20.7157 12.5941 20.8184 12.5012 20.8902 12.3859C20.9619 12.2705 21 12.1374 21 12.0015C21 11.8656 20.9619 11.7324 20.8902 11.6171C20.8184 11.5017 20.7157 11.4088 20.5938 11.3489L6.05642 4.08126C5.94689 4.0246 5.82474 3.99674 5.70147 4.0003Z"></path></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="-ml-[1px]">
+                                      <path d="m10 14 1.086 3.802c.831 2.909 4.958 2.898 5.774-.015L20.04 6.424c.42-1.502-.963-2.886-2.465-2.465L6.213 7.14c-2.913.816-2.924 4.943-.015 5.774zm0 0 3-3" />
+                                    </svg>
                                   )}
                                 </div>
                               </div>
@@ -615,11 +620,11 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                             <div className="flex-1 text-left min-w-0">
                               <div className="flex items-center justify-between">
                                 <div className="text-[#eeeeee] font-semibold text-[16px] leading-tight truncate">
-                                  {isSwap ? "Token Swap" : isReceive ? "Received" : "Sent"}
+                                  {isSwap ? "Swapped" : isReceive ? "Received" : "Sent"}
                                 </div>
                                 <div
                                   className="font-semibold text-[15px] leading-tight flex-shrink-0 text-right"
-                                  style={{ color: isReceive || isSwap ? "rgb(48, 164, 108)" : "rgb(238, 66, 32)" }}
+                                  style={{ color: isReceive || isSwap ? "rgb(48, 164, 108)" : "#f3f3f3" }}
                                 >
                                   {showBalances ? amountStr : "••••"}
                                 </div>
@@ -627,15 +632,15 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                               <div className="mt-1 flex items-center justify-between">
                                 <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight truncate">
                                   {isSwap ? (
-                                    `${tx.token} -> ${tx.toToken}`
+                                    "Phantom"
                                   ) : isReceive ? (
-                                    `From: ${shortenAddress(tx.from)}`
+                                    `From ${shortenAddress(tx.from)}`
                                   ) : (
-                                    `To: ${shortenAddress(tx.to)}`
+                                    `To ${shortenAddress(tx.to)}`
                                   )}
                                 </div>
                                 {isSwap && (
-                                  <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight flex-shrink-0 text-right">
+                                  <div className="text-[#cdcdcd] text-[14px] font-medium leading-tight flex-shrink-0 text-right">
                                     {showBalances ? `-${tx.amount} ${tx.token}` : "••••"}
                                   </div>
                                 )}

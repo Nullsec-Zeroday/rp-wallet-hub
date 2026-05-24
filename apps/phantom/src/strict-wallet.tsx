@@ -24,6 +24,7 @@ import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
 import { syncStoreFromPayload } from "./lib/backend-sync";
 import { createBackendWalletTransactionsBatch, updateBackendNotificationSettings } from "./lib/backend-wallet";
+import { logWalletDebug } from "./lib/wallet-debug";
 import { requestNotificationPermission, showSystemNotification } from "./lib/notifications";
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
 
@@ -102,6 +103,16 @@ function WalletRouteBody() {
   }, [notificationSettings]);
 
   React.useEffect(() => {
+    if (!notificationSettings.isActive || notificationSettings.remainingTimes > 0) return;
+
+    const stoppedSettings = { ...notificationSettings, isActive: false, remainingTimes: 0 };
+    updateNotificationSettings(stoppedSettings);
+    updateBackendNotificationSettings(stoppedSettings).catch((error) => {
+      console.warn("Unable to persist stopped notification simulator", error);
+    });
+  }, [notificationSettings, updateNotificationSettings]);
+
+  React.useEffect(() => {
     if (pathname === "/" || pathname === "/bootstrap") {
       router.replace("/home");
     }
@@ -141,20 +152,39 @@ function WalletRouteBody() {
           walletEventCursorRef.current = maxIsoDate(walletEventCursorRef.current, event.createdAt);
           if (seenWalletEventIdsRef.current.has(event.id)) continue;
           seenWalletEventIdsRef.current.add(event.id);
+          logWalletDebug("wallet-event:received", {
+            accountId: event.accountId,
+            eventId: event.id,
+            title: event.title,
+            transactionId: event.transactionId,
+            type: event.type,
+          });
           if (event.type === "wallet_received") {
             shouldRefresh = true;
             if (notificationSettings.pushEnabled) {
               await showWalletEventNotification(event);
+              logWalletDebug("wallet-event:notified", {
+                eventId: event.id,
+                transactionId: event.transactionId,
+              });
             }
           }
         }
 
         if (shouldRefresh) {
           const response = await api.getWalletState("phantom");
-          if (!cancelled) syncStoreFromPayload(response);
+          if (!cancelled) {
+            syncStoreFromPayload(response);
+            logWalletDebug("wallet-event:refresh", {
+              transactionCount: response.recentTransactions.length,
+            });
+          }
         }
       } catch (error) {
         console.warn("Unable to poll wallet events", error);
+        logWalletDebug("wallet-event:error", {
+          message: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
@@ -172,9 +202,9 @@ function WalletRouteBody() {
 
     const startSettings = notificationSettingsRef.current;
     const intervalMs = getNotificationIntervalMs(startSettings.frequency, startSettings.unit);
-    const initialDelay = getNotificationIntervalMs(startSettings.initialDelay, startSettings.unit);
+    const initialDelay = getNotificationDelayMs(startSettings.initialDelay);
     const pendingTransactions: Array<Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">> = [];
-    let intervalId: number | undefined;
+    let timeoutId: number | undefined;
     let cancelled = false;
     let flushed = false;
 
@@ -193,21 +223,25 @@ function WalletRouteBody() {
       }
     };
 
+    const stopSimulation = async (settings: NotificationSettings) => {
+      const stoppedSettings = { ...settings, isActive: false, remainingTimes: 0 };
+      updateNotificationSettings(stoppedSettings);
+      notificationSettingsRef.current = stoppedSettings;
+      await flushPendingTransactions();
+    };
+
     const run = async () => {
       try {
         const settings = notificationSettingsRef.current;
         if (!settings.isActive || settings.remainingTimes <= 0) {
-          await flushPendingTransactions();
-          return;
+          await stopSimulation(settings);
+          return false;
         }
 
         const simulated = buildSimulatedReceive(settings);
         if (!simulated) {
-          const stoppedSettings = { ...settings, isActive: false, remainingTimes: 0 };
-          updateNotificationSettings(stoppedSettings);
-          notificationSettingsRef.current = stoppedSettings;
-          await flushPendingTransactions();
-          return;
+          await stopSimulation(settings);
+          return false;
         }
 
         const fromAddress = settings.senderAddress || "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j";
@@ -247,21 +281,30 @@ function WalletRouteBody() {
 
         if (nextRemaining <= 0) {
           await flushPendingTransactions();
+          return false;
         }
+
+        return true;
       } catch (error) {
         console.warn("Simulated notification failed", error);
+        return false;
       }
     };
 
-    const timeoutId = window.setTimeout(() => {
-      run();
-      intervalId = window.setInterval(run, intervalMs);
-    }, initialDelay);
+    const scheduleRun = (delayMs: number) => {
+      timeoutId = window.setTimeout(async () => {
+        const shouldContinue = await run();
+        if (!cancelled && shouldContinue) {
+          scheduleRun(intervalMs);
+        }
+      }, delayMs);
+    };
+
+    scheduleRun(initialDelay);
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timeoutId);
-      if (intervalId) window.clearInterval(intervalId);
+      if (timeoutId) window.clearTimeout(timeoutId);
       void flushPendingTransactions();
     };
   }, [addTransaction, notificationSettings.isActive, profile.walletAddress, updateBalance, updateNotificationSettings]);
@@ -629,10 +672,14 @@ function WalletRouteBody() {
 
 function getNotificationIntervalMs(value: number, unit: "ms" | "sec" | "min" | "hr") {
   const safeValue = Math.max(0, Number(value) || 0);
-  if (unit === "hr") return safeValue * 60 * 60 * 1000;
-  if (unit === "min") return safeValue * 60 * 1000;
-  if (unit === "sec") return safeValue * 1000;
+  if (unit === "hr") return Math.max(250, safeValue * 60 * 60 * 1000);
+  if (unit === "min") return Math.max(250, safeValue * 60 * 1000);
+  if (unit === "sec") return Math.max(250, safeValue * 1000);
   return Math.max(250, safeValue);
+}
+
+function getNotificationDelayMs(value: number) {
+  return Math.max(0, Number(value) || 0) * 1000;
 }
 
 export function StrictWalletApp({ payload }: { payload: WalletBootstrapPayload }) {

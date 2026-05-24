@@ -15886,15 +15886,21 @@ var InMemoryPlatformStore = class {
     if (!user || !license) return null;
     const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
     const account = this.getOrCreateWalletAccounts(profile).find((entry) => entry.id === input.accountId);
-    if (!account) return null;
+    if (!account) throw new Error("Wallet account was not found.");
     const amount = Number(input.amount);
-    if (!Number.isFinite(amount) || amount <= 0) return null;
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
     const counterpartAccount = this.findCounterpartAccount(user.id, input);
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) return null;
+    if (counterpartAccount?.id === account.id) {
+      throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
+    }
+    if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
+      throw new Error("Insufficient balance for this transfer.");
+    }
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
       this.applyBalanceMutation(counterpartAccount.id, input.tokenSymbol, amount, "credit");
     }
+    const createdAt = getSafeTransactionDate(input.createdAt).toISOString();
     const transaction = {
       id: createId("wtx"),
       walletAppId: input.walletAppId,
@@ -15906,14 +15912,16 @@ var InMemoryPlatformStore = class {
       fromAddress: input.fromAddress,
       toAddress: input.toAddress,
       counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId,
-      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      createdAt
     };
     const existing = this.walletTransactions.get(profile.id) || [];
     this.walletTransactions.set(profile.id, [transaction, ...existing]);
+    let counterpartTransaction;
+    let notification;
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount && counterpartAccount.id !== account.id) {
       const counterpartProfile = [...this.walletProfiles.values()].find((entry) => entry.id === counterpartAccount.walletProfileId);
       if (counterpartProfile) {
-        const counterpartTx = {
+        counterpartTransaction = {
           ...transaction,
           id: createId("wtx"),
           walletAppId: counterpartProfile.walletAppId,
@@ -15924,13 +15932,13 @@ var InMemoryPlatformStore = class {
           counterpartWalletAppId: input.walletAppId
         };
         const counterpartExisting = this.walletTransactions.get(counterpartProfile.id) || [];
-        this.walletTransactions.set(counterpartProfile.id, [counterpartTx, ...counterpartExisting]);
-        const notification = this.createWalletNotificationRecord(counterpartProfile.id, {
+        this.walletTransactions.set(counterpartProfile.id, [counterpartTransaction, ...counterpartExisting]);
+        notification = this.createWalletNotificationRecord(counterpartProfile.id, {
           walletAppId: counterpartProfile.walletAppId,
           accountId: counterpartAccount.id,
-          transactionId: counterpartTx.id,
+          transactionId: counterpartTransaction.id,
           title: "Received",
-          body: `Received ${counterpartTx.amount} ${counterpartTx.tokenSymbol}`
+          body: `Received ${counterpartTransaction.amount} ${counterpartTransaction.tokenSymbol}`
         });
         this.createWalletEventRecord(counterpartProfile.id, {
           userId: counterpartProfile.userId,
@@ -15939,12 +15947,19 @@ var InMemoryPlatformStore = class {
           type: "wallet_received",
           title: notification.title,
           body: notification.body,
-          transactionId: counterpartTx.id,
+          transactionId: counterpartTransaction.id,
           notificationId: notification.id
         });
       }
     }
-    return this.buildWalletBootstrap(user, license, input.walletAppId);
+    return {
+      payload: this.buildWalletBootstrap(user, license, input.walletAppId),
+      transaction,
+      counterpartTransaction,
+      delivery: toTransferDelivery(effectiveType),
+      recipientFound: Boolean(counterpartAccount),
+      notification
+    };
   }
   async createWalletTransactionsBatch(sessionId, input) {
     const session = this.sessions.get(sessionId);
@@ -15960,6 +15975,7 @@ var InMemoryPlatformStore = class {
       const amount = Number(transactionInput.amount);
       if (!Number.isFinite(amount) || amount <= 0) return null;
       this.applyBalanceMutation(input.accountId, transactionInput.tokenSymbol, amount, "credit");
+      const createdAt = getSafeTransactionDate(transactionInput.createdAt).toISOString();
       const transaction = {
         id: createId("wtx"),
         walletAppId: input.walletAppId,
@@ -15971,7 +15987,7 @@ var InMemoryPlatformStore = class {
         fromAddress: transactionInput.fromAddress,
         toAddress: transactionInput.toAddress,
         counterpartWalletAppId: transactionInput.counterpartWalletAppId,
-        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        createdAt
       };
       const existing = this.walletTransactions.get(profile.id) || [];
       this.walletTransactions.set(profile.id, [transaction, ...existing]);
@@ -16042,7 +16058,7 @@ var InMemoryPlatformStore = class {
     const settings = this.walletNotificationSettings.get(profile.id) || createDefaultNotificationSettings();
     const simulated = buildSimulatedReceive(settings);
     if (!simulated) return null;
-    const payload = await this.createWalletTransaction(sessionId, {
+    const result = await this.createWalletTransaction(sessionId, {
       walletAppId: walletAppId2,
       accountId,
       type: "receive",
@@ -16052,8 +16068,8 @@ var InMemoryPlatformStore = class {
       toAddress: account.address,
       source: "notification_simulation"
     });
-    if (!payload) return null;
-    const transaction = payload.recentTransactions[0];
+    if (!result) return null;
+    const transaction = result.transaction;
     const nextSettings = decrementNotificationSettings(settings);
     this.walletNotificationSettings.set(profile.id, nextSettings);
     const notification = {
@@ -16378,16 +16394,22 @@ var NeonPlatformStore = class {
     const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
     const accounts = await this.getOrCreateWalletAccounts(profile);
     const account = accounts.find((entry) => entry.id === input.accountId);
-    if (!account) return null;
+    if (!account) throw new Error("Wallet account was not found.");
     const amount = Number(input.amount);
-    if (!Number.isFinite(amount) || amount <= 0) return null;
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
     const counterpartAccount = await this.findCounterpartAccount(user.id, input);
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (!await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) return null;
+    if (counterpartAccount?.id === account.id) {
+      throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
+    }
+    if (!await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
+      throw new Error("Insufficient balance for this transfer.");
+    }
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
       await this.applyBalanceMutation(counterpartAccount.id, input.tokenSymbol, amount, "credit");
     }
     const transactionId = createId("wtx");
+    const createdAt = getSafeTransactionDate(input.createdAt);
     await this.db.insert(walletTransactions).values({
       id: transactionId,
       walletAppId: input.walletAppId,
@@ -16398,13 +16420,29 @@ var NeonPlatformStore = class {
       amount: formatAmount(amount),
       fromAddress: input.fromAddress,
       toAddress: input.toAddress,
-      counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId
+      counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId,
+      createdAt
     });
+    const transaction = toWalletTransaction({
+      id: transactionId,
+      walletAppId: input.walletAppId,
+      accountId: input.accountId,
+      type: effectiveType,
+      status: "confirmed",
+      tokenSymbol: input.tokenSymbol.toUpperCase(),
+      amount: formatAmount(amount),
+      fromAddress: input.fromAddress ?? null,
+      toAddress: input.toAddress ?? null,
+      counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId || null,
+      createdAt
+    });
+    let counterpartTransaction;
+    let notification;
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount && counterpartAccount.id !== account.id) {
       const counterpartProfile = await this.getWalletProfileById(counterpartAccount.walletProfileId);
       if (counterpartProfile) {
         const counterpartTransactionId = createId("wtx");
-        await this.db.insert(walletTransactions).values({
+        const counterpartTxInsert = {
           id: counterpartTransactionId,
           walletAppId: counterpartProfile.walletAppId,
           accountId: counterpartAccount.id,
@@ -16414,9 +16452,19 @@ var NeonPlatformStore = class {
           amount: formatAmount(amount),
           fromAddress: account.address,
           toAddress: counterpartAccount.address,
-          counterpartWalletAppId: input.walletAppId
+          counterpartWalletAppId: input.walletAppId,
+          createdAt
+        };
+        await this.db.insert(walletTransactions).values({
+          ...counterpartTxInsert
         });
-        const notification = await this.createWalletNotification({
+        counterpartTransaction = toWalletTransaction({
+          ...counterpartTxInsert,
+          fromAddress: counterpartTxInsert.fromAddress ?? null,
+          toAddress: counterpartTxInsert.toAddress ?? null,
+          counterpartWalletAppId: counterpartTxInsert.counterpartWalletAppId ?? null
+        });
+        notification = await this.createWalletNotification({
           walletAppId: counterpartProfile.walletAppId,
           accountId: counterpartAccount.id,
           transactionId: counterpartTransactionId,
@@ -16444,7 +16492,14 @@ var NeonPlatformStore = class {
         body: `Received ${formatAmount(amount)} ${input.tokenSymbol.toUpperCase()}`
       });
     }
-    return this.buildWalletBootstrap(user, license, input.walletAppId);
+    return {
+      payload: await this.buildWalletBootstrap(user, license, input.walletAppId),
+      transaction,
+      counterpartTransaction,
+      delivery: toTransferDelivery(effectiveType),
+      recipientFound: Boolean(counterpartAccount),
+      notification
+    };
   }
   async createWalletTransactionsBatch(sessionId, input) {
     const session = await this.getSession(sessionId);
@@ -16465,6 +16520,7 @@ var NeonPlatformStore = class {
       const tokenSymbol = transactionInput.tokenSymbol.toUpperCase();
       balanceCredits.set(tokenSymbol, (balanceCredits.get(tokenSymbol) || 0) + amount);
       const transactionId = createId("wtx");
+      const createdAt = getSafeTransactionDate(transactionInput.createdAt);
       rows.push({
         id: transactionId,
         walletAppId: input.walletAppId,
@@ -16475,7 +16531,8 @@ var NeonPlatformStore = class {
         amount: formatAmount(amount),
         fromAddress: transactionInput.fromAddress,
         toAddress: transactionInput.toAddress,
-        counterpartWalletAppId: transactionInput.counterpartWalletAppId
+        counterpartWalletAppId: transactionInput.counterpartWalletAppId,
+        createdAt
       });
       if (transactionInput.source === "notification_simulation") {
         notificationRows.push({
@@ -16583,7 +16640,7 @@ var NeonPlatformStore = class {
     const settings = await this.getNotificationSettings(profile.id);
     const simulated = buildSimulatedReceive(settings);
     if (!simulated) return null;
-    const payload = await this.createWalletTransaction(sessionId, {
+    const result = await this.createWalletTransaction(sessionId, {
       walletAppId: walletAppId2,
       accountId,
       type: "receive",
@@ -16593,7 +16650,7 @@ var NeonPlatformStore = class {
       toAddress: account.address,
       source: "notification_simulation"
     });
-    if (!payload) return null;
+    if (!result) return null;
     const nextSettings = decrementNotificationSettings(settings);
     await this.updateWalletNotificationSettings(sessionId, {
       walletAppId: walletAppId2,
@@ -16934,10 +16991,23 @@ function getEffectiveTransactionType(input, counterpartWalletAppId) {
   return counterpartWalletAppId === input.walletAppId ? "same_wallet_transfer" : "cross_wallet_transfer";
 }
 __name(getEffectiveTransactionType, "getEffectiveTransactionType");
+function toTransferDelivery(type) {
+  if (type === "same_wallet_transfer") return "same_wallet";
+  if (type === "cross_wallet_transfer") return "cross_wallet";
+  return "external";
+}
+__name(toTransferDelivery, "toTransferDelivery");
 function formatAmount(value) {
   return value.toFixed(6).replace(/\.?0+$/, "");
 }
 __name(formatAmount, "formatAmount");
+function getSafeTransactionDate(value) {
+  if (!value) return /* @__PURE__ */ new Date();
+  const date2 = new Date(value);
+  if (Number.isNaN(date2.getTime()) || date2.getTime() > Date.now()) return /* @__PURE__ */ new Date();
+  return date2;
+}
+__name(getSafeTransactionDate, "getSafeTransactionDate");
 function toWalletProfile(profile) {
   return {
     id: profile.id,
@@ -17226,21 +17296,45 @@ app.get("/prices", async (c) => {
 });
 app.get("/trending", async (c) => {
   try {
-    const limit = c.req.query("limit") || "10";
-    const currency = (c.req.query("currency") || "usd").toLowerCase();
-    const response = await fetch(
-      `${CG_BASE_URL}/coins/markets?vs_currency=${currency}&category=solana-meme-coins&order=volume_desc&per_page=${limit}&page=1&sparkline=false&price_change_percentage=24h`,
-      {
-        headers: {
-          Accept: "application/json",
-          "x-cg-demo-api-key": c.env.COINGECKO_API_KEY || ""
-        }
-      }
-    );
-    if (!response.ok) {
-      return c.json({ error: "Failed to fetch trending from CoinGecko" }, response.status);
+    const limit = Math.max(1, Math.min(50, Number.parseInt(c.req.query("limit") || "10", 10) || 10));
+    const boostsResponse = await fetch("https://api.dexscreener.com/token-boosts/top/v1", {
+      headers: { Accept: "application/json" }
+    });
+    if (!boostsResponse.ok) {
+      return c.json({ error: "Failed to fetch trending" }, boostsResponse.status);
     }
-    const data = await response.json();
+    const boosts = await boostsResponse.json();
+    const solanaAddresses = Array.from(
+      new Set(boosts.filter((boost) => boost.chainId === "solana" && boost.tokenAddress).map((boost) => boost.tokenAddress))
+    ).slice(0, limit);
+    if (solanaAddresses.length === 0) {
+      c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+      return c.json([]);
+    }
+    const tokensResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${solanaAddresses.join(",")}`, {
+      headers: { Accept: "application/json" }
+    });
+    if (!tokensResponse.ok) {
+      return c.json({ error: "Failed to fetch token details" }, tokensResponse.status);
+    }
+    const tokensData = await tokensResponse.json();
+    const seen = /* @__PURE__ */ new Set();
+    const data = [];
+    for (const pair of tokensData.pairs || []) {
+      const address = pair.baseToken?.address;
+      if (!address || seen.has(address)) continue;
+      seen.add(address);
+      data.push({
+        current_price: Number.parseFloat(pair.priceUsd || "0") || 0,
+        id: address,
+        image: pair.info?.imageUrl || "",
+        market_cap: pair.marketCap || pair.fdv || 0,
+        name: pair.baseToken?.name || pair.baseToken?.symbol || "Unknown",
+        price_change_percentage_24h: pair.priceChange?.h24 || 0,
+        symbol: pair.baseToken?.symbol || ""
+      });
+      if (data.length >= limit) break;
+    }
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
     return c.json(data);
   } catch (error) {
@@ -17519,11 +17613,16 @@ app.post("/wallet-transactions", async (c) => {
   if (!walletRegistry[body.walletAppId]) {
     return c.json({ error: "Unknown wallet app" }, 400);
   }
-  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
-  if (!response) {
-    return c.json({ error: "Unable to create wallet transaction" }, 400);
+  try {
+    const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
+    if (!response) {
+      return c.json({ error: "Unable to create wallet transaction" }, 400);
+    }
+    return c.json(response);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to create wallet transaction";
+    return c.json({ error: message }, 400);
   }
-  return c.json(response);
 });
 app.post("/wallet-transactions/batch", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17695,7 +17794,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-xLf0dN/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-MbHhYI/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -17727,7 +17826,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-xLf0dN/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-MbHhYI/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -1,5 +1,6 @@
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type {
+  CreateWalletTransactionResponse,
   CreateWalletTransactionRequest,
   UpdateWalletStateRequest,
   WalletBootstrapPayload,
@@ -7,14 +8,22 @@ import type {
 } from "@rp-wallet/types";
 import { writeCachedBootstrap } from "@rp-wallet/wallet-core";
 import { syncStoreFromPayload } from "./backend-sync";
+import { logWalletDebug } from "./wallet-debug";
 import { useWalletStore } from "./wallet-store";
 
 const api = new RpWalletApiClient();
 
-function applyPayload(payload: WalletBootstrapPayload) {
-  writeCachedBootstrap("phantom", payload);
-  syncStoreFromPayload(payload);
-  return payload;
+function applyPayload(payload: WalletBootstrapPayload, options: { preserveLocalNotificationSettings?: boolean } = {}) {
+  const payloadToApply = options.preserveLocalNotificationSettings
+    ? {
+      ...payload,
+      notificationSettings: useWalletStore.getState().notificationSettings,
+    }
+    : payload;
+
+  writeCachedBootstrap("phantom", payloadToApply);
+  syncStoreFromPayload(payloadToApply);
+  return payloadToApply;
 }
 
 export function getCurrentBackendAccount() {
@@ -25,20 +34,40 @@ export async function createBackendWalletTransaction(input: Omit<CreateWalletTra
   const account = getCurrentBackendAccount();
   if (!account) throw new Error("No wallet account is available.");
 
-  const payload = await api.createWalletTransaction({
+  logWalletDebug("send:start", {
+    amount: input.amount,
+    fromAddress: input.fromAddress,
+    toAddress: input.toAddress,
+    tokenSymbol: input.tokenSymbol,
+    type: input.type,
+  });
+
+  const response = await api.createWalletTransaction({
     walletAppId: "phantom",
     accountId: account.id,
     ...input,
   });
 
-  return applyPayload(payload);
+  const payload = applyPayload(response.payload);
+  logWalletDebug("send:result", {
+    delivery: response.delivery,
+    recipientFound: response.recipientFound,
+    counterpartWalletAppId: response.counterpartTransaction?.walletAppId,
+    transactionId: response.transaction.id,
+    type: response.transaction.type,
+  });
+
+  return {
+    ...response,
+    payload,
+  } satisfies CreateWalletTransactionResponse;
 }
 
 export async function createBackendWalletTransactionsBatch(inputs: Array<Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">>) {
   const account = getCurrentBackendAccount();
   if (!account) throw new Error("No wallet account is available.");
   if (inputs.length === 0) {
-    return api.getWalletState("phantom").then(applyPayload);
+    return api.getWalletState("phantom").then((payload) => applyPayload(payload));
   }
 
   const payload = await api.createWalletTransactionsBatch({
@@ -47,7 +76,9 @@ export async function createBackendWalletTransactionsBatch(inputs: Array<Omit<Cr
     transactions: inputs,
   });
 
-  return applyPayload(payload);
+  return applyPayload(payload, {
+    preserveLocalNotificationSettings: inputs.some((input) => input.source === "notification_simulation"),
+  });
 }
 
 export async function deleteBackendWalletTransaction(transactionId: string) {

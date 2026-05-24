@@ -23,6 +23,22 @@ import "@fontsource/inter/latin-800.css";
 import "@ionic/react/css/core.css";
 import "./styles.css";
 
+function registerPhantomServiceWorker() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+  const register = () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("Phantom service worker registration failed", error);
+    });
+  };
+
+  if (document.readyState === "complete") {
+    register();
+  } else {
+    window.addEventListener("load", register, { once: true });
+  }
+}
+
 function PhantomApp() {
   const api = React.useMemo(() => new RpWalletApiClient(), []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => readCachedBootstrap("phantom"));
@@ -200,6 +216,8 @@ function ReconnectPanel({
     </main>
   );
 }
+
+registerPhantomServiceWorker();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

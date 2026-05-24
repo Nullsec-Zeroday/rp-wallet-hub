@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, Lock, Trash2, Pencil, RefreshCw, Bell, Check, Search, Plus, Loader2 } from "lucide-react";
+import { ChevronLeft, Trash2, Pencil, RefreshCw, Bell, Check, Search, Plus, Loader2 } from "lucide-react";
 import { useWalletStore, type UserProfile, DEFAULT_NOTIFICATION_SETTINGS } from "@/lib/wallet-store";
 import { AVATAR_ICONS, AVATAR_IMAGES, TOKENS, type TokenInfo } from "@/lib/wallet-data";
 import TokenLogo from "../../_components/token-logo";
@@ -17,6 +17,7 @@ import {
   updateBackendNotificationSettings,
   updateBackendWalletState,
 } from "@/lib/backend-wallet";
+import { requestNotificationPermission } from "@/lib/notifications";
 
 interface SearchResult {
   id: string;
@@ -51,6 +52,18 @@ const normalizeNotificationSettings = (settings: typeof DEFAULT_NOTIFICATION_SET
       symbol: coin.symbol.toUpperCase(),
     })).sort((a, b) => a.symbol.localeCompare(b.symbol)),
   });
+
+const prepareRunnableNotificationSettings = (settings: typeof DEFAULT_NOTIFICATION_SETTINGS) => {
+  const totalTimes = Math.max(0, Number(settings.totalTimes) || 0);
+
+  return {
+    ...settings,
+    totalTimes,
+    remainingTimes: settings.isActive
+      ? Math.max(Number(settings.remainingTimes) || 0, totalTimes)
+      : Math.max(0, Number(settings.remainingTimes) || 0),
+  };
+};
 
 // Removed PwaGate import
 
@@ -105,6 +118,8 @@ function EditProfileContent() {
   const [txToken, setTxToken] = useState('SOL');
   const [txAmount, setTxAmount] = useState('');
   const [txFrom, setTxFrom] = useState('');
+  const [txDate, setTxDate] = useState('');
+  const [txTime, setTxTime] = useState('');
 
   const [localBalances, setLocalBalances] = useState<Record<string, string>>({});
 
@@ -196,6 +211,16 @@ function EditProfileContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (notificationSettings.isActive || notificationSettings.remainingTimes > 0) return;
+
+    setLocalNotificationSettings((prev) => (
+      prev.isActive || prev.remainingTimes !== 0
+        ? { ...prev, isActive: false, remainingTimes: 0 }
+        : prev
+    ));
+  }, [notificationSettings.isActive, notificationSettings.remainingTimes]);
+
   // Handle URL highlighting separately
   useEffect(() => {
     if (highlight === 'send') setTxType('send');
@@ -230,9 +255,10 @@ function EditProfileContent() {
     }));
     updateAllBalances(newBalances);
     updateBoostConfig(localBoostConfig);
-    updateNotificationSettings(localNotificationSettings);
-    if (normalizeNotificationSettings(localNotificationSettings) !== normalizeNotificationSettings(notificationSettings || DEFAULT_NOTIFICATION_SETTINGS)) {
-      updateBackendNotificationSettings(localNotificationSettings).catch((err) => {
+    const notificationSettingsToSave = prepareRunnableNotificationSettings(localNotificationSettings);
+    updateNotificationSettings(notificationSettingsToSave);
+    if (normalizeNotificationSettings(notificationSettingsToSave) !== normalizeNotificationSettings(notificationSettings || DEFAULT_NOTIFICATION_SETTINGS)) {
+      updateBackendNotificationSettings(notificationSettingsToSave).catch((err) => {
         console.error("Notification settings persist failed:", err);
       });
     }
@@ -265,12 +291,14 @@ function EditProfileContent() {
     }
 
     try {
+      const createdAt = txDate ? new Date(`${txDate}T${txTime || '12:00'}:00`).toISOString() : undefined;
       await createBackendWalletTransaction({
         type: txType,
         tokenSymbol: txToken,
         amount: String(amount),
         fromAddress: txType === 'receive' ? (txFrom || 'External Wallet') : profile.walletAddress,
         toAddress: txType === 'send' ? (txFrom || 'External Wallet') : profile.walletAddress,
+        createdAt,
       });
     } catch {
       toast.error("Unable to add transaction. Check the balance and backend session.");
@@ -291,14 +319,21 @@ function EditProfileContent() {
 
     setTxAmount('');
     setTxFrom('');
+    setTxDate('');
+    setTxTime('');
     toast.success(`Transaction Added: ${txType === 'receive' ? 'Received' : 'Sent'} ${amount} ${txToken}`);
   };
 
   const handleTogglePush = async () => {
     if (!localNotificationSettings.pushEnabled) {
-      setLocalNotificationSettings({ ...localNotificationSettings, pushEnabled: true });
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        toast.error("Notification permission is blocked for this browser.");
+        return;
+      }
+      setLocalNotificationSettings((prev) => ({ ...prev, pushEnabled: true }));
     } else {
-      setLocalNotificationSettings({ ...localNotificationSettings, pushEnabled: false });
+      setLocalNotificationSettings((prev) => ({ ...prev, pushEnabled: false }));
     }
   };
 
@@ -786,6 +821,29 @@ function EditProfileContent() {
             </div>
             <div className="h-px bg-[#2c2c2e] ml-4" />
 
+            <div className="flex h-[52px] items-center justify-between px-4">
+              <span className="text-[15px] text-[#8b8ca7]">Date (Optional)</span>
+              <input
+                className="bg-transparent text-[14px] font-semibold text-right outline-none text-white w-[180px] focus:text-[#AB9FF2] transition-colors [color-scheme:dark]"
+                type="date"
+                max={new Date().toISOString().split('T')[0]}
+                value={txDate}
+                onChange={(e) => setTxDate(e.target.value)}
+              />
+            </div>
+            <div className="h-px bg-[#2c2c2e] ml-4" />
+
+            <div className="flex h-[52px] items-center justify-between px-4">
+              <span className="text-[15px] text-[#8b8ca7]">Time (Optional)</span>
+              <input
+                className="bg-transparent text-[14px] font-semibold text-right outline-none text-white w-[180px] focus:text-[#AB9FF2] transition-colors [color-scheme:dark]"
+                type="time"
+                value={txTime}
+                onChange={(e) => setTxTime(e.target.value)}
+              />
+            </div>
+            <div className="h-px bg-[#2c2c2e] ml-4" />
+
             <div className="flex flex-col px-4 py-3">
               <span className="text-[15px] text-[#8b8ca7] mb-2">{txType === 'receive' ? 'From' : 'To'} Address</span>
               <input
@@ -982,7 +1040,15 @@ function EditProfileContent() {
             <div className="flex h-[52px] items-center justify-between px-4">
               <span className="text-[15px] text-[#8b8ca7]">Status</span>
               <button
-                onClick={() => setLocalNotificationSettings(prev => ({ ...prev, isActive: !prev.isActive }))}
+                onClick={() => setLocalNotificationSettings((prev) => {
+                  const isActive = !prev.isActive;
+                  const totalTimes = Math.max(0, Number(prev.totalTimes) || 0);
+                  return {
+                    ...prev,
+                    isActive,
+                    remainingTimes: isActive ? totalTimes : Math.max(0, Number(prev.remainingTimes) || 0),
+                  };
+                })}
                 className="w-[50px] h-[28px] rounded-full p-1 transition-colors duration-200 relative border border-white/5"
                 style={{
                   backgroundColor: localNotificationSettings.isActive ? "#E11D48" : "#2c2c2e"
@@ -1051,7 +1117,14 @@ function EditProfileContent() {
                 className="bg-[#2c2c2e] text-white text-xs font-bold text-center outline-none w-16 py-1.5 rounded-lg border border-white/5"
                 type="number"
                 value={localNotificationSettings.totalTimes ?? 0}
-                onChange={(e) => setLocalNotificationSettings(prev => ({ ...prev, totalTimes: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => setLocalNotificationSettings((prev) => {
+                  const totalTimes = Math.max(0, parseInt(e.target.value) || 0);
+                  return {
+                    ...prev,
+                    totalTimes,
+                    remainingTimes: prev.isActive ? totalTimes : prev.remainingTimes,
+                  };
+                })}
               />
             </div>
             <div className="h-px bg-[#2c2c2e] ml-4" />

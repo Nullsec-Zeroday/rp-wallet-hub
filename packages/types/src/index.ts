@@ -155,6 +155,7 @@ export interface CreateWalletTransactionRequest {
   toAddress?: string;
   counterpartWalletAppId?: WalletAppId;
   counterpartAccountId?: string;
+  createdAt?: string;
   source?: "user" | "notification_simulation" | "system";
 }
 
@@ -162,6 +163,15 @@ export interface CreateWalletTransactionsBatchRequest {
   walletAppId: WalletAppId;
   accountId: string;
   transactions: Array<Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">>;
+}
+
+export interface CreateWalletTransactionResponse {
+  payload: WalletBootstrapPayload;
+  transaction: WalletTransaction;
+  counterpartTransaction?: WalletTransaction;
+  delivery: "external" | "same_wallet" | "cross_wallet";
+  recipientFound: boolean;
+  notification?: WalletNotification;
 }
 
 export interface UpdateWalletNotificationSettingsRequest {

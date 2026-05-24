@@ -33,13 +33,23 @@ export default function InteractiveChart({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+    const measure = () => {
+      const width = el.getBoundingClientRect().width || el.parentElement?.getBoundingClientRect().width || window.innerWidth;
+      setContainerWidth(width);
+    };
+
+    measure();
     const obs = new ResizeObserver((entries) => {
       for (const e of entries) {
-        setContainerWidth(e.contentRect.width);
+        setContainerWidth(e.contentRect.width || el.getBoundingClientRect().width || window.innerWidth);
       }
     });
     obs.observe(el);
-    return () => obs.disconnect();
+    window.addEventListener("resize", measure);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   // Pulse animation for the idle dot
@@ -58,7 +68,8 @@ export default function InteractiveChart({
 
   const PADDING_LEFT = 0;
   const PADDING_RIGHT = 28;
-  const drawWidth = containerWidth - PADDING_LEFT - PADDING_RIGHT;
+  const measuredWidth = containerWidth || 360;
+  const drawWidth = Math.max(1, measuredWidth - PADDING_LEFT - PADDING_RIGHT);
 
   const points = useMemo(() => {
     if (!data || data.length === 0 || drawWidth <= 0) return [];
@@ -179,7 +190,7 @@ export default function InteractiveChart({
   const LABEL_WIDTH = 120;
   let labelX = activePt ? activePt.x - LABEL_WIDTH / 2 : 0;
   if (labelX < PADDING_LEFT) labelX = PADDING_LEFT;
-  if (labelX > containerWidth - PADDING_RIGHT - LABEL_WIDTH) labelX = containerWidth - PADDING_RIGHT - LABEL_WIDTH;
+  if (labelX > measuredWidth - PADDING_RIGHT - LABEL_WIDTH) labelX = measuredWidth - PADDING_RIGHT - LABEL_WIDTH;
 
   return (
     <div ref={containerRef} className="relative w-full select-none" style={{ marginTop: 20, touchAction: "none" }}>
@@ -200,7 +211,7 @@ export default function InteractiveChart({
       </div>
 
       <svg
-        width={containerWidth}
+        width={measuredWidth}
         height={height}
         className="block"
         onPointerDown={handlePointerDown}
@@ -216,7 +227,7 @@ export default function InteractiveChart({
                 <rect x="0" y="0" width={activePt.x} height="100%" />
               </clipPath>
               <clipPath id="rightClip">
-                <rect x={activePt.x} y="0" width={containerWidth - activePt.x} height="100%" />
+                <rect x={activePt.x} y="0" width={measuredWidth - activePt.x} height="100%" />
               </clipPath>
             </>
           )}
@@ -225,7 +236,7 @@ export default function InteractiveChart({
         {/* Horizontal baseline (equator) - only shows on active */}
         <line
           x1={PADDING_LEFT}
-          x2={containerWidth - PADDING_RIGHT}
+          x2={measuredWidth - PADDING_RIGHT}
           y1={baseY}
           y2={baseY}
           stroke="rgba(255,255,255,0.25)"

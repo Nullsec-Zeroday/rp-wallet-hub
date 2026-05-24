@@ -152,8 +152,8 @@ function BootstrappedWallet({
 
     try {
       const response = await api.createWalletTransaction(body);
-      writeCachedBootstrap("trust", response);
-      onPayloadChange(response);
+      writeCachedBootstrap("trust", response.payload);
+      onPayloadChange(response.payload);
     } catch {
       onErrorChange("That transaction could not be applied.");
     } finally {
