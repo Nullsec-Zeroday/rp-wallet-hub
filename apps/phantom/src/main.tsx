@@ -157,7 +157,7 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
     ? ["Tap the Share button in Safari", 'Choose "Add to Home Screen"', 'Tap "Add"', "Open Phantom from your home screen"]
     : ["Open the browser menu", 'Choose "Add to Home screen"', 'Confirm with "Add"', "Open Phantom from your home screen"];
 
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || "http://localhost:3000";
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://rpwallet.app");
 
   return (
     <motion.div
