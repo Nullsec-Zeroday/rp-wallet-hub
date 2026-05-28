@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import Navigation from "@/components/marketing/navigation";
-import Footer from "@/components/marketing/footer";
-import { AuroraGlow } from "@/components/marketing/aurora-glow";
 import "./styles.css";
 
 const satoshi = localFont({
@@ -32,12 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`dark antialiased font-sans ${satoshi.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-[#0c0a18]">
-        <div className="relative min-h-screen overflow-hidden bg-[var(--phantom-darker)]">
-          <AuroraGlow />
-          <Navigation />
-          {children}
-          <Footer />
-        </div>
+        {children}
       </body>
     </html>
   );

@@ -13,7 +13,7 @@ import type {
 import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
-import { getPlatformStore } from "./platform-store";
+import { DeviceLimitError, getPlatformStore } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 
@@ -459,7 +459,16 @@ app.post("/auth/license/activate", async (c) => {
     return c.json({ error: "licenseKey and deviceId are required" }, 400);
   }
 
-  const response = await getPlatformStore(c.env.DATABASE_URL).activateLicense(body);
+  let response;
+  try {
+    response = await getPlatformStore(c.env.DATABASE_URL).activateLicense(body);
+  } catch (error) {
+    if (error instanceof DeviceLimitError) {
+      return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    throw error;
+  }
+
   setSessionCookie(c, response.session.id, response.session.expiresAt, getSessionCookieName(c));
 
   return c.json(response);
@@ -515,7 +524,15 @@ app.post("/wallet-bootstrap/exchange", async (c) => {
     return c.json({ error: "token and deviceId are required" }, 400);
   }
 
-  const response = await getPlatformStore(c.env.DATABASE_URL).exchangeWalletBootstrap(body);
+  let response;
+  try {
+    response = await getPlatformStore(c.env.DATABASE_URL).exchangeWalletBootstrap(body);
+  } catch (error) {
+    if (error instanceof DeviceLimitError) {
+      return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    throw error;
+  }
 
   if (!response) {
     return c.json({ error: "Launch token is invalid or expired" }, 401);

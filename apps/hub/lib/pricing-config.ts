@@ -19,8 +19,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
   starter: {
     id: "starter",
     name: "Starter",
-    price: "$9",
-    priceNum: 9,
+    price: "$14",
+    priceNum: 14,
     duration: "1 week access",
     durationDays: 7,
     allowedRedemptions: 1,
@@ -39,9 +39,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
   popular: {
     id: "popular",
     name: "Most Popular",
-    price: "$19",
-    originalPrice: "$29",
-    priceNum: 19,
+    price: "$29",
+    priceNum: 29,
     duration: "1 month access",
     durationDays: 30,
     allowedRedemptions: 1,
@@ -61,8 +60,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
   yearly: {
     id: "yearly",
     name: "Yearly Access",
-    price: "$79",
-    priceNum: 79,
+    price: "$99",
+    priceNum: 99,
     duration: "1 year access",
     durationDays: 365,
     allowedRedemptions: 2,

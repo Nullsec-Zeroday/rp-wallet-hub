@@ -7,11 +7,12 @@ import type {
   WalletNotificationSettings,
 } from "@rp-wallet/types";
 import { writeCachedBootstrap } from "@rp-wallet/wallet-core";
+import { appEnv } from "../app-env";
 import { syncStoreFromPayload } from "./backend-sync";
 import { logWalletDebug } from "./wallet-debug";
 import { useWalletStore } from "./wallet-store";
 
-const api = new RpWalletApiClient();
+const api = new RpWalletApiClient(appEnv.apiBaseUrl);
 
 function applyPayload(payload: WalletBootstrapPayload, options: { preserveLocalNotificationSettings?: boolean } = {}) {
   const payloadToApply = options.preserveLocalNotificationSettings

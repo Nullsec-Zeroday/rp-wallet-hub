@@ -15739,6 +15739,15 @@ var walletLaunchTokens = pgTable(
 // src/platform-store.ts
 var THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1e3;
 var LAUNCH_TOKEN_TTL_MS = 60 * 1e3;
+var DeviceLimitError = class extends Error {
+  static {
+    __name(this, "DeviceLimitError");
+  }
+  constructor(allowedDevices) {
+    super(`This license is already active on ${allowedDevices} device${allowedDevices === 1 ? "" : "s"}.`);
+    this.name = "DeviceLimitError";
+  }
+};
 var inMemoryStore;
 var databaseStores = /* @__PURE__ */ new Map();
 function getPlatformStore(databaseUrl) {
@@ -15775,6 +15784,7 @@ var InMemoryPlatformStore = class {
     const existingLicense = [...this.licenses.values()].find((license2) => license2.keyHash === keyHash);
     const user = existingLicense ? this.users.get(existingLicense.userId) : this.createUser(input.email);
     const license = existingLicense ?? this.createLicense(keyHash, user.id, now);
+    this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = this.createSession(user.id, license.id, license.expiresAt);
     this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
@@ -15814,6 +15824,7 @@ var InMemoryPlatformStore = class {
     const user = this.users.get(session.userId);
     const license = this.licenses.get(session.licenseId);
     if (!user || !license) return null;
+    this.assertDeviceAllowed(user.id, license, input.deviceId);
     launchToken.consumedAt = (/* @__PURE__ */ new Date()).toISOString();
     this.recordDevice(user.id, input.deviceId);
     return {
@@ -16138,7 +16149,7 @@ var InMemoryPlatformStore = class {
       plan: "Platform Preview",
       expiresAt: new Date(now.getTime() + THIRTY_DAYS_MS).toISOString(),
       status: "active",
-      allowedDevices: 2
+      allowedDevices: 1
     };
     this.licenses.set(license.id, license);
     return license;
@@ -16264,6 +16275,14 @@ var InMemoryPlatformStore = class {
       lastSeenAt: (/* @__PURE__ */ new Date()).toISOString()
     });
   }
+  assertDeviceAllowed(userId, license, deviceId) {
+    const devices2 = [...this.devices.values()].filter((device) => device.userId === userId);
+    const isKnownDevice = devices2.some((device) => device.deviceId === deviceId);
+    const allowedDevices = getEffectiveAllowedDevices(license);
+    if (!isKnownDevice && devices2.length >= allowedDevices) {
+      throw new DeviceLimitError(allowedDevices);
+    }
+  }
 };
 var NeonPlatformStore = class {
   static {
@@ -16280,6 +16299,7 @@ var NeonPlatformStore = class {
     const [existingLicense] = await this.db.select().from(licenses).where(eq(licenses.keyHash, keyHash)).limit(1);
     const user = existingLicense ? await this.getUser(existingLicense.userId) : await this.createUser(input.email);
     const license = existingLicense ?? await this.createLicense(keyHash, user.id, now);
+    await this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = await this.createSession(user.id, license.id, license.expiresAt);
     await this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
@@ -16318,6 +16338,7 @@ var NeonPlatformStore = class {
     if (!session) return null;
     const user = await this.getUser(session.userId);
     const license = await this.getLicense(session.licenseId);
+    await this.assertDeviceAllowed(user.id, license, input.deviceId);
     await this.db.update(walletLaunchTokens).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq(walletLaunchTokens.id, launchToken.id));
     await this.recordDevice(user.id, input.deviceId);
     return {
@@ -16742,7 +16763,7 @@ var NeonPlatformStore = class {
       userId,
       plan: "Platform Preview",
       expiresAt: new Date(now.getTime() + THIRTY_DAYS_MS),
-      allowedDevices: 2
+      allowedDevices: 1
     }).returning();
     return license;
   }
@@ -16917,6 +16938,14 @@ var NeonPlatformStore = class {
       }
     });
   }
+  async assertDeviceAllowed(userId, license, deviceId) {
+    const devices2 = await this.db.select({ deviceId: devices.deviceId }).from(devices).where(eq(devices.userId, userId));
+    const isKnownDevice = devices2.some((device) => device.deviceId === deviceId);
+    const allowedDevices = getEffectiveAllowedDevices(license);
+    if (!isKnownDevice && devices2.length >= allowedDevices) {
+      throw new DeviceLimitError(allowedDevices);
+    }
+  }
 };
 var DEFAULT_NOTIFICATION_COINS = [
   { symbol: "SOL", enabled: true, min: 5, max: 95 },
@@ -16940,10 +16969,17 @@ function toLicenseSummary(license) {
     plan: license.plan,
     expiresAt: license.expiresAt,
     status: license.status,
-    allowedDevices: license.allowedDevices
+    allowedDevices: getEffectiveAllowedDevices(license)
   };
 }
 __name(toLicenseSummary, "toLicenseSummary");
+function getEffectiveAllowedDevices(license) {
+  const plan = license.plan.toLowerCase();
+  if (plan.includes("year")) return 2;
+  if (plan.includes("week") || plan.includes("starter") || plan.includes("month") || plan.includes("popular")) return 1;
+  return Math.max(1, license.allowedDevices);
+}
+__name(getEffectiveAllowedDevices, "getEffectiveAllowedDevices");
 function normalizeLicenseKey(key) {
   return key.trim().toUpperCase().replace(/-/g, "");
 }
@@ -17509,7 +17545,15 @@ app.post("/auth/license/activate", async (c) => {
   if (!body.licenseKey?.trim() || !body.deviceId?.trim()) {
     return c.json({ error: "licenseKey and deviceId are required" }, 400);
   }
-  const response = await getPlatformStore(c.env.DATABASE_URL).activateLicense(body);
+  let response;
+  try {
+    response = await getPlatformStore(c.env.DATABASE_URL).activateLicense(body);
+  } catch (error) {
+    if (error instanceof DeviceLimitError) {
+      return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    throw error;
+  }
   setSessionCookie(c, response.session.id, response.session.expiresAt, getSessionCookieName(c));
   return c.json(response);
 });
@@ -17552,7 +17596,15 @@ app.post("/wallet-bootstrap/exchange", async (c) => {
   if (!body.token?.trim() || !body.deviceId?.trim()) {
     return c.json({ error: "token and deviceId are required" }, 400);
   }
-  const response = await getPlatformStore(c.env.DATABASE_URL).exchangeWalletBootstrap(body);
+  let response;
+  try {
+    response = await getPlatformStore(c.env.DATABASE_URL).exchangeWalletBootstrap(body);
+  } catch (error) {
+    if (error instanceof DeviceLimitError) {
+      return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    throw error;
+  }
   if (!response) {
     return c.json({ error: "Launch token is invalid or expired" }, 401);
   }

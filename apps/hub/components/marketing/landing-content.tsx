@@ -299,7 +299,7 @@ export default function LandingContent() {
       <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
         <div className="text-center mb-10 md:mb-14">
           <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
-            Phantom wallet,
+            The real wallet,
             <br />
             <span className="text-[#ab9ff2]">but yours.</span>
           </h2>

@@ -13,13 +13,14 @@ import {
   writeCachedBootstrap,
   writePendingToken,
 } from "@rp-wallet/wallet-core";
+import { appEnv } from "./app-env";
 import "@ionic/react/css/core.css";
 import "./styles.css";
 
 setupIonicReact();
 
 function TrustApp() {
-  const api = useMemo(() => new RpWalletApiClient(), []);
+  const api = useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => readCachedBootstrap("trust"));
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(false);
@@ -27,6 +28,11 @@ function TrustApp() {
   const [installReady, setInstallReady] = useState(false);
 
   useEffect(() => {
+    if (!appEnv.walletAppEnabled) {
+      setLoading(false);
+      return;
+    }
+
     const token = new URL(window.location.href).searchParams.get("token");
     if (token) {
       writePendingToken("trust", token);
@@ -57,13 +63,13 @@ function TrustApp() {
         });
 
     loadWallet
-      .catch(() => {
+      .catch((loadError) => {
         const cached = readCachedBootstrap("trust");
         if (cached) {
           setPayload(cached);
           setInstallReady(true);
         } else if (pendingToken) {
-          setError("This launch token has expired. Open Trust again from the hub.");
+          setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open Trust again from the hub."));
         } else {
           setError("Reconnect through the hub to refresh this wallet session.");
         }
@@ -79,7 +85,12 @@ function TrustApp() {
     <IonApp>
       <IonPage>
         <IonContent fullscreen>
-          {!standalone ? (
+          {!appEnv.walletAppEnabled ? (
+            <InstallGate
+              heading="This wallet is not available yet"
+              tone="This RP Wallet app is currently disabled. Check the hub for the wallets available on your license."
+            />
+          ) : !standalone ? (
             <InstallGate
               heading={installReady ? "Open Trust from your home screen" : "Install Trust on your device"}
               tone={
@@ -325,3 +336,11 @@ createRoot(document.getElementById("root")!).render(
     <TrustApp />
   </React.StrictMode>,
 );
+
+function getFriendlyBootstrapError(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+  if (error.message.includes("DEVICE_LIMIT_REACHED") || error.message.includes("already active on")) {
+    return "This license has already reached its device limit.";
+  }
+  return fallback;
+}

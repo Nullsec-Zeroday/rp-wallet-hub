@@ -28,6 +28,13 @@ import { listWalletApps, walletRegistry } from "@rp-wallet/wallet-core";
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
 
+export class DeviceLimitError extends Error {
+  constructor(allowedDevices: number) {
+    super(`This license is already active on ${allowedDevices} device${allowedDevices === 1 ? "" : "s"}.`);
+    this.name = "DeviceLimitError";
+  }
+}
+
 interface LicenseRecord extends LicenseSummary {
   keyHash: string;
   userId: string;
@@ -134,8 +141,9 @@ class InMemoryPlatformStore implements PlatformStore {
     const existingLicense = [...this.licenses.values()].find((license) => license.keyHash === keyHash);
     const user = existingLicense ? this.users.get(existingLicense.userId)! : this.createUser(input.email);
     const license = existingLicense ?? this.createLicense(keyHash, user.id, now);
-    const session = this.createSession(user.id, license.id, license.expiresAt);
 
+    this.assertDeviceAllowed(user.id, license, input.deviceId);
+    const session = this.createSession(user.id, license.id, license.expiresAt);
     this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
   }
@@ -185,6 +193,8 @@ class InMemoryPlatformStore implements PlatformStore {
     const user = this.users.get(session.userId);
     const license = this.licenses.get(session.licenseId);
     if (!user || !license) return null;
+
+    this.assertDeviceAllowed(user.id, license, input.deviceId);
 
     launchToken.consumedAt = new Date().toISOString();
     this.recordDevice(user.id, input.deviceId);
@@ -571,7 +581,7 @@ class InMemoryPlatformStore implements PlatformStore {
       plan: "Platform Preview",
       expiresAt: new Date(now.getTime() + THIRTY_DAYS_MS).toISOString(),
       status: "active",
-      allowedDevices: 2,
+      allowedDevices: 1,
     };
 
     this.licenses.set(license.id, license);
@@ -737,6 +747,16 @@ class InMemoryPlatformStore implements PlatformStore {
       lastSeenAt: new Date().toISOString(),
     });
   }
+
+  private assertDeviceAllowed(userId: string, license: LicenseRecord, deviceId: string) {
+    const devices = [...this.devices.values()].filter((device) => device.userId === userId);
+    const isKnownDevice = devices.some((device) => device.deviceId === deviceId);
+    const allowedDevices = getEffectiveAllowedDevices(license);
+
+    if (!isKnownDevice && devices.length >= allowedDevices) {
+      throw new DeviceLimitError(allowedDevices);
+    }
+  }
 }
 
 class NeonPlatformStore implements PlatformStore {
@@ -757,8 +777,9 @@ class NeonPlatformStore implements PlatformStore {
       ? await this.getUser(existingLicense.userId)
       : await this.createUser(input.email);
     const license = existingLicense ?? (await this.createLicense(keyHash, user.id, now));
-    const session = await this.createSession(user.id, license.id, license.expiresAt);
 
+    await this.assertDeviceAllowed(user.id, license, input.deviceId);
+    const session = await this.createSession(user.id, license.id, license.expiresAt);
     await this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
   }
@@ -811,6 +832,8 @@ class NeonPlatformStore implements PlatformStore {
 
     const user = await this.getUser(session.userId);
     const license = await this.getLicense(session.licenseId);
+
+    await this.assertDeviceAllowed(user.id, license, input.deviceId);
 
     await this.db
       .update(schema.walletLaunchTokens)
@@ -1348,7 +1371,7 @@ class NeonPlatformStore implements PlatformStore {
         userId,
         plan: "Platform Preview",
         expiresAt: new Date(now.getTime() + THIRTY_DAYS_MS),
-        allowedDevices: 2,
+        allowedDevices: 1,
       })
       .returning();
 
@@ -1641,6 +1664,16 @@ class NeonPlatformStore implements PlatformStore {
         },
       });
   }
+
+  private async assertDeviceAllowed(userId: string, license: DbLicense, deviceId: string) {
+    const devices = await this.db.select({ deviceId: schema.devices.deviceId }).from(schema.devices).where(eq(schema.devices.userId, userId));
+    const isKnownDevice = devices.some((device) => device.deviceId === deviceId);
+    const allowedDevices = getEffectiveAllowedDevices(license);
+
+    if (!isKnownDevice && devices.length >= allowedDevices) {
+      throw new DeviceLimitError(allowedDevices);
+    }
+  }
 }
 
 type DbLicense = typeof schema.licenses.$inferSelect;
@@ -1672,8 +1705,15 @@ function toLicenseSummary(license: Omit<LicenseRecord, "keyHash" | "userId">): L
     plan: license.plan,
     expiresAt: license.expiresAt,
     status: license.status,
-    allowedDevices: license.allowedDevices,
+    allowedDevices: getEffectiveAllowedDevices(license),
   };
+}
+
+function getEffectiveAllowedDevices(license: { plan: string; allowedDevices: number }) {
+  const plan = license.plan.toLowerCase();
+  if (plan.includes("year")) return 2;
+  if (plan.includes("week") || plan.includes("starter") || plan.includes("month") || plan.includes("popular")) return 1;
+  return Math.max(1, license.allowedDevices);
 }
 
 function normalizeLicenseKey(key: string) {

@@ -14,6 +14,7 @@ import TokenDetailPage from "./app/(wallet)/token/[symbol]/page";
 import ActivityPage from "./app/(wallet)/activity/page";
 import BrowserPage from "./app/(wallet)/browser/page";
 import SwapPage from "./app/(wallet)/swap/page";
+import { appEnv } from "./app-env";
 import SendModal from "./app/(wallet)/_components/modals/send-modal";
 import ReceiveModal from "./app/(wallet)/_components/modals/receive-modal";
 import BuyModal from "./app/(wallet)/_components/modals/buy-modal";
@@ -30,7 +31,7 @@ import { requestNotificationPermission, showSystemNotification } from "./lib/not
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
 
 type WalletModal = "send" | "receive" | "buy" | null;
-const api = new RpWalletApiClient();
+const api = new RpWalletApiClient(appEnv.apiBaseUrl);
 const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:phantom:notification-permission-prompted";
 
 function maxIsoDate(left: string, right: string) {

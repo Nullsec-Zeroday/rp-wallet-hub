@@ -13,6 +13,7 @@ import {
   writeCachedBootstrap,
   writePendingToken,
 } from "@rp-wallet/wallet-core";
+import { appEnv } from "./app-env";
 import { StrictWalletApp } from "./strict-wallet";
 import SplashScreen from "./splash-screen";
 import "@fontsource/inter/latin-400.css";
@@ -40,13 +41,18 @@ function registerPhantomServiceWorker() {
 }
 
 function PhantomApp() {
-  const api = React.useMemo(() => new RpWalletApiClient(), []);
+  const api = React.useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => readCachedBootstrap("phantom"));
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [installReady, setInstallReady] = React.useState(false);
 
   React.useEffect(() => {
+    if (!appEnv.walletAppEnabled) {
+      setLoading(false);
+      return;
+    }
+
     const token = new URL(window.location.href).searchParams.get("token");
     if (token) {
       writePendingToken("phantom", token);
@@ -77,13 +83,13 @@ function PhantomApp() {
       });
 
     loadWallet
-      .catch(() => {
+      .catch((loadError) => {
         const cached = readCachedBootstrap("phantom");
         if (cached) {
           setPayload(cached);
           setInstallReady(true);
         } else if (pendingToken) {
-          setError("This launch token has expired. Open Phantom again from the hub.");
+          setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open Phantom again from the hub."));
         } else {
           setError("Reconnect through the hub to refresh this wallet session.");
         }
@@ -94,6 +100,10 @@ function PhantomApp() {
   }, [api]);
 
   const standalone = isStandalonePwa();
+
+  if (!appEnv.walletAppEnabled) {
+    return <UnavailablePanel walletName="Phantom" />;
+  }
 
   if (!standalone) {
     return (
@@ -125,6 +135,18 @@ function PhantomApp() {
         {loading && <SplashScreen />}
       </AnimatePresence>
     </>
+  );
+}
+
+function UnavailablePanel({ walletName }: { walletName: string }) {
+  return (
+    <main className="installShell">
+      <section className="installPanel">
+        <p className="label">{walletName} PWA</p>
+        <h1 className="installTitle">This wallet is not available yet</h1>
+        <p className="muted">This RP Wallet app is currently disabled. Check the hub for the wallets available on your license.</p>
+      </section>
+    </main>
   );
 }
 
@@ -182,8 +204,8 @@ function ReconnectPanel({
       writeCachedBootstrap("phantom", response);
       clearPendingToken("phantom");
       onPayloadChange(response);
-    } catch {
-      onErrorChange("That one-time token is invalid or has expired.");
+    } catch (submitError) {
+      onErrorChange(getFriendlyBootstrapError(submitError, "That one-time token is invalid or has expired."));
     } finally {
       setSubmitting(false);
     }
@@ -224,3 +246,11 @@ createRoot(document.getElementById("root")!).render(
     <PhantomApp />
   </React.StrictMode>,
 );
+
+function getFriendlyBootstrapError(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+  if (error.message.includes("DEVICE_LIMIT_REACHED") || error.message.includes("already active on")) {
+    return "This license has already reached its device limit.";
+  }
+  return fallback;
+}
