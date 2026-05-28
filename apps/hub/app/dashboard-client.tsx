@@ -9,12 +9,12 @@ import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
 
 const DEVICE_ID_KEY = "rp_wallet_hub_device_id";
 const WALLET_RETURN_TO: Record<WalletAppId, string> = {
-  phantom: "http://localhost:5173/bootstrap",
-  trust: "http://localhost:5174/bootstrap",
+  phantom: `${process.env.NEXT_PUBLIC_PHANTOM_URL || "http://localhost:5173"}/bootstrap`,
+  trust: `${process.env.NEXT_PUBLIC_TRUST_URL || "http://localhost:5174"}/bootstrap`,
 };
 
 export default function DashboardClient() {
-  const api = useMemo(() => new RpWalletApiClient(), []);
+  const api = useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
   const [licenseKey, setLicenseKey] = useState("");
   const [session, setSession] = useState<HubSessionResponse | null>(null);
   const [loading, setLoading] = useState(false);

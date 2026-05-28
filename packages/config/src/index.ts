@@ -5,4 +5,6 @@ export const walletHosts = {
 
 export const apiDefaults = {
   localBaseUrl: "http://localhost:8787",
-} as const;
+} satisfies {
+  localBaseUrl: string;
+};
