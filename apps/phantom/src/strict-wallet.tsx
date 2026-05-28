@@ -19,6 +19,7 @@ import ReceiveModal from "./app/(wallet)/_components/modals/receive-modal";
 import BuyModal from "./app/(wallet)/_components/modals/buy-modal";
 import AccountModal from "./app/(wallet)/_components/modals/account-modal";
 import RecentActivityModal from "./app/(wallet)/_components/modals/recent-activity-modal";
+import ManageTokensModal from "./app/(wallet)/_components/modals/manage-tokens-modal";
 import SettingsPage from "./app/(wallet)/settings/page";
 import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
@@ -68,8 +69,10 @@ function WalletRouteBody() {
     coingeckoApiKey,
     customTokens,
     handleRefreshBoost,
+    manageTokensVisible,
     notificationSettings,
     profile,
+    setManageTokensVisible,
     updateBalance,
     updateNotificationSettings,
   } = useWalletStore();
@@ -93,6 +96,9 @@ function WalletRouteBody() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [accountModalVisible, setAccountModalVisible] = React.useState(false);
   const [activityVisible, setActivityVisible] = React.useState(false);
+  const [activityNestedModalOpen, setActivityNestedModalOpen] = React.useState(false);
+  const [modalClosing, setModalClosing] = React.useState(false);
+  const lastOpenedModalRef = React.useRef<string | null>(null);
 
   const THRESHOLD = 110;
   const SETTLED_Y = 140;
@@ -312,8 +318,18 @@ function WalletRouteBody() {
   const modal = searchParams.get("modal") as WalletModal;
   const symbol = searchParams.get("symbol") || undefined;
 
+  React.useEffect(() => {
+    if (accountModalVisible) lastOpenedModalRef.current = "account";
+    else if (activityVisible) lastOpenedModalRef.current = "activity";
+    else if (modal === "send") lastOpenedModalRef.current = "send";
+    else if (modal === "receive") lastOpenedModalRef.current = "receive";
+    else if (modal === "buy") lastOpenedModalRef.current = "buy";
+    else if (manageTokensVisible) lastOpenedModalRef.current = "manageTokens";
+  }, [accountModalVisible, activityVisible, manageTokensVisible, modal]);
+
   const closeModal = React.useCallback(() => {
     router.replace(pathname);
+    setModalClosing(false);
   }, [pathname, router]);
 
   const updateSpinner = React.useCallback((visualPx: number, animated = false) => {
@@ -542,30 +558,38 @@ function WalletRouteBody() {
     </div>
   );
 
-  const isScaledDown =
+  const isScaledDown = !modalClosing && (
     accountModalVisible ||
     activityVisible ||
     modal === "send" ||
     modal === "receive" ||
-    modal === "buy";
+    modal === "buy" ||
+    manageTokensVisible
+  );
 
   return (
     <div
-      className="flex w-full flex-col overflow-hidden relative"
-      style={{ backgroundColor: "#111111" }}
+      className="absolute inset-0 h-screen flex w-full flex-col overflow-hidden"
+      style={{
+        backgroundColor: "#111111",
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+      }}
     >
       <div
-        className="flex h-screen w-full overflow-hidden relative"
+        className="flex h-full w-full overflow-hidden relative"
         style={{
+          opacity: activityNestedModalOpen ? 0 : 1,
           backgroundColor: isScaledDown ? "#1c1c1e" : "#111111",
           transformOrigin: "bottom center",
           transform: isScaledDown ? "scale(0.93) translateY(-24px)" : "scale(1) translateY(0px)",
           borderRadius: isScaledDown ? "20px" : "0px",
           filter: isScaledDown ? "brightness(1.15)" : "brightness(1)",
-          transition: isScaledDown
-            ? "transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1)"
-            : "transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
-          willChange: "transform, filter, border-radius, background-color",
+          transition: lastOpenedModalRef.current === "account"
+            ? "opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1)"
+            : isScaledDown
+              ? "opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1)"
+              : "opacity 0.2s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+          willChange: "opacity, transform, filter, border-radius, background-color",
         }}
       >
         {!isTokenPage && !isSettingsPage && <WalletHeader scrolled={scrolled} onAvatarPress={() => setAccountModalVisible(true)} onActivityPress={() => setActivityVisible(true)} />}
@@ -626,28 +650,47 @@ function WalletRouteBody() {
             {content}
           </div>
         </main>
-        <CustomScrollbar
-          ref={scrollbarRef}
-          scrollRef={scrollRef}
-          style={{
-            top: isTokenPage || isSettingsPage ? 0 : "calc(60px + env(safe-area-inset-top))",
-            bottom: isTokenPage || isSettingsPage ? "calc(env(safe-area-inset-bottom, 0px))" : "calc(65px + env(safe-area-inset-bottom, 0px))",
-          }}
-        />
-        {!isSettingsPage && <WalletFooterNavigation />}
+        {!isTokenPage && (
+          <CustomScrollbar
+            ref={scrollbarRef}
+            scrollRef={scrollRef}
+            style={{
+              top: isSettingsPage ? 0 : "calc(60px + env(safe-area-inset-top))",
+              bottom: isSettingsPage ? "calc(env(safe-area-inset-bottom, 0px))" : "calc(65px + env(safe-area-inset-bottom, 0px))",
+            }}
+          />
+        )}
+        {!isTokenPage && !isSettingsPage && <WalletFooterNavigation />}
       </div>
-      <SendModal initialTokenSymbol={symbol} onClose={closeModal} visible={modal === "send"} />
-      <ReceiveModal onClose={closeModal} visible={modal === "receive"} />
-      <BuyModal onClose={closeModal} visible={modal === "buy"} />
+      <SendModal initialTokenSymbol={symbol} onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "send"} />
+      <ReceiveModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "receive"} />
+      <BuyModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "buy"} />
       <AccountModal
         visible={accountModalVisible}
-        onClose={() => setAccountModalVisible(false)}
-        onOpenProfile={() => { setAccountModalVisible(false); router.push("/settings/edit-profile"); }}
-        onOpenSettings={() => { setAccountModalVisible(false); router.push("/settings"); }}
+        onCloseStart={() => setModalClosing(true)}
+        onClose={() => {
+          setAccountModalVisible(false);
+          setModalClosing(false);
+        }}
+        onOpenProfile={() => { setAccountModalVisible(false); setModalClosing(false); router.push("/settings/edit-profile"); }}
+        onOpenSettings={() => { setAccountModalVisible(false); setModalClosing(false); router.push("/settings"); }}
       />
       <RecentActivityModal
         visible={activityVisible}
-        onClose={() => setActivityVisible(false)}
+        onCloseStart={() => setModalClosing(true)}
+        onClose={() => {
+          setActivityVisible(false);
+          setModalClosing(false);
+        }}
+        onNestedModalChange={setActivityNestedModalOpen}
+      />
+      <ManageTokensModal
+        visible={manageTokensVisible}
+        onCloseStart={() => setModalClosing(true)}
+        onClose={() => {
+          setManageTokensVisible(false);
+          setModalClosing(false);
+        }}
       />
       <Toaster
         expand={false}

@@ -14,6 +14,7 @@ interface AccountModalProps {
   onClose: () => void;
   onOpenProfile: () => void;
   onOpenSettings: () => void;
+  onCloseStart?: () => void;
 }
 
 export default function AccountModal({
@@ -21,6 +22,7 @@ export default function AccountModal({
   onClose,
   onOpenProfile,
   onOpenSettings,
+  onCloseStart,
 }: AccountModalProps) {
   const {
     walletName,
@@ -49,6 +51,7 @@ export default function AccountModal({
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    onCloseStart?.();
     setTimeout(() => {
       onClose();
     }, 200);

@@ -2,18 +2,20 @@
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import Image from "next/image";
-import { ChevronLeft, Share, SendIcon } from "lucide-react";
+import { ChevronLeft, Share } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/lib/wallet-store";
-import { TOKEN_MAP, formatCurrency, CURRENCY_SYMBOLS } from "@/lib/wallet-data";
+import { TOKEN_MAP, formatCurrency, CURRENCY_SYMBOLS, TOKENS } from "@/lib/wallet-data";
 import { getStaticPriceData, fetchLivePrices, getStaticPrices } from "@/lib/coingecko-service";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import WalletFooterNavigation from "@/app/(wallet)/_components/wallet-footer-navigation";
 import { apiDefaults } from "@rp-wallet/config";
 
 import InteractiveChart, { type ChartPoint } from "@/components/wallet/interactive-chart";
-// Eagerly imported: removes the ~200ms dynamic import delay on every token page visit
-import { LongIcon, ShortIcon, ReceiveIcon, MoreIcon } from "@/components/wallet/action-icons";
+import { LongIcon, ShortIcon, ReceiveIcon, MoreIcon, SendIcon } from "@/components/wallet/action-icons";
+import CustomScrollbar, { CustomScrollbarRef } from "@/app/(wallet)/_components/custom-scrollbar";
+import TokenLogo from "@/app/(wallet)/_components/token-logo";
 
 
 const TIME_FRAMES = ["1H", "1D", "1W", "1M", "YTD", "ALL"];
@@ -92,7 +94,7 @@ function ActionButton({ Icon, label, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-2 bg-[#1c1c1c] rounded-[20px] aspect-square active:scale-[0.93] transition-transform duration-[50ms]"
+      className="flex flex-col items-center justify-center gap-1.5 bg-[#232323] rounded-2xl py-4 active:scale-[0.93] transition-transform duration-[50ms]"
     >
       <Icon size={24} strokeWidth={2} className="text-[#ac9cf2]" />
       <span className="text-xs font-bold" style={{ color: "rgb(180, 180, 180)" }}>{label}</span>
@@ -133,6 +135,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
   const refreshingRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<CustomScrollbarRef>(null);
   const pulling = useRef(false);
   const startY = useRef(0);
   const currentPull = useRef(0);
@@ -228,6 +231,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
       ? `transform ${duration} cubic-bezier(0.16, 1, 0.3, 1)`
       : "none";
     el.style.transform = `translateY(${y}px)`;
+    scrollbarRef.current?.update(y);
   };
 
   useEffect(() => {
@@ -503,11 +507,14 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
     return formatCurrency(val, baseCurrency);
   };
 
+  const handleScroll = () => {
+    scrollbarRef.current?.show();
+  };
+
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-pt-bg relative">
+    <div className="flex flex-col h-full overflow-hidden bg-pt-bg relative">
       <div className="flex-1 flex flex-col min-h-0 relative z-10">
 
-        {/* Header - Strictly fixed to the viewport top */}
         <div
           className="fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-4 pb-3 pt-[calc(16px+env(safe-area-inset-top))] md:pt-4"
           style={{
@@ -517,13 +524,12 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
           <button className="text-white active:opacity-60 shrink-0" onClick={() => router.back()}>
             <ChevronLeft size={26} strokeWidth={2} />
           </button>
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-[#1c1c1c] shrink-0 flex items-center justify-center text-white font-bold text-sm">
-            {token.logoUrl ? (
-              <Image src={token.logoUrl} alt={token.name} width={40} height={40} className="w-full h-full object-cover" />
-            ) : (
-              <span style={{ color: token.color }}>{token.icon}</span>
-            )}
-          </div>
+          <TokenLogo
+            token={token}
+            size={40}
+            liveImage={prices[token.symbol]?.image}
+            hideChainIcon={token.symbol === "USDC"}
+          />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <span className="text-white font-bold text-lg">{token.name}</span>
@@ -575,6 +581,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
 
         <div
           ref={scrollRef}
+          onScroll={handleScroll}
           className={`flex-1 overflow-y-auto overflow-x-hidden overscroll-contain pb-48 relative pt-[calc(68px+env(safe-area-inset-top))]`}
         >
           <div
@@ -582,24 +589,24 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
             className="h-full"
           >
 
-            <div className="px-4 pt-4 pb-3" style={{ minHeight: "110px" }}>
-              <div className="text-white font-medium" style={{ fontSize: "38px", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+            <div className="px-4 pt-2 pb-3" style={{ minHeight: "110px" }}>
+              <div className="text-white font-medium" style={{ fontSize: 38, lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: 600 }}>
                 {formatVal(currentPrice)}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <span
-                  className="font-bold"
-                  style={{ color: absoluteValueColor, fontSize: 17, letterSpacing: "-0.01em" }}
+                  className="font-medium"
+                  style={{ color: isPositiveChange ? "var(--color-phantom-green)" : "var(--color-phantom-red)", fontSize: 15, letterSpacing: "-0.01em" }}
                 >
                   {isPositiveChange ? "+" : "-"}{formatVal(Math.abs(absoluteChange))}
                 </span>
                 <span
-                  className="font-bold rounded-md"
+                  className="font-bold rounded-sm"
                   style={{
                     backgroundColor: isPositiveChange ? "var(--color-phantom-green)" : "var(--color-phantom-red)",
                     color: "#000000",
                     fontSize: 13,
-                    padding: "2px 7px",
+                    padding: "1px 7px",
                   }}
                 >
                   {isPositiveChange ? "+" : ""}{currentDisplayChange.toFixed(2)}%
@@ -610,7 +617,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
             <div className="w-full">
               {isLoading ? (
                 <div className="relative flex-1 w-full flex items-center justify-center pointer-events-none" style={{ height: "200px" }}>
-                  <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 border-t border-dashed border-[#333] w-full" />
+                  <div className="absolute left-0 right-0 border-t border-dashed border-[#333] w-full" />
                 </div>
               ) : (
                 <div className="w-full relative select-none interactive-chart-container" style={{ height: "200px" }}>
@@ -625,25 +632,23 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
               )}
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center justify-between p-4">
               {TIME_FRAMES.map((tf) => (
                 <button
                   key={tf}
                   onClick={() => setActiveTimeFrame(tf)}
-                  className="flex-1 py-2 rounded-2xl text-sm active:opacity-70"
+                  className="flex-1 py-1 rounded-sm font-semibold text-sm"
                   style={{
                     background: activeTimeFrame === tf ? "rgb(42, 42, 42)" : "transparent",
                     color: activeTimeFrame === tf ? "#ac9cf2" : "rgb(136, 136, 136)"
                   }}
                 >
-                  <span className="font-bold">
-                    {tf}
-                  </span>
+                  {tf}
                 </button>
               ))}
             </div>
 
-            <div className="grid grid-cols-4 gap-3 px-4 mb-4">
+            <div className="grid grid-cols-4 gap-3 p-4">
               {userBalance > 0 ? (
                 <ActionButton Icon={SendIcon} label="Send" onClick={() => router.push(`/home?modal=send&symbol=${symbol}`)} />
               ) : (
@@ -651,10 +656,10 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
               )}
               <ActionButton Icon={LongIcon} label="Long" />
               <ActionButton Icon={ShortIcon} label="Short" />
-              <ActionButton Icon={MoreIcon} label="Options" />
+              <ActionButton Icon={MoreIcon} label="More" />
             </div>
 
-            <div className="mx-4 mb-5 px-4 py-4 rounded-2xl flex items-center justify-between" style={{ background: "rgb(30, 30, 30)" }}>
+            <div className="mx-4 mt-2 mb-8 p-4 rounded-2xl flex items-center justify-between" style={{ background: "rgb(30, 30, 30)" }}>
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
                   {activeChatters.map((chatter, idx) => (
@@ -672,17 +677,143 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
                 </div>
                 <span className="text-[#d3d3d3] text-sm">{chattingCount} chatting...</span>
               </div>
-              <button className="text-white font-bold text-sm active:opacity-70">Join Chat</button>
+              <button className="text-white/90 font-semibold text-sm active:opacity-70 px-4 py-2.5 bg-[#1a1a1a] rounded-lg">Join Chat</button>
             </div>
 
             <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-3">24h Performance</h2>
+              <h2 className="text-white/60 font-medium text-lg mb-2">Position</h2>
+              <div className="flex gap-3 mb-3">
+                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
+                  <div className="text-[#888888] text-sm mb-1">Value</div>
+                  <div className="text-white font-medium text-lg">{formatVal(positionValue)}</div>
+                </div>
+                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
+                  <div className="text-[#888888] text-sm mb-1">Balance</div>
+                  <div className="text-white font-medium text-lg">{userBalance > 0 ? userBalance.toFixed(5) : "0"}</div>
+                </div>
+              </div>
+              <div className="rounded-xl px-4 py-4 flex items-center justify-between" style={{ background: "rgb(26, 26, 26)" }}>
+                <span className="text-[#888888] text-base">24h Return</span>
+                <span className="font-medium text-base" style={{ color: position24hReturn >= 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
+                  {position24hReturn > 0 ? "+" : position24hReturn < 0 ? "-" : ""}{formatVal(Math.abs(position24hReturn))}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-4 mb-5">
+              <h2 className="text-white/60 font-medium text-lg">Activity</h2>
+              <div className="flex flex-col gap-2">
+                {tokenTransactions.length === 0 ? (
+                  <p className="text-[#888888] text-sm ml-1">No recent activity.</p>
+                ) : tokenTransactions.slice(0, 3).map(tx => {
+                  const isReceive = tx.type === "receive";
+                  const isSwap = tx.type === "swap";
+
+                  const getTokenInfo = (sym: string) => {
+                    const staticToken = TOKENS.find((entry) => entry.symbol === sym);
+                    if (staticToken) return staticToken;
+                    return customTokens.find((entry) => entry.symbol === sym) || TOKENS[0];
+                  };
+
+                  let amountStr = "";
+                  if (isSwap) {
+                    amountStr = tx.toAmount ? `+${tx.toAmount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.toToken}` : "";
+                  } else {
+                    amountStr = `${isReceive ? "+" : "-"}${tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.token}`;
+                  }
+
+                  return (
+                    <button
+                      key={tx.id}
+                      className="flex items-center px-4 py-[14px] text-left active:scale-[0.98] transition-transform w-full bg-[#222222] rounded-[20px]"
+                    >
+                      <div className="flex items-center flex-1 min-w-0">
+                        {isSwap ? (
+                          <div className="relative flex-shrink-0 mr-3 w-[44px] h-[44px]">
+                            <div className="absolute top-0 left-0 z-0">
+                              <TokenLogo
+                                token={getTokenInfo(tx.toToken || "USDC")}
+                                size={30}
+                                liveImage={prices[tx.toToken || "USDC"]?.image}
+                                hideChainIcon
+                              />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 z-10 rounded-full border-[2.5px] border-[#222222] bg-[#222222]">
+                              <TokenLogo
+                                token={token}
+                                size={30}
+                                liveImage={prices[token.symbol]?.image}
+                                hideChainIcon
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative flex-shrink-0 mr-3">
+                            <TokenLogo
+                              token={token}
+                              size={44}
+                              liveImage={prices[token.symbol]?.image}
+                              hideChainIcon
+                            />
+                            <div
+                              className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center border-[2.5px] border-[#222222]"
+                              style={{ backgroundColor: isReceive ? "#ab9ff2" : "#3b82f6" }}
+                            >
+                              {isReceive ? (
+                                <ArrowDown size={12} color="#000000" strokeWidth={3} />
+                              ) : (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="-ml-[1px]">
+                                  <path d="m10 14 1.086 3.802c.831 2.909 4.958 2.898 5.774-.015L20.04 6.424c.42-1.502-.963-2.886-2.465-2.465L6.213 7.14c-2.913.816-2.924 4.943-.015 5.774zm0 0 3-3" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="text-[#eeeeee] font-semibold text-[16px] leading-tight truncate">
+                              {isSwap ? "Swapped" : isReceive ? "Received" : "Sent"}
+                            </div>
+                            <div
+                              className="font-semibold text-[15px] leading-tight flex-shrink-0 text-right"
+                              style={{ color: isReceive || isSwap ? "rgb(48, 164, 108)" : "#f3f3f3" }}
+                            >
+                              {amountStr}
+                            </div>
+                          </div>
+                          <div className="mt-1 flex items-center justify-between">
+                            <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight truncate">
+                              {isSwap ? (
+                                "Phantom"
+                              ) : isReceive ? (
+                                `From ${shortenAddress(tx.from)}`
+                              ) : (
+                                `To ${shortenAddress(tx.to)}`
+                              )}
+                            </div>
+                            {isSwap && (
+                              <div className="text-[#cdcdcd] text-[14px] font-medium leading-tight flex-shrink-0 text-right">
+                                {`-${tx.amount} ${tx.token}`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="px-4 mb-5">
+              <h2 className="text-white/60 font-medium text-lg mb-3">24h Performance</h2>
               <div className="bg-[#1a1a1a] rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Volume</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold text-base">{tokenDetails.totalVolume ? formatVal(tokenDetails.totalVolume, true) : "—"}</span>
-                    <span className="font-semibold text-sm" style={{ color: (liveChange * 1.5) > 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
+                    <span className="text-white/80 font-medium text-base">{tokenDetails.totalVolume ? formatVal(tokenDetails.totalVolume, true) : "—"}</span>
+                    <span className="font-medium text-base" style={{ color: (liveChange * 1.5) > 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
                       {(liveChange * 1.5) > 0 ? "+" : ""}{(liveChange * 1.5).toFixed(2)}%
                     </span>
                   </div>
@@ -690,8 +821,8 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottomWidth: "medium", borderBottomStyle: "none" }}>
                   <span className="text-[#888888] text-base">Traders</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold text-base">{tokenDetails.totalVolume ? formatCompact(tokenDetails.totalVolume * 0.000042) : "—"}</span>
-                    <span className="font-semibold text-sm" style={{ color: (liveChange * 0.8) > 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
+                    <span className="text-white/80 font-semibold text-base">{tokenDetails.totalVolume ? formatCompact(tokenDetails.totalVolume * 0.000042) : "—"}</span>
+                    <span className="font-medium text-smbase" style={{ color: (liveChange * 0.8) > 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
                       {(liveChange * 0.8) > 0 ? "+" : ""}{(liveChange * 0.8).toFixed(2)}%
                     </span>
                   </div>
@@ -699,80 +830,8 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
               </div>
             </div>
 
-            {/* Activity Section Hook */}
             <div className="px-4 mb-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-white font-bold text-xl">Activity</h2>
-                <button className="text-[#ac9cf2] font-semibold text-sm">See More</button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {tokenTransactions.length === 0 ? (
-                  <p className="text-[#888888] text-sm ml-1">No recent activity.</p>
-                ) : tokenTransactions.slice(0, 3).map(tx => {
-                  const isReceive = tx.type === "receive";
-                  const isSend = tx.type === "send";
-                  const isSwap = tx.type === "swap";
-                  const amountStr = isSwap && tx.toToken
-                    ? `${tx.amount} ${tx.token} → ${tx.toAmount?.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.toToken}`
-                    : `${isReceive ? "+" : isSwap ? "" : "-"}${tx.amount} ${tx.token}`;
-
-                  return (
-                    <button key={tx.id} className="flex items-center gap-3 px-4 py-4 rounded-2xl text-left active:scale-[0.98] transition-transform w-full" style={{ background: "rgb(26, 26, 26)" }}>
-                      <div className="relative shrink-0">
-                        <div className="w-12 h-12 rounded-full overflow-hidden bg-[#0a0a0a] flex items-center justify-center text-white font-bold text-sm">
-                          {token.logoUrl ? (
-                            <Image src={token.logoUrl} alt={token.name} width={48} height={48} className="w-full h-full object-cover" />
-                          ) : (
-                            <span style={{ color: token.color }}>{token.icon}</span>
-                          )}
-                        </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: isReceive ? "rgb(124, 58, 237)" : isSwap ? "#EC4899" : "rgb(59, 130, 246)" }}>
-                          {isReceive ? (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-                          ) : isSwap ? (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13" /><path d="M22 2L15 22 11 13 2 9l20-7z" /></svg>
-                          ) : (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13" /><path d="M22 2L15 22 11 13 2 9l20-7z" /></svg>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white font-bold text-base">{isReceive ? "Received" : isSend ? "Sent" : "Swapped"}</div>
-                        <div className="text-[#888888] text-sm">
-                          {isReceive ? `From ${shortenAddress(tx.from)}` : `To ${shortenAddress(tx.to)}`}
-                        </div>
-                      </div>
-                      <div className="font-semibold text-base shrink-0" style={{ color: isReceive ? "rgb(11, 165, 106)" : "rgb(255, 255, 255)" }}>
-                        {amountStr}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-3">Position</h2>
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
-                  <div className="text-[#888888] text-sm mb-1">Balance</div>
-                  <div className="text-white font-bold text-xl">{userBalance > 0 ? userBalance.toFixed(5) : "0"}</div>
-                </div>
-                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
-                  <div className="text-[#888888] text-sm mb-1">Value</div>
-                  <div className="text-white font-bold text-xl">{formatVal(positionValue)}</div>
-                </div>
-              </div>
-              <div className="rounded-2xl px-4 py-4 flex items-center justify-between" style={{ background: "rgb(26, 26, 26)" }}>
-                <span className="text-[#888888] text-base">24h Return</span>
-                <span className="font-bold text-base" style={{ color: position24hReturn >= 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
-                  {position24hReturn > 0 ? "+" : position24hReturn < 0 ? "-" : ""}{formatVal(Math.abs(position24hReturn))}
-                </span>
-              </div>
-            </div>
-
-            <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-3">Perps Position</h2>
+              <h2 className="text-white/60 font-medium text-lg mb-3">Perps Position</h2>
               <button className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl active:opacity-70" style={{ background: "rgb(26, 26, 26)" }}>
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgb(46, 16, 101)" }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12c-2-2.5-4-4-6-4a4 4 0 0 0 0 8c2 0 4-1.5 6-4zm0 0c2 2.5 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.5-6 4z" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
@@ -785,7 +844,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
             </div>
 
             <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-3">Your Stake</h2>
+              <h2 className="text-white/60 font-medium text-lg mb-3">Your Stake</h2>
               <div className="rounded-2xl p-4 overflow-hidden relative" style={{ background: "rgb(13, 31, 23)" }}>
                 <div className="text-[#888888] text-sm font-semibold mb-1">Stake with Phantom</div>
                 <div className="text-white font-bold text-xl mb-4">Earn <span style={{ color: "rgb(11, 165, 106)" }}>3.22%</span> per year</div>
@@ -803,37 +862,37 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
             </div>
 
             <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-3">Info</h2>
+              <h2 className="text-white/60 font-medium text-lg mb-3">Info</h2>
               <div className="bg-[#1a1a1a] rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Name</span>
-                  <span className="text-white font-bold text-base">{token.name}</span>
+                  <span className="text-white font-medium text-base">{token.name}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Symbol</span>
-                  <span className="text-white font-bold text-base">{token.symbol}</span>
+                  <span className="text-white font-medium text-base">{token.symbol}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Network</span>
-                  <span className="text-white font-bold text-base">{token.name}</span>
+                  <span className="text-white font-medium text-base">{token.name}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Market Cap</span>
-                  <span className="text-white font-bold text-base">{tokenDetails.marketCap ? formatVal(tokenDetails.marketCap, true) : "—"}</span>
+                  <span className="text-white font-medium text-base">{tokenDetails.marketCap ? formatVal(tokenDetails.marketCap, true) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottom: "1px solid rgb(42, 42, 42)" }}>
                   <span className="text-[#888888] text-base">Total Supply</span>
-                  <span className="text-white font-bold text-base">{tokenDetails.totalSupply ? formatCompact(tokenDetails.totalSupply) : "—"}</span>
+                  <span className="text-white font-medium text-base">{tokenDetails.totalSupply ? formatCompact(tokenDetails.totalSupply) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-4" style={{ borderBottomWidth: "medium", borderBottomStyle: "none" }}>
                   <span className="text-[#888888] text-base">Circulating Supply</span>
-                  <span className="text-white font-bold text-base">{tokenDetails.circulatingSupply ? formatCompact(tokenDetails.circulatingSupply) : "—"}</span>
+                  <span className="text-white font-medium text-base">{tokenDetails.circulatingSupply ? formatCompact(tokenDetails.circulatingSupply) : "—"}</span>
                 </div>
               </div>
             </div>
 
             <div className="px-4 mb-5">
-              <h2 className="text-white font-bold text-xl mb-2">About</h2>
+              <h2 className="text-white/80 font-semibold text-xl mb-2">About</h2>
               <p className="text-[#cccccc] text-base leading-relaxed" style={{ overflow: "hidden", display: "-webkit-box", WebkitLineClamp: showFullAbout ? 999 : 3, WebkitBoxOrient: "vertical" }} dangerouslySetInnerHTML={{ __html: tokenDetails.description || `${token.name} is a cryptocurrency token.` }} />
               <button onClick={() => setShowFullAbout(!showFullAbout)} className="text-[#ac9cf2] text-sm font-semibold mt-1">
                 {showFullAbout ? "Show Less" : "Show More"}
@@ -874,6 +933,14 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
           </div>
         </div>
       </div>
+      <CustomScrollbar
+        ref={scrollbarRef}
+        scrollRef={scrollRef}
+        style={{
+          top: "calc(60px + env(safe-area-inset-top))",
+          bottom: 0
+        }}
+      />
       <WalletFooterNavigation activeTabOverride="/home" blurred={false} />
     </div>
 

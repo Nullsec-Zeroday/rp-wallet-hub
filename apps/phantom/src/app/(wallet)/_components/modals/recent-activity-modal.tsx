@@ -12,6 +12,8 @@ import { useLivePrices } from "@/hooks/useLivePrices";
 interface RecentActivityModalProps {
   visible: boolean;
   onClose: () => void;
+  onCloseStart?: () => void;
+  onNestedModalChange?: (isOpen: boolean) => void;
 }
 
 const formatGroupDate = (timestamp: number) => {
@@ -55,7 +57,7 @@ const shortenAddress = (addr: string) => {
   return addr.slice(0, 4) + "..." + addr.slice(-4);
 };
 
-export default function RecentActivityModal({ visible, onClose }: RecentActivityModalProps) {
+export default function RecentActivityModal({ visible, onClose, onCloseStart, onNestedModalChange }: RecentActivityModalProps) {
   const { transactions, showBalances, toggleShowBalances, customTokens } = useWalletStore();
   const { prices } = useLivePrices();
 
@@ -94,12 +96,20 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
     }
   }, [visible]);
 
+  React.useEffect(() => {
+    if (onNestedModalChange) {
+      const isNestedOpen = (!!selectedTx && !isDetailClosing) || (showSolscan && !isSolscanClosing);
+      onNestedModalChange(isNestedOpen);
+    }
+  }, [selectedTx, isDetailClosing, showSolscan, isSolscanClosing, onNestedModalChange]);
+
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    if (onCloseStart) onCloseStart();
     setTimeout(() => {
       onClose();
-    }, 200);
+    }, 600);
   };
 
   if (!visible) return null;
@@ -111,36 +121,223 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
         className="absolute inset-0 flex-1"
         style={{
           backgroundColor: "rgba(0,0,0,0.15)",
-          animation: isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards",
+          animation: isClosing ? "fadeOut 0.6s ease forwards" : "fadeIn 0.6s ease forwards",
         }}
         onClick={handleClose}
       />
 
-      {/* Sheet */}
+      {/* Main Sheet Wrapper */}
       <div
-        className="w-full max-w-lg flex flex-col rounded-t-[32px] overflow-hidden relative"
+        className="w-full max-w-lg absolute bottom-0 z-10"
         style={{
-          background: "rgb(17, 17, 17)",
           height: "94vh",
-          animation: isClosing
-            ? "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards"
-            : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
-          willChange: "transform",
-          transform: "translateZ(0)"
+          transformOrigin: "top center",
+          transform: (selectedTx && !isDetailClosing) ? "scale(0.93) translateY(-16px)" : "scale(1) translateY(0px)",
+          filter: (selectedTx && !isDetailClosing) ? "brightness(1.15)" : "brightness(1)",
+          transition: "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "transform, filter",
         }}
       >
+        {/* Main Sheet Content */}
+        <div
+          className="w-full h-full flex flex-col overflow-hidden"
+          style={{
+            background: (selectedTx && !isDetailClosing) ? "#1c1c1e" : "rgb(17, 17, 17)",
+            animation: isClosing
+              ? "slideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+              : "slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+            borderRadius: (selectedTx && !isDetailClosing) ? "20px" : "32px 32px 0 0",
+            transition: "border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+            willChange: "border-radius, background-color, transform",
+          }}
+        >
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0 relative">
 
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+            <span className="text-xl font-medium text-[#eeeeee]">Recent Activity</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleShowBalances}
+                className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
+              >
+                {showBalances ? (
+                  <EyeOff size={24} className="text-[#eeeeee]" strokeWidth={1.8} />
+                ) : (
+                  <Eye size={24} className="text-[#eeeeee]" strokeWidth={1.8} />
+                )}
+              </button>
+              <button
+                onClick={handleClose}
+                className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Scroll Content */}
+          <div className="flex-1 overflow-y-auto px-4 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4" style={{ overscrollBehavior: "contain" }}>
+            {groupedTransactions.length === 0 ? (
+              <div className="py-10 flex flex-col items-center">
+                <p className="text-base text-[#888888]">No recent activity</p>
+              </div>
+            ) : (
+              groupedTransactions.map((group) => (
+                <div key={group.date} className="mb-6">
+                  <div className="px-1 pb-3 text-[#eeeeee] font-semibold text-[15px]">
+                    {group.date}
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {group.txs.map((tx, idx) => {
+                      const tokenInfo = getTokenInfo(tx.token);
+                      const isReceive = tx.type === "receive";
+                      const isSend = tx.type === "send";
+                      const isSwap = tx.type === "swap";
+
+                      let amountStr = "";
+                      if (isSwap) {
+                        amountStr = tx.toAmount ? `+${tx.toAmount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.toToken}` : "";
+                      } else {
+                        amountStr = `${isReceive ? "+" : "-"}${tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.token}`;
+                      }
+
+                      return (
+                        <button
+                          key={tx.id}
+                          onClick={() => setSelectedTx(tx)}
+                          className="flex items-center px-4 py-[14px] text-left active:scale-[0.98] transition-transform w-full bg-[#222222] rounded-[20px]"
+                        >
+                          <div className="flex items-center flex-1 min-w-0">
+                            {isSwap ? (
+                              <div className="relative flex-shrink-0 mr-3 w-[44px] h-[44px]">
+                                <div className="absolute top-0 left-0 z-0">
+                                  <TokenLogo
+                                    token={getTokenInfo(tx.toToken || "USDC")}
+                                    size={30}
+                                    liveImage={prices[tx.toToken || "USDC"]?.image}
+                                    hideChainIcon
+                                  />
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 z-10 rounded-full border-[2.5px] border-[#222222] bg-[#222222]">
+                                  <TokenLogo
+                                    token={tokenInfo}
+                                    size={30}
+                                    liveImage={prices[tokenInfo.symbol]?.image}
+                                    hideChainIcon
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="relative flex-shrink-0 mr-3">
+                                <TokenLogo
+                                  token={tokenInfo}
+                                  size={44}
+                                  liveImage={prices[tokenInfo.symbol]?.image}
+                                  hideChainIcon
+                                />
+                                <div
+                                  className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center border-[2.5px] border-[#222222]"
+                                  style={{ backgroundColor: isReceive ? "#ab9ff2" : "#3b82f6" }}
+                                >
+                                  {isReceive ? (
+                                    <ArrowDown size={12} color="#000000" strokeWidth={3} />
+                                  ) : (
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="-ml-[1px]">
+                                      <path d="m10 14 1.086 3.802c.831 2.909 4.958 2.898 5.774-.015L20.04 6.424c.42-1.502-.963-2.886-2.465-2.465L6.213 7.14c-2.913.816-2.924 4.943-.015 5.774zm0 0 3-3" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="text-[#eeeeee] font-semibold text-[16px] leading-tight truncate">
+                                  {isSwap ? "Swapped" : isReceive ? "Received" : "Sent"}
+                                </div>
+                                <div
+                                  className="font-semibold text-[15px] leading-tight flex-shrink-0 text-right"
+                                  style={{ color: isReceive || isSwap ? "rgb(48, 164, 108)" : "#f3f3f3" }}
+                                >
+                                  {showBalances ? amountStr : "••••"}
+                                </div>
+                              </div>
+                              <div className="mt-1 flex items-center justify-between">
+                                <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight truncate">
+                                  {isSwap ? (
+                                    "Phantom"
+                                  ) : isReceive ? (
+                                    `From ${shortenAddress(tx.from)}`
+                                  ) : (
+                                    `To ${shortenAddress(tx.to)}`
+                                  )}
+                                </div>
+                                {isSwap && (
+                                  <div className="text-[#cdcdcd] text-[14px] font-medium leading-tight flex-shrink-0 text-right">
+                                    {showBalances ? `-${tx.amount} ${tx.token}` : "••••"}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+            </div>
+          </div>
+        </div>
+      </div>
           {/* Transaction Detail View Overlay */}
-          {selectedTx && (
+      {selectedTx && (
+        <>
+          <div
+            className="absolute inset-0 flex-1 z-20"
+            style={{
+              animation: isDetailClosing ? "fadeOut 0.6s ease forwards" : "fadeIn 0.6s ease forwards",
+            }}
+            onClick={() => {
+              setIsDetailClosing(true);
+              setTimeout(() => {
+                setSelectedTx(null);
+                setIsDetailClosing(false);
+              }, 600);
+            }}
+          />
+          {/* Transaction Detail View Wrapper */}
+          <div
+            className="w-full max-w-lg absolute bottom-0 z-30"
+            style={{
+              height: "94vh",
+              transformOrigin: "top center",
+              transform: (showSolscan && !isSolscanClosing) ? "scale(0.93) translateY(-16px)" : "scale(1) translateY(0px)",
+              filter: (showSolscan && !isSolscanClosing) ? "brightness(1.15)" : "brightness(1)",
+              transition: "transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "transform, filter",
+            }}
+          >
+            {/* Transaction Detail View Content */}
             <div
-              className="absolute inset-0 z-[40] flex flex-col bg-[#111111]"
+              className="w-full h-full flex flex-col overflow-hidden"
               style={{
-                animation: isDetailClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.2s ease forwards"
+                background: (showSolscan && !isSolscanClosing) ? "#1c1c1e" : "rgb(17, 17, 17)",
+                borderRadius: (showSolscan && !isSolscanClosing) ? "20px" : "32px 32px 0 0",
+                animation: isDetailClosing
+                  ? "slideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+                  : "slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+                transition: "border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1)",
+                willChange: "border-radius, background-color, transform",
               }}
             >
+              <div className="flex-1 flex flex-col bg-[#111111]">
               {/* Detail Header */}
               <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
                 <span className="text-xl font-medium text-[#eeeeee]">
@@ -152,7 +349,7 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                     setTimeout(() => {
                       setSelectedTx(null);
                       setIsDetailClosing(false);
-                    }, 200);
+                    }, 600);
                   }}
                   className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
                 >
@@ -274,17 +471,38 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                   View on Solscan
                 </button>
               </div>
+              </div>
             </div>
-          )}
+          </div>
+        </>
+      )}
 
-          {/* Solscan Overlay */}
-          {showSolscan && (
-            <div
-              className="absolute inset-0 z-[50] flex flex-col bg-[#111111] overflow-y-auto"
-              style={{
-                animation: isSolscanClosing ? "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards" : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards"
-              }}
-            >
+      {/* Solscan Overlay */}
+      {showSolscan && (
+        <>
+          <div
+            className="absolute inset-0 flex-1 z-40"
+            style={{
+              animation: isSolscanClosing ? "fadeOut 0.6s ease forwards" : "fadeIn 0.6s ease forwards",
+            }}
+            onClick={() => {
+              setIsSolscanClosing(true);
+              setTimeout(() => {
+                setShowSolscan(false);
+                setIsSolscanClosing(false);
+              }, 600);
+            }}
+          />
+          <div
+            className="w-full max-w-lg flex flex-col overflow-hidden absolute bottom-0 z-50 bg-[#111111] overflow-y-auto rounded-t-[32px]"
+            style={{
+              height: "94vh",
+              animation: isSolscanClosing
+                ? "slideDown 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+                : "slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+              borderRadius: "32px 32px 0 0",
+            }}
+          >
               <div className="bg-[#111111] pt-0 pb-5">
                 {/* Header Row */}
                 <div className="flex items-center justify-between px-4 py-3 sticky top-0 bg-[#111111] z-20">
@@ -295,7 +513,7 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                         setTimeout(() => {
                           setShowSolscan(false);
                           setIsSolscanClosing(false);
-                        }, 300);
+                        }, 600);
                       }}
                       className="p-1 active:opacity-60 transition-opacity"
                     >
@@ -515,148 +733,28 @@ export default function RecentActivityModal({ visible, onClose }: RecentActivity
                 </div>
               </div>
             </div>
-          )}
+        </>
+      )}
 
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-            <span className="text-xl font-medium text-[#eeeeee]">Recent Activity</span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={toggleShowBalances}
-                className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
-              >
-                {showBalances ? (
-                  <EyeOff size={24} className="text-[#eeeeee]" strokeWidth={1.8} />
-                ) : (
-                  <Eye size={24} className="text-[#eeeeee]" strokeWidth={1.8} />
-                )}
-              </button>
-              <button
-                onClick={handleClose}
-                className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round">
-                  <path d="M18 6L6 18M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
 
-          {/* Scroll Content */}
-          <div className="flex-1 overflow-y-auto px-4 pb-[calc(24px+env(safe-area-inset-bottom))] pt-4" style={{ overscrollBehavior: "contain" }}>
-            {groupedTransactions.length === 0 ? (
-              <div className="py-10 flex flex-col items-center">
-                <p className="text-base text-[#888888]">No recent activity</p>
-              </div>
-            ) : (
-              groupedTransactions.map((group) => (
-                <div key={group.date} className="mb-6">
-                  <div className="px-1 pb-3 text-[#eeeeee] font-semibold text-[15px]">
-                    {group.date}
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {group.txs.map((tx, idx) => {
-                      const tokenInfo = getTokenInfo(tx.token);
-                      const isReceive = tx.type === "receive";
-                      const isSend = tx.type === "send";
-                      const isSwap = tx.type === "swap";
-
-                      let amountStr = "";
-                      if (isSwap) {
-                        amountStr = tx.toAmount ? `+${tx.toAmount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.toToken}` : "";
-                      } else {
-                        amountStr = `${isReceive ? "+" : "-"}${tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.token}`;
-                      }
-
-                      return (
-                        <button
-                          key={tx.id}
-                          onClick={() => setSelectedTx(tx)}
-                          className="flex items-center px-4 py-[14px] text-left active:scale-[0.98] transition-transform w-full bg-[#222222] rounded-[20px]"
-                        >
-                          <div className="flex items-center flex-1 min-w-0">
-                            {isSwap ? (
-                              <div className="relative flex-shrink-0 mr-3 w-[44px] h-[44px]">
-                                <div className="absolute top-0 left-0 z-0">
-                                  <TokenLogo
-                                    token={getTokenInfo(tx.toToken || "USDC")}
-                                    size={30}
-                                    liveImage={prices[tx.toToken || "USDC"]?.image}
-                                    hideChainIcon
-                                  />
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 z-10 rounded-full border-[2.5px] border-[#222222] bg-[#222222]">
-                                  <TokenLogo
-                                    token={tokenInfo}
-                                    size={30}
-                                    liveImage={prices[tokenInfo.symbol]?.image}
-                                    hideChainIcon
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="relative flex-shrink-0 mr-3">
-                                <TokenLogo
-                                  token={tokenInfo}
-                                  size={44}
-                                  liveImage={prices[tokenInfo.symbol]?.image}
-                                  hideChainIcon
-                                />
-                                <div
-                                  className="absolute -bottom-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center border-[2.5px] border-[#222222]"
-                                  style={{ backgroundColor: isReceive ? "#ab9ff2" : "#3b82f6" }}
-                                >
-                                  {isReceive ? (
-                                    <ArrowDown size={12} color="#000000" strokeWidth={3} />
-                                  ) : (
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="-ml-[1px]">
-                                      <path d="m10 14 1.086 3.802c.831 2.909 4.958 2.898 5.774-.015L20.04 6.424c.42-1.502-.963-2.886-2.465-2.465L6.213 7.14c-2.913.816-2.924 4.943-.015 5.774zm0 0 3-3" />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex-1 text-left min-w-0">
-                              <div className="flex items-center justify-between">
-                                <div className="text-[#eeeeee] font-semibold text-[16px] leading-tight truncate">
-                                  {isSwap ? "Swapped" : isReceive ? "Received" : "Sent"}
-                                </div>
-                                <div
-                                  className="font-semibold text-[15px] leading-tight flex-shrink-0 text-right"
-                                  style={{ color: isReceive || isSwap ? "rgb(48, 164, 108)" : "#f3f3f3" }}
-                                >
-                                  {showBalances ? amountStr : "••••"}
-                                </div>
-                              </div>
-                              <div className="mt-1 flex items-center justify-between">
-                                <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight truncate">
-                                  {isSwap ? (
-                                    "Phantom"
-                                  ) : isReceive ? (
-                                    `From ${shortenAddress(tx.from)}`
-                                  ) : (
-                                    `To ${shortenAddress(tx.to)}`
-                                  )}
-                                </div>
-                                {isSwap && (
-                                  <div className="text-[#cdcdcd] text-[14px] font-medium leading-tight flex-shrink-0 text-right">
-                                    {showBalances ? `-${tx.amount} ${tx.token}` : "••••"}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes slideDown {
+          from { transform: translateY(0); }
+          to { transform: translateY(100%); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

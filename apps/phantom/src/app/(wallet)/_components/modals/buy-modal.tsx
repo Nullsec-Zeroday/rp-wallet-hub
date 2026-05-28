@@ -47,12 +47,13 @@ const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
 interface BuyModalProps {
   visible: boolean;
   onClose: () => void;
+  onCloseStart?: () => void;
 }
 
 type Step = 'SELECT_TOKEN' | 'ENTER_AMOUNT' | 'SENDING' | 'SUCCESS';
 type PaymentMethod = 'debit' | 'bank' | 'crypto';
 
-export default function BuyModal({ visible, onClose }: BuyModalProps) {
+export default function BuyModal({ visible, onClose, onCloseStart }: BuyModalProps) {
   const {
     customTokens,
     updateBalance,
@@ -90,6 +91,7 @@ export default function BuyModal({ visible, onClose }: BuyModalProps) {
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    onCloseStart?.();
     setTimeout(() => {
       onClose();
     }, 180);

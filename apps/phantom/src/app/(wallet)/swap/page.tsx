@@ -547,7 +547,6 @@ export default function SwapPage() {
             </span>
           </div>
         </div>
-
         {/* Swap Arrow Button */}
         <div className="flex justify-center -my-3 relative z-10">
           <button

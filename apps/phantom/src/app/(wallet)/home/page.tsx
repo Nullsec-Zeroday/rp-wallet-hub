@@ -19,7 +19,7 @@ function ActionButton({ Icon, label, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 bg-[#232323] rounded-xl py-4 active:scale-[0.93] transition-transform duration-[50ms]"
+      className="flex flex-col items-center justify-center gap-1.5 bg-[#232323] rounded-2xl py-4 active:scale-[0.93] transition-transform duration-[50ms]"
     >
       <Icon size={24} strokeWidth={2} className="text-[#ac9cf2]" />
       <span className="text-xs font-bold" style={{ color: "rgb(180, 180, 180)" }}>{label}</span>
@@ -152,7 +152,7 @@ export default function HomePage() {
   if (!mounted) return <HomeSkeleton />;
 
   return (
-    <div className="flex flex-col pb-24">
+    <div className="flex flex-col pb-32">
       <div className="px-4">
         {/* ── Balance Section ── */}
         <div className="pt-4 pb-4 walkthrough-balance">
@@ -211,16 +211,16 @@ export default function HomePage() {
           </div>
           <button
             onClick={() => router.push('/home?modal=buy')}
-            className="bg-[#ac9cf2] text-[#111111] px-5 py-2 rounded-lg text-sm active:scale-95 transition-transform"
+            className="bg-[#ac9cf2] text-[#111111] font-semibold px-5 py-2 rounded-lg text-sm active:scale-95 transition-transform"
           >
-            <span className="font-semibold">Add Cash</span>
+            Add Cash
           </button>
         </div>
 
         {/* ── Tokens Section ── */}
         <div className="flex items-center justify-between mb-2 walkthrough-tokens">
           <button
-            onClick={() => router.push("/settings/edit-profile?highlight=tokens")}
+            onClick={() => setManageTokensVisible(true)}
             className="flex items-center gap-0.5 hover:opacity-80 active:opacity-60 transition-opacity"
           >
             <span className="text-[#f3f3f3] text-xl font-semibold">Tokens</span>

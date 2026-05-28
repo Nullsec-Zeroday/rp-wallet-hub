@@ -53,6 +53,7 @@ interface SendModalProps {
   onClose: () => void;
   initialTokenSymbol?: string;
   onOpenActivity?: () => void;
+  onCloseStart?: () => void;
 }
 
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
@@ -74,7 +75,7 @@ function getTransferSummary(result: CreateWalletTransactionResponse | null) {
   return "External transfer";
 }
 
-export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity }: SendModalProps) {
+export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, onCloseStart }: SendModalProps) {
   const {
     tokenBalances,
     customTokens,
@@ -122,6 +123,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    onCloseStart?.();
     setTimeout(() => {
       onClose();
     }, 180);

@@ -9,9 +9,10 @@ import { toast } from "sonner";
 interface ReceiveModalProps {
   visible: boolean;
   onClose: () => void;
+  onCloseStart?: () => void;
 }
 
-export default function ReceiveModal({ visible, onClose }: ReceiveModalProps) {
+export default function ReceiveModal({ visible, onClose, onCloseStart }: ReceiveModalProps) {
   const { profile, customTokens } = useWalletStore();
   const walletAddress = profile?.walletAddress || "j9iMYuecFRuwaLzGtnsftYCpwYwW48tCWdYGGjaEpGYS";
 
@@ -27,6 +28,7 @@ export default function ReceiveModal({ visible, onClose }: ReceiveModalProps) {
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    onCloseStart?.();
     setTimeout(() => {
       onClose();
     }, 200);

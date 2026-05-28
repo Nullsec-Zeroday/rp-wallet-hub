@@ -33,7 +33,7 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
           width={size}
           height={size}
           priority={priority}
-          className="rounded-full object-cover w-full h-full"
+          className={`rounded-full object-cover w-full h-full ${token.symbol === 'USDC' ? 'scale-[0.82]' : ''}`}
           onError={() => setImgErr(true)}
         />
       );
@@ -51,7 +51,10 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+      <div
+        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
+        style={{ backgroundColor: token.color || 'transparent' }}
+      >
         {renderContent()}
       </div>
       {!hideChainIcon && token.chainId && CHAIN_ICONS[token.chainId] && (
