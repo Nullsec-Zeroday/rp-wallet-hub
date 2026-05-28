@@ -30,8 +30,8 @@ export default function Footer() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-12 gap-y-10 md:gap-16 text-[13px] w-full md:w-auto">
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Product</span>
-              <Link href="/#pricing" className="text-white/40 hover:text-white transition-colors">Pricing</Link>
-              <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">Blog</Link>
+              <Link href="/buy" className="text-white/40 hover:text-white transition-colors">Pricing</Link>
+              <Link href="/blog" className="text-white/40 hover:text-white transition-colors">Blog</Link>
             </div>
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Socials</span>
@@ -40,8 +40,8 @@ export default function Footer() {
             <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Legal</span>
               <div className="flex flex-row sm:flex-col gap-4 justify-center sm:justify-start mt-1 sm:mt-0">
-                <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">Terms</Link>
-                <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">Privacy</Link>
+                <Link href="/terms" className="text-white/40 hover:text-white transition-colors">Terms</Link>
+                <Link href="/privacy" className="text-white/40 hover:text-white transition-colors">Privacy</Link>
               </div>
             </div>
           </div>
