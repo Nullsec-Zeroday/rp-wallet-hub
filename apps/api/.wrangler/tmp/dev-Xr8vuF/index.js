@@ -17555,7 +17555,7 @@ app.post("/auth/license/activate", async (c) => {
     throw error;
   }
   setSessionCookie(c, response.session.id, response.session.expiresAt, getSessionCookieName(c));
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToHubSession(c.env, response));
 });
 app.get("/me", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17566,7 +17566,7 @@ app.get("/me", async (c) => {
   if (!response) {
     return c.json({ error: "Unauthorized" }, 401);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToHubSession(c.env, response));
 });
 app.post("/wallet-launch", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17574,9 +17574,9 @@ app.post("/wallet-launch", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  const wallet = walletRegistry[body.walletAppId];
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
   if (!wallet?.enabled) {
-    return c.json({ error: "Unknown wallet app" }, 400);
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const launchToken = await getPlatformStore(c.env.DATABASE_URL).createWalletLaunch({
     sessionId,
@@ -17609,7 +17609,7 @@ app.post("/wallet-bootstrap/exchange", async (c) => {
     return c.json({ error: "Launch token is invalid or expired" }, 401);
   }
   setSessionCookie(c, response.sessionId, response.payload.license.expiresAt, getSessionCookieName(c));
-  return c.json(response.payload);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response.payload));
 });
 app.get("/wallet-state/:walletAppId", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17617,14 +17617,18 @@ app.get("/wallet-state/:walletAppId", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const walletAppId2 = c.req.param("walletAppId");
-  if (!walletRegistry[walletAppId2]) {
+  const wallet = getConfiguredWallet(c.env, walletAppId2);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).getWalletState(sessionId, walletAppId2);
   if (!response) {
     return c.json({ error: "Unauthorized" }, 401);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.get("/wallet-events", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17632,8 +17636,12 @@ app.get("/wallet-events", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const walletAppId2 = c.req.query("walletAppId");
-  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+  const wallet = walletAppId2 ? getConfiguredWallet(c.env, walletAppId2) : null;
+  if (!walletAppId2 || !wallet) {
     return c.json({ error: "walletAppId is required" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).getWalletEvents(sessionId, walletAppId2, c.req.query("after"));
   if (!response) {
@@ -17647,8 +17655,12 @@ app.get("/wallet-transactions", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const walletAppId2 = c.req.query("walletAppId");
-  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+  const wallet = walletAppId2 ? getConfiguredWallet(c.env, walletAppId2) : null;
+  if (!walletAppId2 || !wallet) {
     return c.json({ error: "walletAppId is required" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const transactions = await getPlatformStore(c.env.DATABASE_URL).getWalletTransactions(sessionId, walletAppId2);
   if (!transactions) {
@@ -17662,15 +17674,19 @@ app.post("/wallet-transactions", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  if (!walletRegistry[body.walletAppId]) {
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   try {
     const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransaction(sessionId, body);
     if (!response) {
       return c.json({ error: "Unable to create wallet transaction" }, 400);
     }
-    return c.json(response);
+    return c.json(applyWalletAvailabilityToCreateTransactionResponse(c.env, response));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create wallet transaction";
     return c.json({ error: message }, 400);
@@ -17682,14 +17698,18 @@ app.post("/wallet-transactions/batch", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  if (!walletRegistry[body.walletAppId]) {
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).createWalletTransactionsBatch(sessionId, body);
   if (!response) {
     return c.json({ error: "Unable to create wallet transactions" }, 400);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.delete("/wallet-transactions/:transactionId", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17697,14 +17717,18 @@ app.delete("/wallet-transactions/:transactionId", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const walletAppId2 = c.req.query("walletAppId");
-  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+  const wallet = walletAppId2 ? getConfiguredWallet(c.env, walletAppId2) : null;
+  if (!walletAppId2 || !wallet) {
     return c.json({ error: "walletAppId is required" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).deleteWalletTransaction(sessionId, walletAppId2, c.req.param("transactionId"));
   if (!response) {
     return c.json({ error: "Unable to delete wallet transaction" }, 400);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.delete("/wallet-transactions", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17712,14 +17736,18 @@ app.delete("/wallet-transactions", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const walletAppId2 = c.req.query("walletAppId");
-  if (!walletAppId2 || !walletRegistry[walletAppId2]) {
+  const wallet = walletAppId2 ? getConfiguredWallet(c.env, walletAppId2) : null;
+  if (!walletAppId2 || !wallet) {
     return c.json({ error: "walletAppId is required" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).clearWalletTransactions(sessionId, walletAppId2);
   if (!response) {
     return c.json({ error: "Unable to clear wallet transactions" }, 400);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.put("/wallet-state", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17727,14 +17755,18 @@ app.put("/wallet-state", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  if (!walletRegistry[body.walletAppId]) {
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletState(sessionId, body);
   if (!response) {
     return c.json({ error: "Unable to update wallet state" }, 400);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.put("/wallet-notification-settings", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17742,14 +17774,18 @@ app.put("/wallet-notification-settings", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  if (!walletRegistry[body.walletAppId]) {
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).updateWalletNotificationSettings(sessionId, body);
   if (!response) {
     return c.json({ error: "Unable to update wallet notification settings" }, 400);
   }
-  return c.json(response);
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 app.post("/wallet-notifications/trigger", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
@@ -17757,8 +17793,12 @@ app.post("/wallet-notifications/trigger", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   const body = await c.req.json();
-  if (!walletRegistry[body.walletAppId]) {
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
     return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
   }
   const response = await getPlatformStore(c.env.DATABASE_URL).triggerWalletNotification(sessionId, body.walletAppId, body.accountId);
   if (!response) {
@@ -17766,6 +17806,47 @@ app.post("/wallet-notifications/trigger", async (c) => {
   }
   return c.json(response);
 });
+function getConfiguredWallet(env, walletAppId2) {
+  const wallet = walletRegistry[walletAppId2];
+  if (!wallet) return null;
+  return {
+    ...wallet,
+    enabled: isWalletEnabled(env, walletAppId2)
+  };
+}
+__name(getConfiguredWallet, "getConfiguredWallet");
+function isWalletEnabled(env, walletAppId2) {
+  const raw2 = walletAppId2 === "phantom" ? env.PHANTOM_ENABLED : env.TRUST_ENABLED;
+  return raw2?.toLowerCase() !== "false";
+}
+__name(isWalletEnabled, "isWalletEnabled");
+function applyWalletAvailabilityToHubSession(env, response) {
+  return {
+    ...response,
+    wallets: response.wallets.map((wallet) => ({
+      ...wallet,
+      enabled: isWalletEnabled(env, wallet.id)
+    }))
+  };
+}
+__name(applyWalletAvailabilityToHubSession, "applyWalletAvailabilityToHubSession");
+function applyWalletAvailabilityToPayload(env, payload) {
+  return {
+    ...payload,
+    wallet: {
+      ...payload.wallet,
+      enabled: isWalletEnabled(env, payload.wallet.id)
+    }
+  };
+}
+__name(applyWalletAvailabilityToPayload, "applyWalletAvailabilityToPayload");
+function applyWalletAvailabilityToCreateTransactionResponse(env, response) {
+  return {
+    ...response,
+    payload: applyWalletAvailabilityToPayload(env, response.payload)
+  };
+}
+__name(applyWalletAvailabilityToCreateTransactionResponse, "applyWalletAvailabilityToCreateTransactionResponse");
 function setSessionCookie(c, sessionId, expiresAt, name) {
   setCookie(c, name, sessionId, {
     httpOnly: true,
@@ -17846,7 +17927,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-wHgMHU/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-jGZhKJ/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -17878,7 +17959,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-wHgMHU/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-jGZhKJ/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

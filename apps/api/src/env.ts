@@ -5,6 +5,8 @@ export interface ApiEnv {
   HUB_ORIGIN?: string;
   PHANTOM_ORIGIN?: string;
   TRUST_ORIGIN?: string;
+  PHANTOM_ENABLED?: string;
+  TRUST_ENABLED?: string;
 }
 
 export function getAllowedOrigins(env: ApiEnv) {
