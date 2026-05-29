@@ -129,7 +129,7 @@ export default function SettingsPage() {
   };
 
 
-  const displayName = profile.username || walletName || "rpwallet.app";
+  const displayName = profile.username || walletName || "larperwallet.com";
 
   return (
     <div className="flex flex-col min-h-full max-w-[430px] mx-auto w-full relative walkthrough-settings-page bg-[#111111] text-[#eeeeee]">
@@ -312,4 +312,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

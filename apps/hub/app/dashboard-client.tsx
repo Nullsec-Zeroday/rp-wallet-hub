@@ -60,7 +60,7 @@ export default function DashboardClient() {
       });
       window.location.href = response.launchUrl;
     } catch {
-      setError("Unable to create wallet launch token.");
+      setError("Unable to create the wallet OTP.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function DashboardClient() {
         await navigator.clipboard.writeText(token);
       }
     } catch {
-      setError("Unable to generate a manual wallet launch token.");
+      setError("Unable to generate a manual wallet OTP.");
     } finally {
       setLoading(false);
     }
@@ -139,7 +139,7 @@ export default function DashboardClient() {
                   Setup Guide
                 </button>
                 {manualTokens[wallet.id] && (
-                  <p className="mt-1 text-center text-[12px] text-white/50">Launch token copied: {shrinkToken(manualTokens[wallet.id]!)}</p>
+                  <p className="mt-1 text-center text-[12px] text-white/50">OTP copied: {shrinkToken(manualTokens[wallet.id]!)}</p>
                 )}
               </div>
             ))}
@@ -170,14 +170,14 @@ export default function DashboardClient() {
               </div>
 
               <p className="relative mt-3 text-[13.5px] leading-relaxed text-white/60">
-                {setupWallet.name} runs as its own PWA, so Hub cannot pass your session directly. You'll need to manually link them using a secure launch token.
+                {setupWallet.name} runs as its own PWA, so Hub cannot pass your session directly. You'll need to manually link them using a one-time OTP.
               </p>
 
               <div className="relative mt-6 flex flex-col gap-1.5">
                 {[
-                  "Copy your one-time launch token.",
+                  "Copy your one-time OTP.",
                   `Open ${setupWallet.name} on this device.`,
-                  "Paste the token when prompted.",
+                  "Paste the OTP when prompted.",
                 ].map((step, index) => (
                   <div className="group flex items-center gap-3.5 rounded-2xl border border-transparent bg-white/[0.02] px-3.5 py-3 transition-colors hover:border-white/5 hover:bg-white/[0.04]" key={step}>
                     <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#9c8df6]/30 bg-[#9c8df6]/10 text-[12px] font-semibold text-[#c7bdff] shadow-[0_0_12px_rgba(156,141,246,0.15)] transition-transform group-hover:scale-105">
@@ -190,7 +190,7 @@ export default function DashboardClient() {
 
               {manualTokens[setupWallet.id] && (
                 <div className="relative mt-4 flex items-center justify-between rounded-2xl border border-[#9c8df6]/30 bg-[#9c8df6]/10 px-4 py-3.5 shadow-[inset_0_0_20px_rgba(156,141,246,0.05)] animate-in fade-in zoom-in-95 duration-200">
-                  <span className="text-[12px] font-medium text-[#c7bdff]">Token Copied</span>
+                  <span className="text-[12px] font-medium text-[#c7bdff]">OTP Copied</span>
                   <span className="font-mono text-[13px] font-semibold tracking-wider text-white">{shrinkToken(manualTokens[setupWallet.id]!)}</span>
                 </div>
               )}
@@ -203,7 +203,7 @@ export default function DashboardClient() {
                   type="button"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : <Copy size={17} />}
-                  Copy Launch Token
+                  Copy OTP
                 </button>
                 <button
                   className="flex h-[52px] w-full items-center justify-center gap-2.5 rounded-[14px] border border-white/10 bg-white/5 text-sm font-semibold text-white transition-all duration-300 hover:bg-white/10 disabled:opacity-50 active:scale-[0.98]"

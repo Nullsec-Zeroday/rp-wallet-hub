@@ -3,7 +3,7 @@ import type { BlogPost } from "@/lib/blog-data";
 
 export const siteConfig = {
   name: "RP Wallet",
-  url: "https://rpwallet.app",
+  url: "https://larperwallet.com",
   description:
     "RP Wallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay—flex millions in crypto with an indistinguishable fake crypto app interface.",
   ogImage: "/opengraph-image.png",

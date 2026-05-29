@@ -3,13 +3,18 @@
   "name": "rp-wallet-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-22",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  // Keep only safe, non-secret local defaults here.
+  // Production values should be set in the Cloudflare dashboard / Wrangler secrets.
+  // Never commit DATABASE_URL, API keys, or other credentials to this file.
   "vars": {
     "SESSION_COOKIE_NAME": "rp_session",
-    "HUB_ORIGIN": "http://localhost:3000",
-    "PHANTOM_ORIGIN": "http://localhost:5173",
-    "TRUST_ORIGIN": "http://localhost:5174",
+    "HUB_ORIGIN": "http://larperwallet.com",
+    "PHANTOM_ORIGIN": "http://app1.larperwallet.com",
+    "TRUST_ORIGIN": "http://app2.larperwallet.com",
     "PHANTOM_ENABLED": "true",
-    "TRUST_ENABLED": "true"
+    "TRUST_ENABLED": "false"
   }
 }

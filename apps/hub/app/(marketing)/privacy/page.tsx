@@ -36,7 +36,7 @@ export default function PrivacyPage() {
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">1. Introduction</h2>
               <div className="space-y-4 text-[16px] text-[#A1A1AA] leading-relaxed">
                 <p>
-                  RP Wallet ("we," "us," or "our") operates the RP Wallet progressive web application (PWA) and the website located at rpwallet.app (collectively, the "Service"). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
+                  RP Wallet ("we," "us," or "our") operates the RP Wallet progressive web application (PWA) and the website located at larperwallet.com (collectively, the "Service"). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
                 </p>
                 <p>
                   RP Wallet is a novelty entertainment application. It is <strong>not</strong> a real cryptocurrency wallet. It does not hold, send, receive, or interact with any real cryptocurrency, blockchain, or digital asset. We are <strong>not affiliated with Phantom, Solana Labs, Ledger SAS, Trust Wallet, Binance, or any other wallet provider or blockchain project</strong>.
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">6. Cookies & Tracking</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                The rpwallet.app website may use minimal cookies or local storage for functional purposes such as session management. We do not use third-party advertising trackers. We may use basic, anonymized analytics to understand overall site traffic.
+                The larperwallet.com website may use minimal cookies or local storage for functional purposes such as session management. We do not use third-party advertising trackers. We may use basic, anonymized analytics to understand overall site traffic.
               </p>
             </section>
           </FadeIn>

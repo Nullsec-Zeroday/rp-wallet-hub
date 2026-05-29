@@ -36,7 +36,7 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">1. Acceptance of Terms</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                By accessing, purchasing, or using RP Wallet (the "Service"), including the website at rpwallet.app and the RP Wallet progressive web application (PWA), you agree to be bound by these Terms & Conditions ("Terms"). If you do not agree with any part of these Terms, you must not use the Service.
+                By accessing, purchasing, or using RP Wallet (the "Service"), including the website at larperwallet.com and the RP Wallet progressive web application (PWA), you agree to be bound by these Terms & Conditions ("Terms"). If you do not agree with any part of these Terms, you must not use the Service.
               </p>
             </section>
           </FadeIn>
@@ -103,7 +103,7 @@ export default function TermsPage() {
               <div className="space-y-4 text-[16px] text-[#A1A1AA] leading-relaxed">
                 <p>All payments for RP Wallet are processed securely through <strong>SellAuth</strong> and are payable exclusively in cryptocurrency. We do not accept credit cards, debit cards, bank transfers, PayPal, or any other traditional payment method at this time.</p>
                 <p>
-                  Purchases are facilitated through our official website (rpwallet.app) via SellAuth, or through authorized retailers listed on our website. Prices are displayed in USD but are payable in the cryptocurrency equivalent at the time of purchase.
+                  Purchases are facilitated through our official website (larperwallet.com) via SellAuth, or through authorized retailers listed on our website. Prices are displayed in USD but are payable in the cryptocurrency equivalent at the time of purchase.
                 </p>
                 <p>You are solely responsible for ensuring that you send the correct amount to the correct wallet address provided during the SellAuth checkout process. We are not responsible for funds sent to incorrect addresses or for blockchain network fees.</p>
               </div>

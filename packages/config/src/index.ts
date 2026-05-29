@@ -1,6 +1,6 @@
 export const walletHosts = {
-  phantom: "phantom.rpwallet.app",
-  trust: "trust.rpwallet.app",
+  phantom: "app1.larperwallet.com",
+  trust: "app2.larperwallet.com",
 } as const;
 
 export const apiDefaults = {

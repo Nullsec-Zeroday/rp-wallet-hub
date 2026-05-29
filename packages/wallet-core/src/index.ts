@@ -4,13 +4,13 @@ export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activat
   phantom: {
     id: "phantom",
     name: "Phantom",
-    host: "phantom.rpwallet.app",
+    host: "app1.larperwallet.com",
     enabled: true,
   },
   trust: {
     id: "trust",
     name: "Trust Wallet",
-    host: "trust.rpwallet.app",
+    host: "app2.larperwallet.com",
     enabled: true,
   },
 };
