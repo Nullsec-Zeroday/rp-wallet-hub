@@ -11,6 +11,7 @@ import { getStaticPriceData, fetchLivePrices, getStaticPrices } from "@/lib/coin
 import { useLivePrices } from "@/hooks/useLivePrices";
 import WalletFooterNavigation from "@/app/(wallet)/_components/wallet-footer-navigation";
 import { apiDefaults } from "@rp-wallet/config";
+import { appEnv } from "@/app-env";
 
 import InteractiveChart, { type ChartPoint } from "@/components/wallet/interactive-chart";
 import { LongIcon, ShortIcon, ReceiveIcon, MoreIcon, SendIcon } from "@/components/wallet/action-icons";
@@ -79,8 +80,12 @@ function buildFallbackChartData(timeFrame: string, currentPrice: number, change2
     const progress = index / (pointCount - 1);
     const timestamp = now - duration + duration * progress;
     const trend = startPrice + (safeCurrentPrice - startPrice) * progress;
-    const wave = Math.sin(progress * Math.PI * 5) * safeCurrentPrice * 0.012;
-    const micro = Math.sin(progress * Math.PI * 17) * safeCurrentPrice * 0.004;
+    
+    // Smoothly fade out the wave as progress approaches 1 to prevent a sharp drop at the end
+    const attenuation = Math.pow(1 - progress, 1.5);
+    const wave = Math.sin(progress * Math.PI * 5) * safeCurrentPrice * 0.012 * attenuation;
+    const micro = Math.sin(progress * Math.PI * 17) * safeCurrentPrice * 0.004 * attenuation;
+    
     const price = index === pointCount - 1 ? safeCurrentPrice : Math.max(0.0000001, trend + wave + micro);
     return { timestamp, price };
   });
@@ -457,7 +462,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
       setIsLoading(true);
       const fallbackData = buildFallbackChartData(activeTimeFrame, livePrice, liveChange);
       try {
-        const res = await fetch(`${apiDefaults.localBaseUrl}/chart?symbol=${token.symbol}&id=${token.coingeckoId || ''}&timeframe=${activeTimeFrame}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
+        const res = await fetch(`${appEnv.apiBaseUrl || apiDefaults.localBaseUrl}/chart?symbol=${token.symbol}&id=${token.coingeckoId || ''}&timeframe=${activeTimeFrame}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
         const data = await res.json();
@@ -484,7 +489,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
     async function loadDetails() {
       if (!token) return;
       try {
-        const res = await fetch(`${apiDefaults.localBaseUrl}/token-details?symbol=${token.symbol}&id=${token.coingeckoId || ''}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
+        const res = await fetch(`${appEnv.apiBaseUrl || apiDefaults.localBaseUrl}/token-details?symbol=${token.symbol}&id=${token.coingeckoId || ''}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
         if (res.ok) {
           const data = await res.json();
           setTokenDetails(data);

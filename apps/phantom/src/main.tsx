@@ -286,18 +286,24 @@ function ReconnectPanel({
   }
 
   return (
-    <main className="walletShell">
-      <section className="balancePanel">
-        <p className="label">Phantom PWA</p>
-        <h1 className="statusTitle">Open this from the hub</h1>
-        <p className="muted">{body}</p>
+    <main className="min-h-screen bg-[#0d0d0e] text-white px-6 py-12 flex flex-col font-sans">
+      <section className="mb-12 mt-12">
+        <p className="text-[#ab9ff2] text-xs font-bold tracking-widest uppercase mb-4">Larper Wallet PWA</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-white leading-tight mb-4">Open this from the hub</h1>
+        <p className="text-white/50 text-sm leading-relaxed max-w-[280px]">
+          {body}
+        </p>
       </section>
 
-      <form className="composerPanel" onSubmit={submitToken}>
-        <div className="listHeader">Manual One-Time Token</div>
-        <label className="field">
-          <span>Launch token</span>
+      <form 
+        className="flex flex-col gap-5 p-6 rounded-3xl bg-[#121212]/80 border border-white/[0.04] backdrop-blur-md shadow-2xl" 
+        onSubmit={submitToken}
+      >
+        <div className="text-white/80 font-semibold text-xs tracking-widest uppercase">Manual One-Time Token</div>
+        <label className="flex flex-col gap-2">
+          <span className="text-white/40 text-[11px] font-bold uppercase tracking-widest">Launch token</span>
           <input
+            className="h-12 bg-black/40 border border-white/5 rounded-xl px-4 text-white text-sm focus:outline-none focus:border-[#ab9ff2]/50 transition-colors placeholder:text-white/20"
             autoCapitalize="off"
             autoCorrect="off"
             onChange={(event) => setToken(event.target.value)}
@@ -305,7 +311,11 @@ function ReconnectPanel({
             value={token}
           />
         </label>
-        <button className="submitButton" disabled={submitting || !token.trim()} type="submit">
+        <button 
+          className="h-12 mt-2 bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100" 
+          disabled={submitting || !token.trim()} 
+          type="submit"
+        >
           {submitting ? "Connecting..." : "Connect Wallet"}
         </button>
       </form>

@@ -1,3 +1,9 @@
+import { apiDefaults } from "@rp-wallet/config";
+
+const defaultApiBaseUrl = import.meta.env.DEV
+  ? apiDefaults.localBaseUrl
+  : apiDefaults.productionBaseUrl;
+
 export const walletFlags = {
   phantom: import.meta.env.VITE_WALLET_PHANTOM_ENABLED !== "false",
   trust: import.meta.env.VITE_WALLET_TRUST_ENABLED === "true",
@@ -5,5 +11,5 @@ export const walletFlags = {
 
 export const appEnv = {
   walletAppEnabled: walletFlags.trust,
-  apiBaseUrl: import.meta.env.VITE_RP_WALLET_API_URL || undefined,
+  apiBaseUrl: import.meta.env.VITE_RP_WALLET_API_URL || defaultApiBaseUrl,
 } as const;

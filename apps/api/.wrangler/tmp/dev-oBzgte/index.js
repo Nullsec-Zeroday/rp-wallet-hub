@@ -2397,6 +2397,7 @@ __name(listWalletApps, "listWalletApps");
 function getAllowedOrigins(env) {
   return [
     env.HUB_ORIGIN || "http://localhost:3000",
+    "https://www.larperwallet.com",
     "http://127.0.0.1:3000",
     env.PHANTOM_ORIGIN || "http://localhost:5173",
     env.TRUST_ORIGIN || "http://localhost:5174"

@@ -5,6 +5,8 @@ export const walletHosts = {
 
 export const apiDefaults = {
   localBaseUrl: "http://localhost:8787",
+  productionBaseUrl: "https://api.larperwallet.com",
 } satisfies {
   localBaseUrl: string;
+  productionBaseUrl: string;
 };

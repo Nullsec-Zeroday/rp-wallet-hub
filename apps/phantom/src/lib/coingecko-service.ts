@@ -3,6 +3,7 @@
  * Fetches live prices for portfolio tokens using free /simple/price endpoint.
  */
 
+import { appEnv } from '@/app-env';
 import { TOKENS, type LivePrices, type PriceData } from '@/lib/wallet-data';
 import { apiDefaults } from "@rp-wallet/config";
 
@@ -32,7 +33,7 @@ export async function fetchLivePrices(
   currency?: string,
   customMappings?: Record<string, string>
 ): Promise<LivePrices> {
-  let url = `${apiDefaults.localBaseUrl}/prices`;
+  let url = `${appEnv.apiBaseUrl || apiDefaults.localBaseUrl}/prices`;
   const params = new URLSearchParams();
 
   if (symbols && symbols.length > 0) {
@@ -100,7 +101,7 @@ export interface TrendingToken {
 
 export async function fetchTrendingSolanaTokens(limit: number = 10, currency?: string): Promise<TrendingToken[]> {
   try {
-    let url = `${apiDefaults.localBaseUrl}/trending?limit=${limit}`;
+    let url = `${appEnv.apiBaseUrl || apiDefaults.localBaseUrl}/trending?limit=${limit}`;
     if (currency) {
       url += `&currency=${currency.toLowerCase()}`;
     }
