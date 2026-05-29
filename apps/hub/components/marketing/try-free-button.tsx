@@ -6,10 +6,21 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function TryFreeButton({ className, wrapperClassName }: { className?: string, wrapperClassName?: string }) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (window.location.pathname === "/") {
+      e.preventDefault();
+      const pricingSection = document.getElementById("pricing");
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className={wrapperClassName}>
       <Link
         href="/#pricing"
+        onClick={handleClick}
         className={`relative overflow-hidden w-full sm:w-[240px] h-12 md:h-14 px-4 sm:px-8 rounded-xl flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white bg-gradient-to-r from-phantom-purple to-phantom-accent border border-white/20 transition-all group whitespace-nowrap ${className || ""}`}
       >
         <motion.div
