@@ -80,12 +80,12 @@ function buildFallbackChartData(timeFrame: string, currentPrice: number, change2
     const progress = index / (pointCount - 1);
     const timestamp = now - duration + duration * progress;
     const trend = startPrice + (safeCurrentPrice - startPrice) * progress;
-    
+
     // Smoothly fade out the wave as progress approaches 1 to prevent a sharp drop at the end
     const attenuation = Math.pow(1 - progress, 1.5);
     const wave = Math.sin(progress * Math.PI * 5) * safeCurrentPrice * 0.012 * attenuation;
     const micro = Math.sin(progress * Math.PI * 17) * safeCurrentPrice * 0.004 * attenuation;
-    
+
     const price = index === pointCount - 1 ? safeCurrentPrice : Math.max(0.0000001, trend + wave + micro);
     return { timestamp, price };
   });
@@ -642,10 +642,12 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
                 <button
                   key={tf}
                   onClick={() => setActiveTimeFrame(tf)}
-                  className="flex-1 py-1 rounded-sm font-semibold text-sm"
+                  className="flex-1 py-1 rounded-sm"
                   style={{
                     background: activeTimeFrame === tf ? "rgb(42, 42, 42)" : "transparent",
-                    color: activeTimeFrame === tf ? "#ac9cf2" : "rgb(136, 136, 136)"
+                    color: activeTimeFrame === tf ? "#ac9cf2" : "rgb(136, 136, 136)",
+                    fontSize: 14,
+                    fontWeight: 600,
                   }}
                 >
                   {tf}
@@ -685,25 +687,7 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
               <button className="text-white/90 font-semibold text-sm active:opacity-70 px-4 py-2.5 bg-[#1a1a1a] rounded-lg">Join Chat</button>
             </div>
 
-            <div className="px-4 mb-5">
-              <h2 className="text-white/60 font-medium text-lg mb-2">Position</h2>
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
-                  <div className="text-[#888888] text-sm mb-1">Value</div>
-                  <div className="text-white font-medium text-lg">{formatVal(positionValue)}</div>
-                </div>
-                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
-                  <div className="text-[#888888] text-sm mb-1">Balance</div>
-                  <div className="text-white font-medium text-lg">{userBalance > 0 ? userBalance.toFixed(5) : "0"}</div>
-                </div>
-              </div>
-              <div className="rounded-xl px-4 py-4 flex items-center justify-between" style={{ background: "rgb(26, 26, 26)" }}>
-                <span className="text-[#888888] text-base">24h Return</span>
-                <span className="font-medium text-base" style={{ color: position24hReturn >= 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
-                  {position24hReturn > 0 ? "+" : position24hReturn < 0 ? "-" : ""}{formatVal(Math.abs(position24hReturn))}
-                </span>
-              </div>
-            </div>
+
 
             <div className="px-4 mb-5">
               <h2 className="text-white/60 font-medium text-lg">Activity</h2>
@@ -863,6 +847,26 @@ export default function TokenDetailPage({ params }: { params: { symbol: string }
                   <path d="M 0 75 Q 75 70 150 50 Q 225 30 300 5" fill="none" stroke="#0ba56a" strokeWidth="2" strokeDasharray="6 4"></path>
                   <path d="M 0 75 Q 75 70 150 50 Q 225 30 300 5 L 300 80 L 0 80 Z" fill="url(#stakeGrad)"></path>
                 </svg>
+              </div>
+            </div>
+
+            <div className="px-4 mb-5">
+              <h2 className="text-white/60 font-medium text-lg mb-2">Position</h2>
+              <div className="flex gap-3 mb-3">
+                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
+                  <div className="text-[#888888] text-sm mb-1">Value</div>
+                  <div className="text-white font-medium text-lg">{formatVal(positionValue)}</div>
+                </div>
+                <div className="flex-1 rounded-2xl p-4" style={{ background: "rgb(26, 26, 26)" }}>
+                  <div className="text-[#888888] text-sm mb-1">Balance</div>
+                  <div className="text-white font-medium text-lg">{userBalance > 0 ? userBalance.toFixed(5) : "0"}</div>
+                </div>
+              </div>
+              <div className="rounded-xl px-4 py-4 flex items-center justify-between" style={{ background: "rgb(26, 26, 26)" }}>
+                <span className="text-[#888888] text-base">24h Return</span>
+                <span className="font-medium text-base" style={{ color: position24hReturn >= 0 ? "var(--color-phantom-green)" : "var(--color-phantom-red)" }}>
+                  {position24hReturn > 0 ? "+" : position24hReturn < 0 ? "-" : ""}{formatVal(Math.abs(position24hReturn))}
+                </span>
               </div>
             </div>
 

@@ -27,6 +27,7 @@ import { listWalletApps, walletRegistry } from "@rp-wallet/wallet-core";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
+const DEFAULT_WALLET_USERNAME = "larperwallet";
 
 export class DeviceLimitError extends Error {
   constructor(allowedDevices: number) {
@@ -656,6 +657,7 @@ class InMemoryPlatformStore implements PlatformStore {
       userId,
       walletAppId,
       displayName,
+      username: DEFAULT_WALLET_USERNAME,
       createdAt: now,
       updatedAt: now,
     };
@@ -1504,6 +1506,7 @@ class NeonPlatformStore implements PlatformStore {
             userId,
             walletAppId,
             displayName,
+            username: DEFAULT_WALLET_USERNAME,
           })
           .returning()
       )[0];

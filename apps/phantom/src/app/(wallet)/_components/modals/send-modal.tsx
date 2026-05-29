@@ -10,9 +10,8 @@ import TokenLogo from "../token-logo";
 import { toast } from "sonner";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../rive-asset-provider";
-import { createBackendWalletTransaction } from "@/lib/backend-wallet";
+import { createBackendWalletTransaction, updateBackendWalletState } from "@/lib/backend-wallet";
 import { logWalletDebug } from "@/lib/wallet-debug";
-import type { CreateWalletTransactionResponse } from "@rp-wallet/types";
 
 const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
   const src = "/rive/progress-send.riv";
@@ -68,13 +67,6 @@ function getRecipientAddressError(value: string, ownAddress: string) {
   return "Enter a valid wallet address.";
 }
 
-function getTransferSummary(result: CreateWalletTransactionResponse | null) {
-  if (!result) return null;
-  if (result.delivery === "same_wallet") return "Internal Phantom transfer";
-  if (result.delivery === "cross_wallet") return "Internal ecosystem transfer";
-  return "External transfer";
-}
-
 export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, onCloseStart }: SendModalProps) {
   const {
     tokenBalances,
@@ -93,7 +85,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const [amount, setAmount] = useState("");
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [transferResult, setTransferResult] = useState<CreateWalletTransactionResponse | null>(null);
   const hasPlayedConfetti = useRef(false);
 
   // Handle initial token
@@ -115,7 +106,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
       // Reset inputs
       setRecipientAddress("");
       setAmount("");
-      setTransferResult(null);
       hasPlayedConfetti.current = false;
     }
   }, [visible, initialTokenSymbol, customTokens]);
@@ -195,11 +185,24 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     }
 
     setStep("SENDING");
-    setTransferResult(null);
 
     const minimumAnimation = new Promise((resolve) => window.setTimeout(resolve, 1800));
 
     try {
+      const latestState = useWalletStore.getState();
+      await updateBackendWalletState({
+        accountAddress: latestState.profile.walletAddress,
+        accountName: latestState.walletName,
+        balances: latestState.tokenBalances.map((balance) => ({
+          amount: String(balance.balance),
+          tokenSymbol: balance.symbol,
+        })),
+        profile: {
+          displayName: latestState.walletName,
+          username: latestState.profile.username,
+        },
+      });
+
       const [result] = await Promise.all([
         createBackendWalletTransaction({
           type: "send",
@@ -211,7 +214,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         minimumAnimation,
       ]);
 
-      setTransferResult(result);
       addRecentAddress(normalizedRecipientAddress);
       logWalletDebug("send:ui-success", {
         delivery: result.delivery,
@@ -221,7 +223,9 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
       setStep("SUCCESS");
     } catch (error) {
       await minimumAnimation;
-      const message = error instanceof Error ? error.message : "Transaction failed. Check your balance and try again.";
+      const message = error instanceof Error
+        ? error.message.replace(/^LarperWallet API request failed:\s*\d+:?\s*/i, "")
+        : "Transaction failed. Check your balance and try again.";
       logWalletDebug("send:ui-error", {
         message,
         toAddress: normalizedRecipientAddress,
@@ -408,10 +412,10 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       </svg>
                     </button>
                   </div>
-                  {normalizedRecipientAddress ? (
+                  {normalizedRecipientAddress && recipientAddressError ? (
                     <div className="px-4 pt-2 text-[13px] leading-5">
-                      <span className={recipientAddressError ? "text-[#F97373]" : "text-[#7FDBB6]"}>
-                        {recipientAddressError || "Wallet address looks valid."}
+                      <span className="text-[#F97373]">
+                        {recipientAddressError}
                       </span>
                     </div>
                   ) : null}
@@ -685,12 +689,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       <span className="text-[17px] leading-[22px] font-semibold text-[#eeeeee]">$0.000447</span>
                     </div>
                   </div>
-                  {!recipientAddressError ? (
-                    <div className="mt-4 rounded-[20px] bg-[#1b1b1b] px-4 py-3 text-[14px] leading-5 text-[#b4b4b4]">
-                      Transfers to wallets in our database will arrive live and create a receiver notification. Unknown addresses are treated as external sends.
-                    </div>
-                  ) : null}
-
                   <div className="flex-1 min-h-[24px]" />
                 </div>
 
@@ -742,11 +740,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         <p className="text-[#888] font-medium text-[15px] leading-snug">
                           sent to {recipientAddress.length > 12 ? `${recipientAddress.slice(0, 12)} (${recipientAddress.slice(0, 4)}...${recipientAddress.slice(-4)})` : recipientAddress}
                         </p>
-                        {transferResult ? (
-                          <p className="text-[#ac9cf2] font-semibold text-[14px] leading-snug pt-2">
-                            {getTransferSummary(transferResult)}
-                          </p>
-                        ) : null}
                       </>
                     )}
                   </div>

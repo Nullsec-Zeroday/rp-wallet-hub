@@ -211,7 +211,11 @@ export default function HomePage() {
           </div>
           <button
             onClick={() => router.push('/home?modal=buy')}
-            className="bg-[#ac9cf2] text-[#111111] font-semibold px-5 py-2 rounded-lg text-sm active:scale-95 transition-transform"
+            style={{
+              fontWeight: 600,
+              fontSize: 15
+            }}
+            className="bg-[#ac9cf2] text-[#111111] px-5 py-2 rounded-lg active:scale-95 transition-transform"
           >
             Add Cash
           </button>

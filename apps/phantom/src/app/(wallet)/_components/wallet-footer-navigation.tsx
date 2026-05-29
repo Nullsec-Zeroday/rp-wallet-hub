@@ -62,7 +62,10 @@ const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = fa
   return (
     <div 
       className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0 pointer-events-none"}`}
-      style={{ height: "calc(60px + env(safe-area-inset-bottom, 0px))" }}
+      style={{ 
+        height: "calc(60px + env(safe-area-inset-bottom, 0px))",
+        isolation: "isolate",
+      }}
     >
       <div 
         className="absolute inset-0 pointer-events-auto"
@@ -95,7 +98,6 @@ const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = fa
                   style={{
                     opacity: isActive ? 1 : 0.5,
                     transition: "opacity 80ms ease-out",
-                    willChange: "opacity",
                   }}
                 >
                   <div className="relative w-10 h-10 pointer-events-none">

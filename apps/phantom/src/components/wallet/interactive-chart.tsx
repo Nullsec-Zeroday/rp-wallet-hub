@@ -75,7 +75,7 @@ export default function InteractiveChart({
     if (!data || data.length === 0 || drawWidth <= 0) return [];
     const minPrice = Math.min(...data.map((d) => d.price));
     const maxPrice = Math.max(...data.map((d) => d.price));
-    const topPadding = 20;
+    const topPadding = 0;
     const bottomPadding = 20;
     const drawHeight = height - topPadding - bottomPadding;
 

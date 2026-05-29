@@ -15740,6 +15740,7 @@ var walletLaunchTokens = pgTable(
 // src/platform-store.ts
 var THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1e3;
 var LAUNCH_TOKEN_TTL_MS = 60 * 1e3;
+var DEFAULT_WALLET_USERNAME = "larperwallet";
 var DeviceLimitError = class extends Error {
   static {
     __name(this, "DeviceLimitError");
@@ -16207,6 +16208,7 @@ var InMemoryPlatformStore = class {
       userId,
       walletAppId: walletAppId2,
       displayName,
+      username: DEFAULT_WALLET_USERNAME,
       createdAt: now,
       updatedAt: now
     };
@@ -16853,7 +16855,8 @@ var NeonPlatformStore = class {
       id: createId("wpf"),
       userId,
       walletAppId: walletAppId2,
-      displayName
+      displayName,
+      username: DEFAULT_WALLET_USERNAME
     }).returning())[0];
     return {
       id: profile.id,
