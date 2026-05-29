@@ -15,9 +15,6 @@ export default function Navigation() {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  if (pathname !== "/") {
-    return null;
-  }
 
   return (
     <>

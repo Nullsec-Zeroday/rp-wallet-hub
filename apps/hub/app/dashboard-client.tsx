@@ -328,5 +328,8 @@ function getFriendlyApiError(error: unknown, fallback: string) {
   if (error.message.includes("DEVICE_LIMIT_REACHED") || error.message.includes("already active on")) {
     return "This license is already active on the maximum number of devices for its plan.";
   }
+  if (error.message.includes("INVALID_LICENSE") || error.message.includes("Invalid license")) {
+    return "This license key is invalid. Please check the key from your order page and try again.";
+  }
   return fallback;
 }

@@ -35,6 +35,13 @@ export class DeviceLimitError extends Error {
   }
 }
 
+export class InvalidLicenseError extends Error {
+  constructor() {
+    super("Invalid license key.");
+    this.name = "InvalidLicenseError";
+  }
+}
+
 interface LicenseRecord extends LicenseSummary {
   keyHash: string;
   userId: string;
@@ -67,6 +74,14 @@ export interface ActivationInput {
   email?: string;
 }
 
+export interface PurchasedLicenseInput {
+  licenseKey: string;
+  email?: string;
+  plan: string;
+  expiresAt: Date;
+  allowedDevices: number;
+}
+
 export interface WalletLaunchInput {
   sessionId: string;
   walletAppId: WalletAppId;
@@ -88,6 +103,7 @@ export interface WalletBootstrapResult {
 }
 
 export interface PlatformStore {
+  createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary>;
   activateLicense(input: ActivationInput): Promise<HubSessionResponse>;
   getHubSession(sessionId: string): Promise<HubSessionResponse | null>;
   createWalletLaunch(input: WalletLaunchInput): Promise<WalletLaunchResult | null>;
@@ -139,13 +155,36 @@ class InMemoryPlatformStore implements PlatformStore {
     const now = new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
     const existingLicense = [...this.licenses.values()].find((license) => license.keyHash === keyHash);
-    const user = existingLicense ? this.users.get(existingLicense.userId)! : this.createUser(input.email);
-    const license = existingLicense ?? this.createLicense(keyHash, user.id, now);
+    if (!existingLicense) {
+      throw new InvalidLicenseError();
+    }
+
+    const user = this.users.get(existingLicense.userId)!;
+    const license = existingLicense;
 
     this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = this.createSession(user.id, license.id, license.expiresAt);
     this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
+  }
+
+  async createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary> {
+    const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
+    const existingLicense = [...this.licenses.values()].find((license) => license.keyHash === keyHash);
+    if (existingLicense) return toLicenseSummary(existingLicense);
+
+    const user = this.createUser(input.email);
+    const license: LicenseRecord = {
+      id: createId("lic"),
+      keyHash,
+      userId: user.id,
+      plan: input.plan,
+      expiresAt: input.expiresAt.toISOString(),
+      status: "active",
+      allowedDevices: input.allowedDevices,
+    };
+    this.licenses.set(license.id, license);
+    return toLicenseSummary(license);
   }
 
   async getHubSession(sessionId: string): Promise<HubSessionResponse | null> {
@@ -769,19 +808,52 @@ class NeonPlatformStore implements PlatformStore {
   async activateLicense(input: ActivationInput): Promise<HubSessionResponse> {
     await this.ensureWalletApps();
 
-    const now = new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
     const [existingLicense] = await this.db.select().from(schema.licenses).where(eq(schema.licenses.keyHash, keyHash)).limit(1);
+    if (!existingLicense) {
+      throw new InvalidLicenseError();
+    }
 
-    const user = existingLicense
-      ? await this.getUser(existingLicense.userId)
-      : await this.createUser(input.email);
-    const license = existingLicense ?? (await this.createLicense(keyHash, user.id, now));
+    const user = await this.getUser(existingLicense.userId);
+    const license = existingLicense;
 
     await this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = await this.createSession(user.id, license.id, license.expiresAt);
     await this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
+  }
+
+  async createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary> {
+    await this.ensureWalletApps();
+
+    const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
+    const [existingLicense] = await this.db.select().from(schema.licenses).where(eq(schema.licenses.keyHash, keyHash)).limit(1);
+    if (existingLicense) {
+      return toLicenseSummary({
+        ...existingLicense,
+        expiresAt: existingLicense.expiresAt.toISOString(),
+      });
+    }
+
+    const user = await this.createUser(input.email);
+    const [license] = await this.db
+      .insert(schema.licenses)
+      .values({
+        id: createId("lic"),
+        keyHash,
+        userId: user.id,
+        plan: input.plan,
+        expiresAt: input.expiresAt,
+        allowedDevices: input.allowedDevices,
+      })
+      .onConflictDoNothing({ target: schema.licenses.keyHash })
+      .returning();
+
+    const createdLicense = license ?? (await this.db.select().from(schema.licenses).where(eq(schema.licenses.keyHash, keyHash)).limit(1))[0];
+    return toLicenseSummary({
+      ...createdLicense,
+      expiresAt: createdLicense.expiresAt.toISOString(),
+    });
   }
 
   async getHubSession(sessionId: string): Promise<HubSessionResponse | null> {

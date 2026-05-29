@@ -6,15 +6,19 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  // Keep only safe, non-secret local defaults here.
-  // Production values should be set in the Cloudflare dashboard / Wrangler secrets.
+  // Keep only safe, non-secret defaults here.
+  // Secrets should be set in the Cloudflare dashboard / Wrangler secrets.
   // Never commit DATABASE_URL, API keys, or other credentials to this file.
   "vars": {
     "SESSION_COOKIE_NAME": "rp_session",
-    "HUB_ORIGIN": "http://larperwallet.com",
-    "PHANTOM_ORIGIN": "http://app1.larperwallet.com",
-    "TRUST_ORIGIN": "http://app2.larperwallet.com",
+    "HUB_ORIGIN": "https://larperwallet.com",
+    "PHANTOM_ORIGIN": "https://app1.larperwallet.com",
+    "TRUST_ORIGIN": "https://app2.larperwallet.com",
     "PHANTOM_ENABLED": "true",
-    "TRUST_ENABLED": "false"
+    "TRUST_ENABLED": "false",
+    "SELLAUTH_SHOP_ID": "234704",
+    "SELLAUTH_STARTER_PRODUCT_ID": "700824",
+    "SELLAUTH_MONTHLY_PRODUCT_ID": "700825",
+    "SELLAUTH_YEARLY_PRODUCT_ID": "700827"
   }
 }

@@ -11,7 +11,7 @@ const PLANS = Object.values(PRICING_PLANS);
 
 export default function BuyPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0c0c0c]" />}>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <BuyContent />
     </Suspense>
   );
@@ -46,7 +46,7 @@ function BuyContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0e] text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">
+    <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">
       {isExpired && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-red-500/10 border-b border-red-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
           <p className="text-red-400 text-sm font-medium">Your license key has expired. Please choose a new plan to continue.</p>
@@ -69,7 +69,7 @@ function BuyContent() {
         </div>
 
         {/* ── I N T E R A C T I V E  P R I C I N G  G R I D ── */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch mb-16 relative">
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-6 items-stretch mb-16 relative">
           {PLANS.map((plan) => {
             const isSelected = selectedPlanId === plan.id;
             const isStarter = plan.id === "starter";

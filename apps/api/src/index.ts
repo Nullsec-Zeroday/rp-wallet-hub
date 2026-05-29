@@ -16,7 +16,7 @@ import type {
 import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
-import { DeviceLimitError, getPlatformStore } from "./platform-store";
+import { DeviceLimitError, InvalidLicenseError, getPlatformStore } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 
@@ -63,6 +63,20 @@ const CUSTOM_IMAGE_OVERRIDES: Record<string, string> = {
   USDT: "/tokens/usdt.webp",
 };
 
+type SellAuthPlan = {
+  id: "starter" | "popular" | "yearly";
+  label: string;
+  durationDays: number;
+  allowedDevices: number;
+};
+
+const SELLAUTH_PLANS: Record<string, SellAuthPlan> = {
+  starter: { id: "starter", label: "Starter", durationDays: 7, allowedDevices: 1 },
+  popular: { id: "popular", label: "Most Popular", durationDays: 30, allowedDevices: 1 },
+  monthly: { id: "popular", label: "Most Popular", durationDays: 30, allowedDevices: 1 },
+  yearly: { id: "yearly", label: "Yearly Access", durationDays: 365, allowedDevices: 2 },
+};
+
 const app = new Hono<HonoEnv>();
 
 app.use("*", async (c, next) => {
@@ -80,6 +94,66 @@ app.get("/health", (c) =>
     storage: c.env.DATABASE_URL ? "neon" : "memory",
   }),
 );
+
+app.post("/webhooks/sellauth", async (c) => {
+  const secret = c.env.SELLAUTH_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("[sellauth-webhook] SELLAUTH_WEBHOOK_SECRET is not set");
+    return c.text("Server misconfiguration", 500);
+  }
+
+  const rawBody = await c.req.text();
+  const signature =
+    c.req.header("x-signature") ||
+    c.req.header("x-sellauth-signature") ||
+    c.req.header("signature") ||
+    "";
+
+  if (!signature) {
+    return c.text("Missing signature", 401);
+  }
+
+  if (!(await verifySellAuthSignature(rawBody, signature, secret))) {
+    return c.text("Invalid signature", 403);
+  }
+
+  let payload: Record<string, any>;
+  try {
+    payload = JSON.parse(rawBody) as Record<string, any>;
+  } catch {
+    return c.text("Invalid JSON", 400);
+  }
+
+  const expectedShopId = c.env.SELLAUTH_SHOP_ID || c.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID;
+  const payloadShopId = payload.shop_id ?? payload.shopId ?? payload.data?.shop_id ?? payload.data?.shopId;
+  if (expectedShopId && payloadShopId?.toString() !== expectedShopId.toString()) {
+    console.warn(`[sellauth-webhook] Shop ID mismatch. Expected ${expectedShopId}, received ${payloadShopId}`);
+    return c.text("Invalid shop ID", 403);
+  }
+
+  const orderId = extractSellAuthOrderId(payload);
+  if (!orderId) {
+    console.error("[sellauth-webhook] Missing order id in payload");
+    return c.text("Missing order id", 400);
+  }
+
+  const plan = resolveSellAuthPlan(c.env, payload);
+  const licenseKey = await generateLicenseKeyForOrder(orderId, secret);
+  const now = Date.now();
+  const expiresAt = new Date(now + plan.durationDays * 24 * 60 * 60 * 1000);
+  const buyerEmail = extractSellAuthEmail(payload);
+
+  await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+    licenseKey,
+    email: buyerEmail,
+    plan: plan.label,
+    expiresAt,
+    allowedDevices: plan.allowedDevices,
+  });
+
+  console.log(`[sellauth-webhook] Created license for order ${orderId} | plan=${plan.id} | expires=${expiresAt.toISOString()}`);
+  return c.text(licenseKey, 200, { "Content-Type": "text/plain" });
+});
 
 app.get("/prices", async (c) => {
   try {
@@ -468,6 +542,9 @@ app.post("/auth/license/activate", async (c) => {
   } catch (error) {
     if (error instanceof DeviceLimitError) {
       return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    if (error instanceof InvalidLicenseError) {
+      return c.json({ code: "INVALID_LICENSE", error: error.message }, 401);
     }
     throw error;
   }
@@ -858,6 +935,130 @@ function buildLaunchUrl(env: ApiEnv, walletAppId: WalletAppId, token: string, re
   const url = new URL(target);
   url.searchParams.set("token", token);
   return url.toString();
+}
+
+async function verifySellAuthSignature(rawBody: string, signature: string, secret: string) {
+  const computed = await hmacSha256Hex(secret, rawBody);
+  return timingSafeHexEqual(computed, signature);
+}
+
+async function hmacSha256Hex(secret: string, message: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return bytesToHex(new Uint8Array(signature));
+}
+
+function timingSafeHexEqual(leftHex: string, rightHex: string) {
+  const left = hexToBytes(leftHex);
+  const right = hexToBytes(rightHex);
+  if (!left || !right || left.length !== right.length) return false;
+
+  let diff = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left[index] ^ right[index];
+  }
+  return diff === 0;
+}
+
+function bytesToHex(bytes: Uint8Array) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function hexToBytes(hex: string) {
+  const normalized = hex.trim().toLowerCase();
+  if (!/^[a-f0-9]+$/.test(normalized) || normalized.length % 2 !== 0) return null;
+
+  const bytes = new Uint8Array(normalized.length / 2);
+  for (let index = 0; index < normalized.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(normalized.slice(index, index + 2), 16);
+  }
+  return bytes;
+}
+
+async function generateLicenseKeyForOrder(orderId: string, secret: string) {
+  const digest = await hmacSha256Hex(secret, `license:${orderId}`);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const letters = Array.from(hexToBytes(digest)!.slice(0, 20), (byte) => alphabet[byte % alphabet.length]);
+  return [0, 5, 10, 15].map((start) => letters.slice(start, start + 5).join("")).join("-");
+}
+
+function extractSellAuthOrderId(payload: Record<string, any>) {
+  return normalizePayloadString(
+    payload.id ??
+      payload.order_id ??
+      payload.orderId ??
+      payload.invoice_id ??
+      payload.invoiceId ??
+      payload.data?.id ??
+      payload.data?.order_id ??
+      payload.data?.orderId ??
+      payload.data?.invoice_id ??
+      payload.data?.invoiceId,
+  );
+}
+
+function extractSellAuthEmail(payload: Record<string, any>) {
+  return normalizePayloadString(
+    payload.email ??
+      payload.customer_email ??
+      payload.buyer_email ??
+      payload.data?.email ??
+      payload.data?.customer_email ??
+      payload.data?.buyer_email ??
+      payload.customer?.email ??
+      payload.buyer?.email,
+  );
+}
+
+function resolveSellAuthPlan(env: ApiEnv, payload: Record<string, any>): SellAuthPlan {
+  const planId = normalizePayloadString(
+    payload.item?.custom_fields?.plan_id ??
+      payload.custom_fields?.plan_id ??
+      payload.metadata?.plan_id ??
+      payload.data?.metadata?.plan_id,
+  )?.toLowerCase();
+  if (planId && SELLAUTH_PLANS[planId]) return SELLAUTH_PLANS[planId];
+
+  const productId = normalizePayloadString(
+    payload.product_id ??
+      payload.productId ??
+      payload.item?.product_id ??
+      payload.item?.productId ??
+      payload.data?.product_id ??
+      payload.data?.productId ??
+      payload.items?.[0]?.product_id ??
+      payload.items?.[0]?.productId,
+  );
+
+  const productPlan = getSellAuthProductPlanMap(env)[productId || ""];
+  if (productPlan) return productPlan;
+
+  console.warn(`[sellauth-webhook] Unknown plan/product id: ${planId || productId || "missing"}. Falling back to starter.`);
+  return SELLAUTH_PLANS.starter;
+}
+
+function getSellAuthProductPlanMap(env: ApiEnv) {
+  const starter = env.SELLAUTH_STARTER_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID;
+  const monthly = env.SELLAUTH_MONTHLY_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID;
+  const yearly = env.SELLAUTH_YEARLY_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID;
+
+  return {
+    ...(starter ? { [starter]: SELLAUTH_PLANS.starter } : {}),
+    ...(monthly ? { [monthly]: SELLAUTH_PLANS.popular } : {}),
+    ...(yearly ? { [yearly]: SELLAUTH_PLANS.yearly } : {}),
+  };
+}
+
+function normalizePayloadString(value: unknown) {
+  if (value === undefined || value === null) return undefined;
+  const normalized = String(value).trim();
+  return normalized ? normalized : undefined;
 }
 
 export default app;

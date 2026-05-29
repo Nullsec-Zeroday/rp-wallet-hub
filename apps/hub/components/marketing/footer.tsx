@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import MadeInUsaBadge from "./made-in-usa-badge";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname === "/buy") return null;
+
   return (
     <footer className="w-full border-t border-white/5 relative z-10 px-6 pb-12 overflow-hidden">
       <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-16 relative z-10">

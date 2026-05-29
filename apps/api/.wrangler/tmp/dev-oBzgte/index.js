@@ -15748,6 +15748,15 @@ var DeviceLimitError = class extends Error {
     this.name = "DeviceLimitError";
   }
 };
+var InvalidLicenseError = class extends Error {
+  static {
+    __name(this, "InvalidLicenseError");
+  }
+  constructor() {
+    super("Invalid license key.");
+    this.name = "InvalidLicenseError";
+  }
+};
 var inMemoryStore;
 var databaseStores = /* @__PURE__ */ new Map();
 function getPlatformStore(databaseUrl) {
@@ -15782,12 +15791,32 @@ var InMemoryPlatformStore = class {
     const now = /* @__PURE__ */ new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
     const existingLicense = [...this.licenses.values()].find((license2) => license2.keyHash === keyHash);
-    const user = existingLicense ? this.users.get(existingLicense.userId) : this.createUser(input.email);
-    const license = existingLicense ?? this.createLicense(keyHash, user.id, now);
+    if (!existingLicense) {
+      throw new InvalidLicenseError();
+    }
+    const user = this.users.get(existingLicense.userId);
+    const license = existingLicense;
     this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = this.createSession(user.id, license.id, license.expiresAt);
     this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
+  }
+  async createPurchasedLicense(input) {
+    const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
+    const existingLicense = [...this.licenses.values()].find((license2) => license2.keyHash === keyHash);
+    if (existingLicense) return toLicenseSummary(existingLicense);
+    const user = this.createUser(input.email);
+    const license = {
+      id: createId("lic"),
+      keyHash,
+      userId: user.id,
+      plan: input.plan,
+      expiresAt: input.expiresAt.toISOString(),
+      status: "active",
+      allowedDevices: input.allowedDevices
+    };
+    this.licenses.set(license.id, license);
+    return toLicenseSummary(license);
   }
   async getHubSession(sessionId) {
     const session = this.sessions.get(sessionId);
@@ -16294,15 +16323,42 @@ var NeonPlatformStore = class {
   }
   async activateLicense(input) {
     await this.ensureWalletApps();
-    const now = /* @__PURE__ */ new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
     const [existingLicense] = await this.db.select().from(licenses).where(eq(licenses.keyHash, keyHash)).limit(1);
-    const user = existingLicense ? await this.getUser(existingLicense.userId) : await this.createUser(input.email);
-    const license = existingLicense ?? await this.createLicense(keyHash, user.id, now);
+    if (!existingLicense) {
+      throw new InvalidLicenseError();
+    }
+    const user = await this.getUser(existingLicense.userId);
+    const license = existingLicense;
     await this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = await this.createSession(user.id, license.id, license.expiresAt);
     await this.recordDevice(user.id, input.deviceId);
     return this.buildHubSession(user, license, session);
+  }
+  async createPurchasedLicense(input) {
+    await this.ensureWalletApps();
+    const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
+    const [existingLicense] = await this.db.select().from(licenses).where(eq(licenses.keyHash, keyHash)).limit(1);
+    if (existingLicense) {
+      return toLicenseSummary({
+        ...existingLicense,
+        expiresAt: existingLicense.expiresAt.toISOString()
+      });
+    }
+    const user = await this.createUser(input.email);
+    const [license] = await this.db.insert(licenses).values({
+      id: createId("lic"),
+      keyHash,
+      userId: user.id,
+      plan: input.plan,
+      expiresAt: input.expiresAt,
+      allowedDevices: input.allowedDevices
+    }).onConflictDoNothing({ target: licenses.keyHash }).returning();
+    const createdLicense = license ?? (await this.db.select().from(licenses).where(eq(licenses.keyHash, keyHash)).limit(1))[0];
+    return toLicenseSummary({
+      ...createdLicense,
+      expiresAt: createdLicense.expiresAt.toISOString()
+    });
   }
   async getHubSession(sessionId) {
     const session = await this.getSession(sessionId);
@@ -17236,6 +17292,12 @@ var CUSTOM_IMAGE_OVERRIDES = {
   USDC: "https://api.phantom.app/image-proxy/?image=https%3A%2F%2Fcdn.jsdelivr.net%2Fgh%2Fsolana-labs%2Ftoken-list%40main%2Fassets%2Fmainnet%2FEPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v%2Flogo.png&anim=false&fit=cover&width=128&height=128",
   USDT: "/tokens/usdt.webp"
 };
+var SELLAUTH_PLANS = {
+  starter: { id: "starter", label: "Starter", durationDays: 7, allowedDevices: 1 },
+  popular: { id: "popular", label: "Most Popular", durationDays: 30, allowedDevices: 1 },
+  monthly: { id: "popular", label: "Most Popular", durationDays: 30, allowedDevices: 1 },
+  yearly: { id: "yearly", label: "Yearly Access", durationDays: 365, allowedDevices: 2 }
+};
 var app = new Hono2();
 app.use("*", async (c, next) => {
   const middleware = cors({
@@ -17252,6 +17314,52 @@ app.get(
     storage: c.env.DATABASE_URL ? "neon" : "memory"
   })
 );
+app.post("/webhooks/sellauth", async (c) => {
+  const secret = c.env.SELLAUTH_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error("[sellauth-webhook] SELLAUTH_WEBHOOK_SECRET is not set");
+    return c.text("Server misconfiguration", 500);
+  }
+  const rawBody = await c.req.text();
+  const signature = c.req.header("x-signature") || c.req.header("x-sellauth-signature") || c.req.header("signature") || "";
+  if (!signature) {
+    return c.text("Missing signature", 401);
+  }
+  if (!await verifySellAuthSignature(rawBody, signature, secret)) {
+    return c.text("Invalid signature", 403);
+  }
+  let payload;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return c.text("Invalid JSON", 400);
+  }
+  const expectedShopId = c.env.SELLAUTH_SHOP_ID || c.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID;
+  const payloadShopId = payload.shop_id ?? payload.shopId ?? payload.data?.shop_id ?? payload.data?.shopId;
+  if (expectedShopId && payloadShopId?.toString() !== expectedShopId.toString()) {
+    console.warn(`[sellauth-webhook] Shop ID mismatch. Expected ${expectedShopId}, received ${payloadShopId}`);
+    return c.text("Invalid shop ID", 403);
+  }
+  const orderId = extractSellAuthOrderId(payload);
+  if (!orderId) {
+    console.error("[sellauth-webhook] Missing order id in payload");
+    return c.text("Missing order id", 400);
+  }
+  const plan = resolveSellAuthPlan(c.env, payload);
+  const licenseKey = await generateLicenseKeyForOrder(orderId, secret);
+  const now = Date.now();
+  const expiresAt = new Date(now + plan.durationDays * 24 * 60 * 60 * 1e3);
+  const buyerEmail = extractSellAuthEmail(payload);
+  await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+    licenseKey,
+    email: buyerEmail,
+    plan: plan.label,
+    expiresAt,
+    allowedDevices: plan.allowedDevices
+  });
+  console.log(`[sellauth-webhook] Created license for order ${orderId} | plan=${plan.id} | expires=${expiresAt.toISOString()}`);
+  return c.text(licenseKey, 200, { "Content-Type": "text/plain" });
+});
 app.get("/prices", async (c) => {
   try {
     const symbolsParam = c.req.query("symbols");
@@ -17551,6 +17659,9 @@ app.post("/auth/license/activate", async (c) => {
   } catch (error) {
     if (error instanceof DeviceLimitError) {
       return c.json({ code: "DEVICE_LIMIT_REACHED", error: error.message }, 403);
+    }
+    if (error instanceof InvalidLicenseError) {
+      return c.json({ code: "INVALID_LICENSE", error: error.message }, 401);
     }
     throw error;
   }
@@ -17884,6 +17995,98 @@ function buildLaunchUrl(env, walletAppId2, token, returnTo) {
   return url.toString();
 }
 __name(buildLaunchUrl, "buildLaunchUrl");
+async function verifySellAuthSignature(rawBody, signature, secret) {
+  const computed = await hmacSha256Hex(secret, rawBody);
+  return timingSafeHexEqual(computed, signature);
+}
+__name(verifySellAuthSignature, "verifySellAuthSignature");
+async function hmacSha256Hex(secret, message) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return bytesToHex(new Uint8Array(signature));
+}
+__name(hmacSha256Hex, "hmacSha256Hex");
+function timingSafeHexEqual(leftHex, rightHex) {
+  const left = hexToBytes2(leftHex);
+  const right = hexToBytes2(rightHex);
+  if (!left || !right || left.length !== right.length) return false;
+  let diff = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left[index] ^ right[index];
+  }
+  return diff === 0;
+}
+__name(timingSafeHexEqual, "timingSafeHexEqual");
+function bytesToHex(bytes) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+__name(bytesToHex, "bytesToHex");
+function hexToBytes2(hex) {
+  const normalized = hex.trim().toLowerCase();
+  if (!/^[a-f0-9]+$/.test(normalized) || normalized.length % 2 !== 0) return null;
+  const bytes = new Uint8Array(normalized.length / 2);
+  for (let index = 0; index < normalized.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(normalized.slice(index, index + 2), 16);
+  }
+  return bytes;
+}
+__name(hexToBytes2, "hexToBytes");
+async function generateLicenseKeyForOrder(orderId, secret) {
+  const digest = await hmacSha256Hex(secret, `license:${orderId}`);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const letters = Array.from(hexToBytes2(digest).slice(0, 20), (byte) => alphabet[byte % alphabet.length]);
+  return [0, 5, 10, 15].map((start) => letters.slice(start, start + 5).join("")).join("-");
+}
+__name(generateLicenseKeyForOrder, "generateLicenseKeyForOrder");
+function extractSellAuthOrderId(payload) {
+  return normalizePayloadString(
+    payload.id ?? payload.order_id ?? payload.orderId ?? payload.invoice_id ?? payload.invoiceId ?? payload.data?.id ?? payload.data?.order_id ?? payload.data?.orderId ?? payload.data?.invoice_id ?? payload.data?.invoiceId
+  );
+}
+__name(extractSellAuthOrderId, "extractSellAuthOrderId");
+function extractSellAuthEmail(payload) {
+  return normalizePayloadString(
+    payload.email ?? payload.customer_email ?? payload.buyer_email ?? payload.data?.email ?? payload.data?.customer_email ?? payload.data?.buyer_email ?? payload.customer?.email ?? payload.buyer?.email
+  );
+}
+__name(extractSellAuthEmail, "extractSellAuthEmail");
+function resolveSellAuthPlan(env, payload) {
+  const planId = normalizePayloadString(
+    payload.item?.custom_fields?.plan_id ?? payload.custom_fields?.plan_id ?? payload.metadata?.plan_id ?? payload.data?.metadata?.plan_id
+  )?.toLowerCase();
+  if (planId && SELLAUTH_PLANS[planId]) return SELLAUTH_PLANS[planId];
+  const productId = normalizePayloadString(
+    payload.product_id ?? payload.productId ?? payload.item?.product_id ?? payload.item?.productId ?? payload.data?.product_id ?? payload.data?.productId ?? payload.items?.[0]?.product_id ?? payload.items?.[0]?.productId
+  );
+  const productPlan = getSellAuthProductPlanMap(env)[productId || ""];
+  if (productPlan) return productPlan;
+  console.warn(`[sellauth-webhook] Unknown plan/product id: ${planId || productId || "missing"}. Falling back to starter.`);
+  return SELLAUTH_PLANS.starter;
+}
+__name(resolveSellAuthPlan, "resolveSellAuthPlan");
+function getSellAuthProductPlanMap(env) {
+  const starter = env.SELLAUTH_STARTER_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID;
+  const monthly = env.SELLAUTH_MONTHLY_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID;
+  const yearly = env.SELLAUTH_YEARLY_PRODUCT_ID || env.NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID;
+  return {
+    ...starter ? { [starter]: SELLAUTH_PLANS.starter } : {},
+    ...monthly ? { [monthly]: SELLAUTH_PLANS.popular } : {},
+    ...yearly ? { [yearly]: SELLAUTH_PLANS.yearly } : {}
+  };
+}
+__name(getSellAuthProductPlanMap, "getSellAuthProductPlanMap");
+function normalizePayloadString(value) {
+  if (value === void 0 || value === null) return void 0;
+  const normalized = String(value).trim();
+  return normalized ? normalized : void 0;
+}
+__name(normalizePayloadString, "normalizePayloadString");
 var src_default = app;
 
 // ../../node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
@@ -17927,7 +18130,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-aqsb4v/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-WxGnOF/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -17959,7 +18162,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-aqsb4v/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-WxGnOF/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

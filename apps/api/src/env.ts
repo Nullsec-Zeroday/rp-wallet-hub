@@ -7,6 +7,15 @@ export interface ApiEnv {
   TRUST_ORIGIN?: string;
   PHANTOM_ENABLED?: string;
   TRUST_ENABLED?: string;
+  SELLAUTH_WEBHOOK_SECRET?: string;
+  SELLAUTH_SHOP_ID?: string;
+  NEXT_PUBLIC_SELLAUTH_SHOP_ID?: string;
+  SELLAUTH_STARTER_PRODUCT_ID?: string;
+  SELLAUTH_MONTHLY_PRODUCT_ID?: string;
+  SELLAUTH_YEARLY_PRODUCT_ID?: string;
+  NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID?: string;
+  NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID?: string;
+  NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID?: string;
 }
 
 export function getAllowedOrigins(env: ApiEnv) {
