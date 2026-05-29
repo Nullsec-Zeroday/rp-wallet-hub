@@ -10,7 +10,7 @@ const satoshi = localFont({
 export const metadata: Metadata = {
   title: {
     default: "Premium Phantom Simulator & Fake Crypto App",
-    template: "%s | RP Wallet",
+    template: "%s | LarperWallet",
   },
   description:
     "The world's most realistic phantom simulator and fake crypto app for content creation. Create perfect screenshots and roleplay portfolios with our premium fake wallet.",

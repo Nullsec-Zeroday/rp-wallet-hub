@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms & Conditions — RP Wallet",
-  description: "Read the Terms & Conditions for using RP Wallet. Understanding the novelty nature and rules of our entertainment service.",
+  title: "Terms & Conditions — LarperWallet",
+  description: "Read the Terms & Conditions for using LarperWallet. Understanding the novelty nature and rules of our entertainment service.",
   alternates: {
     canonical: "/terms",
   },

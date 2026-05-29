@@ -34,7 +34,7 @@ export default function TryFreeButton({ className }: { className?: string }) {
 
         <div className="relative z-10 flex items-center gap-2.5">
           <ArrowDown size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-          <span className="truncate tracking-tight">Get RPWallet App</span>
+          <span className="truncate tracking-tight">Get Larper Wallet</span>
         </div>
       </Link>
     </motion.div>

@@ -164,7 +164,7 @@ export default function BlogPage() {
                 Need polished wallet visuals for your next launch?
               </h2>
               <p className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed text-white/70 [text-wrap:pretty]">
-                Explore RP Wallet for mockups, demos, creator assets, and entertainment-ready wallet scenes that look clean on mobile and desktop.
+                Explore LarperWallet for mockups, demos, creator assets, and entertainment-ready wallet scenes that look clean on mobile and desktop.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

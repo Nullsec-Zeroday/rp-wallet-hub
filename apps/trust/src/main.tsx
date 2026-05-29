@@ -88,7 +88,7 @@ function TrustApp() {
           {!appEnv.walletAppEnabled ? (
             <InstallGate
               heading="This wallet is not available yet"
-              tone="This RP Wallet app is currently disabled. Check the hub for the wallets available on your license."
+              tone="This LarperWallet app is currently disabled. Check the hub for the wallets available on your license."
             />
           ) : !standalone ? (
             <InstallGate
@@ -114,7 +114,7 @@ function TrustApp() {
             <StatusPanel
               eyebrow="Trust Wallet PWA"
               title="Open this from the hub"
-              body={error || "Launch Trust from the RP Wallet hub to attach a session to this installed app."}
+              body={error || "Launch Trust from the LarperWallet hub to attach a session to this installed app."}
             />
           )}
         </IonContent>

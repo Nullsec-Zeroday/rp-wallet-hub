@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import type { BlogPost } from "@/lib/blog-data";
 
 export const siteConfig = {
-  name: "RP Wallet",
+  name: "LarperWallet",
   url: "https://larperwallet.com",
   description:
-    "RP Wallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay—flex millions in crypto with an indistinguishable fake crypto app interface.",
+    "LarperWallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay—flex millions in crypto with an indistinguishable fake crypto app interface.",
   ogImage: "/opengraph-image.png",
-  xHandle: "@rpwallet",
+  xHandle: "@LarperWallet",
 };
 
 export function absoluteUrl(path = "/") {
@@ -50,9 +50,9 @@ export function buildDefaultMetadata(): Metadata {
       "wallet roleplay app",
       "novelty crypto wallet",
       "crypto screenshot tool",
-      "RP Wallet",
+      "LarperWallet",
     ],
-    authors: [{ name: "RP Wallet Team" }],
+    authors: [{ name: "LarperWallet Team" }],
     creator: siteConfig.name,
     publisher: siteConfig.name,
     category: "technology",
@@ -128,7 +128,7 @@ export function buildWebApplicationSchema() {
     },
     author: {
       "@type": "Organization",
-      name: "RP Wallet Team",
+      name: "LarperWallet Team",
     },
   };
 }
@@ -153,7 +153,7 @@ export function buildBlogPostingSchema(post: BlogPost) {
     articleSection: post.category,
     author: {
       "@type": "Organization",
-      name: "RP Wallet Team",
+      name: "LarperWallet Team",
     },
     datePublished: post.date,
     dateModified: post.date,

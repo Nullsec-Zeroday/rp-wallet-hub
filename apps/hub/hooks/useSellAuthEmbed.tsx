@@ -39,6 +39,21 @@ interface CheckoutResponse {
 }
 
 function CheckoutModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const [redirectedAway, setRedirectedAway] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) {
+        // Page went to background — likely a popup/new tab opened from the iframe
+        setRedirectedAway(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
   return createPortal(
     <div className="fixed inset-0 z-[100000010] flex items-center justify-center p-4 pointer-events-none">
       <motion.div
@@ -66,20 +81,46 @@ function CheckoutModal({ url, onClose }: { url: string; onClose: () => void }) {
             <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
           </svg>
         </button>
-        <div className="w-full h-full">
-          <iframe
-            src={url}
-            title="SellAuth Embed"
-            referrerPolicy="no-referrer"
-            allow="payment; clipboard-write"
-            className="w-full h-[46rem] md:h-[52rem] border-0"
-          />
+        <div className="w-full h-full relative">
+          {!redirectedAway && (
+            <iframe
+              src={url}
+              title="SellAuth Embed"
+              referrerPolicy="no-referrer"
+              allow="payment; clipboard-write"
+              className="w-full h-[46rem] md:h-[52rem] border-0"
+            />
+          )}
+          {redirectedAway && (
+            <div className="w-full h-[46rem] md:h-[52rem] flex flex-col items-center justify-center gap-6 px-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#ab9ff2]/10 border border-[#ab9ff2]/20 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ab9ff2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-2">Complete your payment</h3>
+                <p className="text-white/50 text-sm leading-relaxed max-w-[280px] mx-auto">
+                  A new window was opened for payment. Complete your purchase there, then return here.
+                </p>
+              </div>
+              <button
+                onClick={() => setRedirectedAway(false)}
+                className="mt-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium transition-all"
+              >
+                ← Back to checkout
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>,
     document.body,
   );
 }
+
 
 export function useSellAuthEmbed(): SellAuthEmbedHook {
   const [isLoading, setIsLoading] = useState(false);
@@ -175,18 +216,19 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
           throw new Error('No checkout URL returned. Please try again.');
         }
 
-        if (options.modal !== false) {
+        // On mobile, skip the iframe modal and redirect directly.
+        // Mobile browsers block popups from iframes (e.g. Whop payment opening a new window).
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobileDevice) {
+          window.location.href = responseData.url;
+        } else if (options.modal !== false) {
           setModalUrl(responseData.url);
           if (options.scrollTop) {
             window.scrollTo(0, 0);
           }
         } else {
-          const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window);
-          if (isIos) {
-            window.location.href = responseData.url;
-          } else {
-            window.open(responseData.url, '_blank');
-          }
+          window.open(responseData.url, '_blank');
         }
       } catch (error: unknown) {
         console.error('SellAuth Checkout Error:', error);

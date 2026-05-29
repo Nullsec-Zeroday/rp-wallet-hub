@@ -253,10 +253,10 @@ export default function BlogPostClient({
                 Want better wallet visuals for your next campaign?
               </h3>
               <p className="mx-auto mb-8 max-w-lg text-[16px] leading-relaxed text-white/70 [text-wrap:pretty]">
-                RP Wallet is built for polished demos, mockups, roleplay content, and entertainment-ready visuals that feel consistent across desktop and mobile.
+                LarperWallet is built for polished demos, mockups, roleplay content, and entertainment-ready visuals that feel consistent across desktop and mobile.
               </p>
               <Link href="/buy" className="inline-flex h-12 items-center justify-center rounded-xl bg-[#8B5CF6] px-8 text-[15px] font-bold text-white transition-all hover:bg-[#7e53de]">
-                Explore RP Wallet
+                Explore LarperWallet
               </Link>
             </div>
           </div>

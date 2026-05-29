@@ -109,7 +109,7 @@ function PhantomApp() {
   if (!standalone) {
     return (
       <InstallGate
-        heading={installReady ? "Open Phantom from your home screen" : "Install Phantom on your device"}
+        heading={installReady ? "Open the app from your home screen" : "Install the app on your device"}
         tone={
           installReady
             ? "Your wallet session is ready. Add this app to your home screen, then open it there to continue."
@@ -126,7 +126,7 @@ function PhantomApp() {
       ) : !loading ? (
         <ReconnectPanel
           api={api}
-          body={error || "Launch Phantom from the RP Wallet hub to attach a session to this installed app."}
+          body={error || "Launch Phantom from the LarperWallet hub to attach a session to this installed app."}
           onErrorChange={setError}
           onPayloadChange={setPayload}
         />
@@ -145,7 +145,7 @@ function UnavailablePanel({ walletName }: { walletName: string }) {
       <section className="installPanel">
         <p className="label">{walletName} PWA</p>
         <h1 className="installTitle">This wallet is not available yet</h1>
-        <p className="muted">This RP Wallet app is currently disabled. Check the hub for the wallets available on your license.</p>
+        <p className="muted">This LarperWallet app is currently disabled. Check the hub for the wallets available on your license.</p>
       </section>
     </main>
   );
@@ -154,8 +154,8 @@ function UnavailablePanel({ walletName }: { walletName: string }) {
 function InstallGate({ heading, tone }: { heading: string; tone: string }) {
   const ios = isIOS();
   const steps = ios
-    ? ["Tap the Share button in Safari", 'Choose "Add to Home Screen"', 'Tap "Add"', "Open Phantom from your home screen"]
-    : ["Open the browser menu", 'Choose "Add to Home screen"', 'Confirm with "Add"', "Open Phantom from your home screen"];
+    ? ["Tap the Share button in Safari", 'Choose "Add to Home Screen"', 'Tap "Add"', "Open the app from your home screen"]
+    : ["Open the browser menu", 'Choose "Add to Home screen"', 'Confirm with "Add"', "Open the app from your home screen"];
 
   const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://larperwallet.com");
 

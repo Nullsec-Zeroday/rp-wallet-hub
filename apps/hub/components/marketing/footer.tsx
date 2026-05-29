@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-16 relative z-10">
         <div className="w-full max-w-4xl mx-auto border border-[#d4af37]/20 bg-[#d4af37]/[0.03] rounded-3xl p-6 md:p-8 text-center shadow-lg">
           <p className="text-[#d4af37]/80 text-[14px] md:text-[15px] leading-relaxed font-medium">
-            <span className="text-[#d4af37] font-bold">⚠️ Disclaimer:</span> RP Wallet is a novelty app for entertainment purposes only. It is not a real cryptocurrency wallet and does not hold, send, or receive any real crypto assets. Not affiliated with Phantom, Ledger, Trust Wallet, Binance, or Solana Labs.
+            <span className="text-[#d4af37] font-bold">⚠️ Disclaimer:</span> LarperWallet is a novelty app for entertainment purposes only. It is not a real cryptocurrency wallet and does not hold, send, or receive any real crypto assets. Not affiliated with Phantom, Ledger, Trust Wallet, Binance, or Solana Labs.
           </p>
         </div>
 
@@ -23,7 +23,7 @@ export default function Footer() {
             </p>
             <MadeInUsaBadge className="mt-8 mb-4 opacity-80 hover:opacity-100 transition-opacity" />
             <div className="text-[12px] text-white/10 font-medium tracking-wide">
-              © {new Date().getFullYear()} RP WALLET.
+              © {new Date().getFullYear()} LarperWallet.
             </div>
           </div>
 
@@ -35,7 +35,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Socials</span>
-              <Link href="https://t.me/rpwalletchannel" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">Telegram</Link>
+              <Link href="https://t.me/larperwalletchannel" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">Telegram</Link>
             </div>
             <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Legal</span>

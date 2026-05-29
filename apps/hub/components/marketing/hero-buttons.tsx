@@ -15,7 +15,7 @@ export default function HeroButtons({ onOpenDemo }: { onOpenDemo?: () => void })
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 w-full ">
         <TryFreeButton />
         <Link
-          href="https://t.me/rpwalletchannel"
+          href="https://t.me/larperwalletchannel"
           target="_blank"
           rel="noopener noreferrer"
           onClick={trackTelegramClick}

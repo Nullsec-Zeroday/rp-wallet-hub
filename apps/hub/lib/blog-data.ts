@@ -52,7 +52,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Discover the real-world use cases for a crypto wallet simulator. From product demos to creator workflows, learn how teams use fake wallet apps to speed up production.",
     date: "April 23, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "12 min read",
     category: "Guides",
     image: "/logo.png",
@@ -91,7 +91,7 @@ export const blogPosts: BlogPost[] = [
     ],
     quote: {
       text: "The more repeatable the scene, the more valuable the simulator becomes.",
-      attribution: "RP Wallet Editorial",
+      attribution: "LarperWallet Editorial",
     },
     sections: [
       {
@@ -187,7 +187,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Learn how to create professional crypto wallet product demos without relying on live accounts. Use simulators to build clean, repeatable scenes for pitch decks and ads.",
     date: "April 21, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "13 min read",
     category: "Product",
     image: "/logo.png",
@@ -319,7 +319,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Design high-converting wallet mockups for your crypto landing page. Stop using decorative screenshots and start building visual systems that explain your product.",
     date: "April 18, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "14 min read",
     category: "Design",
     image: "/logo.png",
@@ -444,7 +444,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Build a reusable visual kit for wallet screenshots and short videos so creators can move faster while keeping their content consistent.",
     date: "April 15, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "11 min read",
     category: "Creators",
     image: "/logo.png",
@@ -481,7 +481,7 @@ export const blogPosts: BlogPost[] = [
     ],
     quote: {
       text: "A creator workflow gets faster when the visual system starts doing the remembering.",
-      attribution: "RP Wallet Editorial",
+      attribution: "LarperWallet Editorial",
     },
     sections: [
       {
@@ -570,7 +570,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Protect your team from accidental leaks by using a safe, controlled workflow for crypto wallet screenshots, demos, and mockups.",
     date: "April 12, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "10 min read",
     category: "Security",
     image: "/logo.png",
@@ -686,7 +686,7 @@ export const blogPosts: BlogPost[] = [
     description:
       "Stop writing feature logs and start building a search-worthy product blog. Learn the editorial strategy that drives organic traffic for visual tools and SaaS.",
     date: "April 09, 2026",
-    author: "RP Wallet Editorial",
+    author: "LarperWallet Editorial",
     readingTime: "15 min read",
     category: "Strategy",
     image: "/logo.png",
@@ -808,9 +808,9 @@ export const blogPosts: BlogPost[] = [
   excerpt:
     "A clear breakdown of what a phantom wallet simulator actually is, who uses one, and how it differs from scam tools — plus the legitimate use cases that drive the category.",
   description:
-    "Understand what a phantom wallet simulator is, who needs one, and why the category exists. Covers content creation, product demos, mockups, roleplay content, and how RP Wallet fits in.",
+    "Understand what a phantom wallet simulator is, who needs one, and why the category exists. Covers content creation, product demos, mockups, roleplay content, and how LarperWallet fits in.",
   date: "May 24, 2026",
-  author: "RP Wallet Editorial",
+  author: "LarperWallet Editorial",
   readingTime: "10 min read",
   category: "Guides",
   image: "/logo.png",
@@ -825,7 +825,7 @@ export const blogPosts: BlogPost[] = [
   takeaways: [
     "A phantom wallet simulator is a visual mockup tool — it does not connect to any blockchain or hold real funds.",
     "The primary users are content creators, product teams, designers, and crypto educators who need controlled wallet visuals.",
-    "Legitimate simulators like RP Wallet are clearly separate from phishing tools or scam kits — the intent, the audience, and the output are completely different.",
+    "Legitimate simulators like LarperWallet are clearly separate from phishing tools or scam kits — the intent, the audience, and the output are completely different.",
   ],
   audience: [
     "Content creators making crypto-themed videos or posts",
@@ -846,7 +846,7 @@ export const blogPosts: BlogPost[] = [
   ],
   quote: {
     text: "A simulator does not pretend to be a wallet. It pretends to look like one — and that distinction matters.",
-    attribution: "RP Wallet Editorial",
+    attribution: "LarperWallet Editorial",
   },
   sections: [
     {
@@ -882,12 +882,12 @@ export const blogPosts: BlogPost[] = [
       summary:
         "The difference is intent, transparency, and what the tool actually does.",
       paragraphs: [
-        "This is the question that comes up the most, so it is worth being direct about it. Scam tools are designed to deceive someone into thinking a fake wallet is real — usually to trick a victim into sending funds, proving solvency they do not have, or faking transaction receipts. They are built for deception. A phantom wallet simulator like RP Wallet is built for content production. It is openly marketed as a simulation tool, it says \"simulator\" right on the label, and it cannot interact with any blockchain.",
+        "This is the question that comes up the most, so it is worth being direct about it. Scam tools are designed to deceive someone into thinking a fake wallet is real — usually to trick a victim into sending funds, proving solvency they do not have, or faking transaction receipts. They are built for deception. A phantom wallet simulator like LarperWallet is built for content production. It is openly marketed as a simulation tool, it says \"simulator\" right on the label, and it cannot interact with any blockchain.",
         "The distinction is the same one that separates a stage prop from a counterfeit. A prop knife in a theater production is not a weapon — everyone involved knows it is fake, and its purpose is to support a story. A fake phantom wallet used in a YouTube skit or a product demo is serving the same function. The audience either knows it is simulated or the context makes it obvious.",
-        "RP Wallet is transparent about what it is. The app is a crypto wallet simulator for content creators, designers, and product teams. There is no hidden functionality that connects to a real network. There are no private key prompts. There is no send button that actually does anything. The tool exists to make realistic wallet visuals quickly — nothing more.",
+        "LarperWallet is transparent about what it is. The app is a crypto wallet simulator for content creators, designers, and product teams. There is no hidden functionality that connects to a real network. There are no private key prompts. There is no send button that actually does anything. The tool exists to make realistic wallet visuals quickly — nothing more.",
       ],
       callout:
-        "Scam tools hide what they are. RP Wallet puts \"simulator\" in the name. That is not a small difference — it is the entire point.",
+        "Scam tools hide what they are. LarperWallet puts \"simulator\" in the name. That is not a small difference — it is the entire point.",
     },
     {
       title: "Legitimate use cases that drive the category",
@@ -913,19 +913,19 @@ export const blogPosts: BlogPost[] = [
       paragraphs: [
         "The first thing that matters is visual fidelity. If the simulator does not look convincingly close to a real Phantom wallet, it fails at its only job. The spacing, the font rendering, the color palette, the token icons, the balance formatting — all of it needs to feel native. Users who work with wallet UI every day will spot a cheap mockup instantly, and so will their audiences.",
         "Customization depth is the second factor. A good phantom simulator app lets you set specific token balances, add or remove tokens from the portfolio, adjust the total value, and ideally tweak details like wallet addresses and transaction histories. The more control you have over the visual state, the more useful the tool becomes across different projects. A simulator that only shows one hardcoded balance is barely a step above a static screenshot.",
-        "The third thing — and this is where RP Wallet puts a lot of focus — is workflow speed. Creators and product teams do not want to spend twenty minutes configuring a wallet mockup. They want to open the app, set the state they need, capture the output, and move on. The best simulators treat the setup process as a production tool, not a novelty toy. That means fast token selection, instant balance editing, and an interface that stays out of your way while you work.",
+        "The third thing — and this is where LarperWallet puts a lot of focus — is workflow speed. Creators and product teams do not want to spend twenty minutes configuring a wallet mockup. They want to open the app, set the state they need, capture the output, and move on. The best simulators treat the setup process as a production tool, not a novelty toy. That means fast token selection, instant balance editing, and an interface that stays out of your way while you work.",
       ],
       callout:
         "The three things that matter most: does it look real, can you customize it, and is it fast to use?",
     },
     {
-      title: "Why RP Wallet is built for this exact job",
+      title: "Why LarperWallet is built for this exact job",
       summary:
-        "RP Wallet was designed from the start as a phantom wallet simulator for people who need clean, controlled wallet visuals.",
+        "LarperWallet was designed from the start as a phantom wallet simulator for people who need clean, controlled wallet visuals.",
       paragraphs: [
-        "RP Wallet is not a repurposed fintech app or a hacked-together screenshot generator. It was built specifically as a phantom wallet simulator for content creators, designers, and product teams. Every design decision — from the token selection flow to the balance editing interface to the overall visual polish — was made with one goal: give users a realistic wallet screen they can capture and use immediately.",
-        "The app supports custom token balances, realistic portfolio layouts, and the kind of visual accuracy that makes the output actually usable in professional contexts. Whether you need a quick screenshot for a tweet, a detailed wallet state for a product demo, or a series of consistent visuals for a landing page, RP Wallet handles the production side so you can focus on the creative side.",
-        "And because RP Wallet is openly positioned as a simulator — not disguised as a real wallet — users never have to worry about the ethical grey areas that surround shadier tools. The app is what it says it is: a premium wallet mockup tool for people who make things.",
+        "LarperWallet is not a repurposed fintech app or a hacked-together screenshot generator. It was built specifically as a phantom wallet simulator for content creators, designers, and product teams. Every design decision — from the token selection flow to the balance editing interface to the overall visual polish — was made with one goal: give users a realistic wallet screen they can capture and use immediately.",
+        "The app supports custom token balances, realistic portfolio layouts, and the kind of visual accuracy that makes the output actually usable in professional contexts. Whether you need a quick screenshot for a tweet, a detailed wallet state for a product demo, or a series of consistent visuals for a landing page, LarperWallet handles the production side so you can focus on the creative side.",
+        "And because LarperWallet is openly positioned as a simulator — not disguised as a real wallet — users never have to worry about the ethical grey areas that surround shadier tools. The app is what it says it is: a premium wallet mockup tool for people who make things.",
       ],
     },
   ],
@@ -939,13 +939,13 @@ export const blogPosts: BlogPost[] = [
       question:
         "Can you make real transactions with a phantom wallet simulator?",
       answer:
-        "No. A legitimate phantom wallet simulator like RP Wallet has zero blockchain connectivity. You cannot send, receive, swap, or stake real tokens. The app generates visual output only — it is a screen that looks like a wallet, not a wallet that functions like one. There are no private keys, no seed phrases, and no network connections involved.",
+        "No. A legitimate phantom wallet simulator like LarperWallet has zero blockchain connectivity. You cannot send, receive, swap, or stake real tokens. The app generates visual output only — it is a screen that looks like a wallet, not a wallet that functions like one. There are no private keys, no seed phrases, and no network connections involved.",
     },
     {
       question:
         "What is the difference between a phantom wallet simulator and a fake wallet scam?",
       answer:
-        "Intent and transparency. A simulator is openly marketed as a mockup and content tool — it says 'simulator' in the name and on the product page. A scam tool is designed to trick someone into believing a fake wallet is real, usually to steal funds or fake proof of holdings. RP Wallet is a production tool for creators and teams, not a deception tool.",
+        "Intent and transparency. A simulator is openly marketed as a mockup and content tool — it says 'simulator' in the name and on the product page. A scam tool is designed to trick someone into believing a fake wallet is real, usually to steal funds or fake proof of holdings. LarperWallet is a production tool for creators and teams, not a deception tool.",
     },
     {
       question: "Who should use a phantom wallet simulator?",
@@ -963,7 +963,7 @@ export const blogPosts: BlogPost[] = [
   description:
     "A practical guide for creators who need fake crypto portfolio visuals for content. Covers simulation tools, ethical transparency, and workflows that look convincing without misleading anyone.",
   date: "May 24, 2026",
-  author: "RP Wallet Editorial",
+  author: "LarperWallet Editorial",
   readingTime: "9 min read",
   category: "Creators",
   image: "/logo.png",
@@ -1000,7 +1000,7 @@ export const blogPosts: BlogPost[] = [
   ],
   quote: {
     text: "The goal isn't to trick anyone. It's to tell a better visual story without putting your real accounts on camera.",
-    attribution: "RP Wallet Editorial",
+    attribution: "LarperWallet Editorial",
   },
   sections: [
     {
@@ -1030,7 +1030,7 @@ export const blogPosts: BlogPost[] = [
       summary:
         "A simulation tool gives you control over every detail without the risk of editing real screenshots or exposing live accounts.",
       paragraphs: [
-        "The workflow is straightforward. Instead of screenshotting a real wallet and editing out the parts you don't want, you start from a simulation tool like RP Wallet and build the exact scene your content needs. Pick your tokens. Set balances that support the story. Arrange the portfolio in a way that makes visual sense for the format you're publishing in — whether that's a vertical reel, a wide thumbnail, or a square post.",
+        "The workflow is straightforward. Instead of screenshotting a real wallet and editing out the parts you don't want, you start from a simulation tool like LarperWallet and build the exact scene your content needs. Pick your tokens. Set balances that support the story. Arrange the portfolio in a way that makes visual sense for the format you're publishing in — whether that's a vertical reel, a wide thumbnail, or a square post.",
         "This approach is better than manual editing for a few reasons. First, the interface details stay accurate. You're not guessing at padding, font weights, or how Phantom actually renders a token list. Second, you can reuse scenes. If you create a fake crypto balance for one video, that same setup can power your next three thumbnails without starting over. Third, there's nothing to leak. No real addresses, no actual transaction history, no accidental exposure of operational data.",
         "The creators who do this well usually build a small library of three to five wallet states they rotate through. One might be a high-balance overview for attention-grabbing thumbnails. Another might be a more modest, realistic-looking portfolio for tutorial content. A third might be set up specifically for short-form clips where only the top portion of the screen is visible.",
       ],
@@ -1087,7 +1087,7 @@ export const blogPosts: BlogPost[] = [
       question:
         "How do I make a fake wallet balance look realistic?",
       answer:
-        "Use a simulation tool that replicates the actual wallet interface rather than editing screenshots manually. The key details that matter are font rendering, decimal precision, token ordering, and portfolio percentages that add up correctly. A dedicated tool like RP Wallet handles these automatically. Beyond that, make sure your token mix and balance scale make logical sense together.",
+        "Use a simulation tool that replicates the actual wallet interface rather than editing screenshots manually. The key details that matter are font rendering, decimal precision, token ordering, and portfolio percentages that add up correctly. A dedicated tool like LarperWallet handles these automatically. Beyond that, make sure your token mix and balance scale make logical sense together.",
     },
     {
       question:
@@ -1106,7 +1106,7 @@ export const blogPosts: BlogPost[] = [
   description:
     "Learn how to take clean crypto wallet screenshots for social media, pitch decks, and product pages. Covers crop ratios, content framing, common mistakes, and the right tools for professional results.",
   date: "May 24, 2026",
-  author: "RP Wallet Editorial",
+  author: "LarperWallet Editorial",
   readingTime: "9 min read",
   category: "Design",
   image: "/logo.png",
@@ -1143,7 +1143,7 @@ export const blogPosts: BlogPost[] = [
   ],
   quote: {
     text: "A screenshot should explain something. If the viewer has to squint, scroll, or guess, the screenshot failed.",
-    attribution: "RP Wallet Editorial",
+    attribution: "LarperWallet Editorial",
   },
   sections: [
     {
@@ -1182,7 +1182,7 @@ export const blogPosts: BlogPost[] = [
       paragraphs: [
         "A clean wallet screenshot isn't just about image quality — it's about what information is visible and what isn't. This applies to two categories: what you're intentionally showing (portfolio balance, token list, a specific transaction) and what might accidentally show up (wallet addresses, notification badges, browser tabs, personal transaction history).",
         "For public-facing content, the rule is pretty straightforward: show the minimum needed to tell the story. If the screenshot is for a pitch deck demonstrating portfolio tracking, you want a clear balance and a tidy token list — but you don't need every pending transaction, browser extension icon, and system notification cluttering the frame. Strip it down to the message.",
-        "The trickier part is accidental exposure. Wallet addresses, recent transaction hashes, connected app permissions, and even timestamps can leak context you didn't intend to share. If you're using a live wallet for screenshots, you need to manually check every pixel. Or — and this is where a tool like RP Wallet becomes useful — you can start with a simulated interface where the data is already safe to share, and the visual state is exactly what you designed it to be.",
+        "The trickier part is accidental exposure. Wallet addresses, recent transaction hashes, connected app permissions, and even timestamps can leak context you didn't intend to share. If you're using a live wallet for screenshots, you need to manually check every pixel. Or — and this is where a tool like LarperWallet becomes useful — you can start with a simulated interface where the data is already safe to share, and the visual state is exactly what you designed it to be.",
       ],
       callout:
         "Treat every visible detail as an editorial decision. If it doesn't serve the story, it shouldn't be in the frame.",
@@ -1211,17 +1211,17 @@ export const blogPosts: BlogPost[] = [
       paragraphs: [
         "If you've ever tried to take a series of professional wallet screenshots from a live wallet, you know the real pain point. It's not the screenshot tool or the export settings — it's getting the wallet into the right state. You need specific tokens at specific balances, a clean transaction history, no pending swaps creating visual noise, and ideally a consistent look that holds up across multiple captures.",
         "With a live wallet, that's almost impossible to control. Prices move. Transactions complete. Notifications pop in. You end up taking twenty screenshots and using two, then spending more time editing than you spent planning. For a single social post, that might be tolerable. For a pitch deck with eight wallet visuals, or a product page with a screenshot system, it's a serious time sink.",
-        "This is exactly the problem RP Wallet was built to solve. Instead of wrestling a live interface into submission, you set up the exact portfolio state, token list, and balance you want — and the simulator holds that state for as long as you need it. Every screenshot comes out consistent. Every capture session starts with a clean, controlled interface. The setup problem just goes away, and you're left with the part that should actually take time: deciding what story the screenshot needs to tell.",
+        "This is exactly the problem LarperWallet was built to solve. Instead of wrestling a live interface into submission, you set up the exact portfolio state, token list, and balance you want — and the simulator holds that state for as long as you need it. Every screenshot comes out consistent. Every capture session starts with a clean, controlled interface. The setup problem just goes away, and you're left with the part that should actually take time: deciding what story the screenshot needs to tell.",
       ],
       callout:
-        "RP Wallet gives you a wallet interface that stays exactly how you set it up — no price drift, no notification interruptions, no accidental data exposure.",
+        "LarperWallet gives you a wallet interface that stays exactly how you set it up — no price drift, no notification interruptions, no accidental data exposure.",
     },
     {
       title: "A quick workflow for getting clean wallet screenshots every time",
       summary:
         "A repeatable process that works whether you're making one screenshot or twenty.",
       paragraphs: [
-        "Here's a workflow that works well for most use cases. First, define the purpose: what is this screenshot for, and what single thing should the viewer understand from it? Second, set the state: configure the wallet interface (using RP Wallet or whatever tool you prefer) to show exactly that content. Third, frame the shot: decide on the crop ratio based on where the image will be used, and make sure the focal point is centered with enough padding for flexibility.",
+        "Here's a workflow that works well for most use cases. First, define the purpose: what is this screenshot for, and what single thing should the viewer understand from it? Second, set the state: configure the wallet interface (using LarperWallet or whatever tool you prefer) to show exactly that content. Third, frame the shot: decide on the crop ratio based on where the image will be used, and make sure the focal point is centered with enough padding for flexibility.",
         "Fourth, capture at high resolution. Use your OS screenshot tool at retina resolution, or use a browser-based capture tool that exports at 2x or higher. Fifth, do a quick review pass: check for any unintended details, confirm the resolution holds up at 100% zoom, and verify the content matches the surrounding context. If you're making multiple screenshots for a deck or page, repeat steps two through five with the same visual settings to keep the set consistent.",
         "The entire process takes about five minutes per screenshot when the wallet state is already controlled. Compare that to the thirty-minute scramble of trying to capture a live wallet at just the right moment, and the productivity difference is hard to ignore.",
       ],
@@ -1245,7 +1245,7 @@ export const blogPosts: BlogPost[] = [
       question:
         "How do I take wallet screenshots without exposing my real wallet data?",
       answer:
-        "The safest approach is to use a wallet simulator like RP Wallet, which gives you a realistic wallet interface with fully customizable — and fictional — data. If you're screenshotting a live wallet, manually check every visible element for addresses, transaction hashes, balances, and notification content before publishing.",
+        "The safest approach is to use a wallet simulator like LarperWallet, which gives you a realistic wallet interface with fully customizable — and fictional — data. If you're screenshotting a live wallet, manually check every visible element for addresses, transaction hashes, balances, and notification content before publishing.",
     },
     {
       question:
@@ -1264,7 +1264,7 @@ export const blogPosts: BlogPost[] = [
   description:
     "Compare the main approaches to wallet product demos — testnets, screenshot editing, and simulator tools — and learn which wallet demo tool works best for crypto startups building pitch decks, onboarding content, and launch assets.",
   date: "May 24, 2026",
-  author: "RP Wallet Editorial",
+  author: "LarperWallet Editorial",
   readingTime: "10 min read",
   category: "Product",
   image: "/logo.png",
@@ -1348,7 +1348,7 @@ export const blogPosts: BlogPost[] = [
       summary:
         "A proper wallet demo tool gives you controlled, realistic wallet states without touching real funds or wrestling with testnets.",
       paragraphs: [
-        "The third option — and the one that's gained traction with product teams over the last year — is a dedicated wallet simulator. Tools like RP Wallet let you set up a complete wallet interface with custom token balances, realistic portfolio layouts, and native-looking UI, all without connecting to any real account or network. You pick the tokens, set the balances, and the tool renders a wallet screen that looks exactly like the real thing.",
+        "The third option — and the one that's gained traction with product teams over the last year — is a dedicated wallet simulator. Tools like LarperWallet let you set up a complete wallet interface with custom token balances, realistic portfolio layouts, and native-looking UI, all without connecting to any real account or network. You pick the tokens, set the balances, and the tool renders a wallet screen that looks exactly like the real thing.",
         "The advantage here is speed and consistency. There's no testnet to configure, no faucet to wait on, no post-production editing to do. The wallet state is ready when you are. Need a portfolio showing $47,000 in SOL, $12,000 in ETH, and a handful of smaller positions? Set it up in under two minutes. Need to change the story for a different audience? Adjust the balances and go again. Need video? Record the screen directly — the interface is interactive, so the wallet demonstration feels live even though no real funds are involved.",
         "This is why crypto startups building pitch materials, onboarding videos, or marketing assets have started treating a wallet demo tool as standard production infrastructure. It's not a novelty. It's the fastest way to get professional wallet visuals without the friction of every other approach.",
       ],
@@ -1378,7 +1378,7 @@ export const blogPosts: BlogPost[] = [
       paragraphs: [
         "If your only need is showing a developer audience how a smart contract interaction works on a test network, a testnet is probably fine. The audience expects it, the visual bar is lower, and the setup cost is justifiable. But the moment your demo needs to convince someone who isn't a developer — an investor, a new user, a journalist, a potential partner — the visual standard changes completely.",
         "For teams that produce wallet visuals regularly (pitch updates, onboarding iterations, campaign refreshes, feature launch assets), a simulator pays for itself almost immediately. The time saved on each production cycle compounds fast, especially when the same underlying scenes can be reused across decks, landing pages, social posts, and support docs. That's the real value of a crypto demo tool: not just one better screenshot, but a production system that stays useful across the entire launch calendar.",
-        "RP Wallet was built specifically for this use case. It gives crypto startups, product teams, and content creators a professional wallet interface they can customize, capture, and reuse — without ever exposing real accounts. If your team is spending more than a few minutes trying to get wallet screenshots to look right, it's worth trying the faster path.",
+        "LarperWallet was built specifically for this use case. It gives crypto startups, product teams, and content creators a professional wallet interface they can customize, capture, and reuse — without ever exposing real accounts. If your team is spending more than a few minutes trying to get wallet screenshots to look right, it's worth trying the faster path.",
       ],
     },
   ],
@@ -1387,13 +1387,13 @@ export const blogPosts: BlogPost[] = [
       question:
         "Can I use a wallet demo tool for live product walkthroughs with investors?",
       answer:
-        "Yes. A simulator like RP Wallet produces an interactive wallet interface, so you can click through screens and demonstrate features in real time during a pitch. The experience looks and feels live, but no real account data is involved. This gives you the polish of a scripted demo with the flexibility of a live walkthrough.",
+        "Yes. A simulator like LarperWallet produces an interactive wallet interface, so you can click through screens and demonstrate features in real time during a pitch. The experience looks and feels live, but no real account data is involved. This gives you the polish of a scripted demo with the flexibility of a live walkthrough.",
     },
     {
       question:
         "What's the difference between a wallet demo tool and a testnet wallet?",
       answer:
-        "A testnet wallet connects to a real (test) blockchain network and requires token funding, network configuration, and ongoing maintenance. A wallet demo tool like RP Wallet doesn't connect to any network — you set the token balances and portfolio state directly. The result is faster setup, cleaner visuals, and no dependency on faucet availability or network stability.",
+        "A testnet wallet connects to a real (test) blockchain network and requires token funding, network configuration, and ongoing maintenance. A wallet demo tool like LarperWallet doesn't connect to any network — you set the token balances and portfolio state directly. The result is faster setup, cleaner visuals, and no dependency on faucet availability or network stability.",
     },
     {
       question:
@@ -1408,11 +1408,11 @@ export const blogPosts: BlogPost[] = [
   title:
     "Crypto Roleplay Wallets: How Creators Use Them for Content and Entertainment",
   excerpt:
-    "Inside the growing world of crypto roleplay — why creators fake wallet balances for content, what larping means in crypto culture, and how simulation apps like RP Wallet were built for exactly this.",
+    "Inside the growing world of crypto roleplay — why creators fake wallet balances for content, what larping means in crypto culture, and how simulation apps like LarperWallet were built for exactly this.",
   description:
     "A guide to crypto roleplay culture, larp wallets, and how content creators use wallet simulation apps for comedy, aspirational content, and entertainment — with a focus on transparency and creative best practices.",
   date: "May 24, 2026",
-  author: "RP Wallet Editorial",
+  author: "LarperWallet Editorial",
   readingTime: "10 min read",
   category: "Creators",
   image: "/logo.png",
@@ -1449,7 +1449,7 @@ export const blogPosts: BlogPost[] = [
   ],
   quote: {
     text: "Nobody gets mad at an actor for playing a billionaire. The same logic applies to crypto content — as long as you're honest about the role you're playing.",
-    attribution: "RP Wallet Editorial",
+    attribution: "LarperWallet Editorial",
   },
   sections: [
     {
@@ -1480,7 +1480,7 @@ export const blogPosts: BlogPost[] = [
         "It is less about trickery and more about having a reliable production tool.",
       paragraphs: [
         "Before dedicated crypto roleplay apps existed, creators had two options: Photoshop or browser inspect-element hacks. Both are slow, fragile, and obvious to anyone who looks closely. Photoshopped wallet screenshots often have misaligned text, wrong fonts, or decimal formatting that does not match the real interface. Inspect-element edits disappear the moment you refresh the page. Neither method scales for someone making content regularly.",
-        "A purpose-built simulation app like RP Wallet changes the workflow entirely. Creators can set custom token balances, build realistic portfolio states, and capture clean screenshots or screen recordings without touching a real wallet. The interface looks right because it was designed to look right — the spacing, typography, and hierarchy all match what audiences expect from a real wallet app. That visual fidelity is what makes the content land.",
+        "A purpose-built simulation app like LarperWallet changes the workflow entirely. Creators can set custom token balances, build realistic portfolio states, and capture clean screenshots or screen recordings without touching a real wallet. The interface looks right because it was designed to look right — the spacing, typography, and hierarchy all match what audiences expect from a real wallet app. That visual fidelity is what makes the content land.",
         "The practical benefit goes beyond a single post. Creators who use a simulation app can build a library of wallet states for different content formats. One state might be the 'diamond hands millionaire' scene for an aspirational flex. Another might be a 'rug pull victim' scene for a comedy skit. A third might be a modest portfolio for a more grounded storytelling format. Having those states ready to go means the creator spends less time on setup and more time on the actual content.",
       ],
       bullets: [
@@ -1511,7 +1511,7 @@ export const blogPosts: BlogPost[] = [
       paragraphs: [
         "The creator economy has been expanding into niche verticals for years. Finance content, trading content, and crypto content are already massive categories. Crypto roleplay sits at the intersection of all three — plus comedy and entertainment. That combination gives it a wider audience than straight educational content because it does not require the viewer to care about actual trading. They just need to find the premise funny or interesting.",
         "Creators in this niche monetize the same way others do: brand deals, affiliate partnerships, merch, and audience growth that feeds into other projects. The wallet simulation is just the format. Some creators use it for pure comedy. Others use it for 'what if' scenarios — imagining what their portfolio would look like if they had made different decisions. Others use it for storytelling, building fictional characters with specific financial journeys. The format is flexible enough to support very different creative voices.",
-        "For a tool like RP Wallet, this is not a secondary use case. It is the primary one. The name literally stands for 'roleplay wallet.' The app was built from the ground up for creators who need convincing wallet visuals without the risk, complexity, or ethical baggage of faking real accounts. Every feature — custom balances, realistic interface design, easy screenshot capture — exists because this specific creator workflow demands it.",
+        "For a tool like LarperWallet, this is not a secondary use case. It is the primary one. The name literally stands for 'roleplay wallet.' The app was built from the ground up for creators who need convincing wallet visuals without the risk, complexity, or ethical baggage of faking real accounts. Every feature — custom balances, realistic interface design, easy screenshot capture — exists because this specific creator workflow demands it.",
       ],
     },
     {
@@ -1539,7 +1539,7 @@ export const blogPosts: BlogPost[] = [
     {
       question: "What apps do creators use for fake wallet screenshots?",
       answer:
-        "Purpose-built simulation apps like RP Wallet are the cleanest option. They let creators set custom token balances, build realistic portfolio views, and capture screenshots or recordings that look like a real wallet interface. Before these apps existed, creators relied on Photoshop or browser inspect-element edits, but those methods are slower, less consistent, and easier for audiences to spot as fakes. A dedicated simulation app gives creators a repeatable workflow with higher visual fidelity.",
+        "Purpose-built simulation apps like LarperWallet are the cleanest option. They let creators set custom token balances, build realistic portfolio views, and capture screenshots or recordings that look like a real wallet interface. Before these apps existed, creators relied on Photoshop or browser inspect-element edits, but those methods are slower, less consistent, and easier for audiences to spot as fakes. A dedicated simulation app gives creators a repeatable workflow with higher visual fidelity.",
     },
     {
       question: "How do I make crypto roleplay content without misleading people?",

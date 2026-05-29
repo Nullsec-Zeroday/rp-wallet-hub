@@ -135,7 +135,7 @@ export class RpWalletApiClient {
       } catch {
         detail = "";
       }
-      throw new Error(`RP Wallet API request failed: ${response.status}${detail}`);
+      throw new Error(`LarperWallet API request failed: ${response.status}${detail}`);
     }
 
     return response.json() as Promise<T>;

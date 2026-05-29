@@ -12,32 +12,43 @@ const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
 
 import { trackEvent } from "@/lib/track";
 import { PRICING_PLANS } from "@/lib/pricing-config";
-import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 import { isDemoFeatureEnabled } from "@/lib/demo-config";
 
 const HeroMockups = dynamic(() => import("./hero-mockups").then((mod) => mod.HeroMockups), {
   ssr: false,
 });
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
-};
-
-const staggerContainer = {
-  initial: {},
-  whileInView: {
-    transition: {
-      staggerChildren: 0.02,
-    },
-  },
-  viewport: { once: true },
-};
 
 export default function LandingContent() {
   const USE_NEW_MOBILE_LOOP = false;
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== "undefined") return window.innerWidth < 768;
+    return true;
+  });
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const fadeInUp: any = {
+    initial: isMobile ? false : { opacity: 0, y: 20 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  };
+
+  const staggerContainer: any = {
+    initial: {},
+    whileInView: {
+      transition: {
+        staggerChildren: isMobile ? 0 : 0.02,
+      },
+    },
+    viewport: { once: true },
+  };
+
 
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -108,14 +119,14 @@ export default function LandingContent() {
     }
   };
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
+  // SellAuth logic moved to /buy page
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const demoEnabled = isDemoFeatureEnabled();
 
   const compactSteps = [
     {
       title: "Purchase a License",
-      desc: "Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.",
+      desc: "Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.",
     },
     {
       title: "Receive Your Key",
@@ -137,13 +148,13 @@ export default function LandingContent() {
   return (
     <div className="w-full overflow-visible pb-12 pt-2 md:pb-0">
       <motion.section
-        initial={{ opacity: 0 }}
+        initial={isMobile ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
         className="py-2 md:py-6 flex flex-col items-center px-4 relative"
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={isMobile ? false : { opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
           className="flex items-center gap-1 md:gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-phantom-light relative z-10"
@@ -157,7 +168,7 @@ export default function LandingContent() {
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
@@ -165,18 +176,18 @@ export default function LandingContent() {
             Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">the flex.</span>
           </motion.h1>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom, Trust (coming soon) wallet interface - no real crypto involved.</p>
+            <p>LarperWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom, Trust (coming soon) wallet interface - no real crypto involved.</p>
           </motion.div>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="relative z-10 w-full flex flex-col items-center justify-center mt-2 md:mt-0"
@@ -185,7 +196,7 @@ export default function LandingContent() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={isMobile ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="md:hidden relative z-0 w-full flex flex-col items-center justify-center px-2 pointer-events-none mt-4"
@@ -212,7 +223,7 @@ export default function LandingContent() {
                         {phase === "text" && (
                           <motion.div
                             key={`text-${activeSlide}`}
-                            initial={{ opacity: 0, scale: 0.95 }}
+                            initial={isMobile ? false : { opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 1.05 }}
                             transition={{ duration: 0.4 }}
@@ -269,7 +280,7 @@ export default function LandingContent() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={isMobile ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
             className="mt-6 text-center max-w-[280px] z-10 relative pointer-events-auto"
@@ -286,7 +297,7 @@ export default function LandingContent() {
 
         <Suspense fallback={null}>
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={isMobile ? false : { opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="w-full"
@@ -360,7 +371,7 @@ export default function LandingContent() {
 
       <section className="pb-12 px-6 max-w-[1000px] mx-auto relative">
         <div className="text-center mb-4 md:mb-14">
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">How RPWallet Works</h2>
+          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">How LarperWallet Works</h2>
         </div>
 
         <motion.div
@@ -389,7 +400,7 @@ export default function LandingContent() {
 
           <p className="text-white/60 text-[13px] mt-6 font-medium text-center">
             Have any questions? We have 24/7 support,{" "}
-            <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+            <a href="https://t.me/LarperWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
               click here to contact us
             </a>
             .
@@ -457,45 +468,26 @@ export default function LandingContent() {
                   ))}
                 </ul>
 
-                <button
-                  disabled={isLoading}
-                  onClick={() => {
-                    if (isLoading) return;
-                    trackEvent("clicked_pricing_card", { plan_name: plan.name, plan_price: plan.priceNum.toString() });
-                    if (hasEmbedConfig) {
-                      checkout({
-                        cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
-                        shopId,
-                      });
-                    } else {
-                      window.open(plan.buyUrl, "_blank");
-                    }
-                  }}
+                <Link
+                  href="/buy"
                   className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${isPopular
                     ? "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02]"
                     : isYearly
                       ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
                       : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
-                    } ${isLoading ? "pointer-events-none opacity-50" : ""}`}
+                    }`}
                 >
-                  {isLoading ? (
-                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
-                  ) : (
                     <>
                       Buy <ArrowRight size={18} />
                     </>
-                  )}
-                </button>
+                </Link>
               </motion.div>
             );
           })}
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={isMobile ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="mt-16 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
@@ -517,8 +509,8 @@ export default function LandingContent() {
         <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
           {[
             {
-              q: "Is RP Wallet a real crypto wallet?",
-              a: "No. RP Wallet is an entertainment app only — it does not hold, send, receive, or interact with any real crypto assets. No seed phrases or private keys are ever asked for or stored. It is a display app that shows custom balances on a realistic wallet interface.",
+              q: "Is LarperWallet a real crypto wallet?",
+              a: "No. LarperWallet is an entertainment app only — it does not hold, send, receive, or interact with any real crypto assets. No seed phrases or private keys are ever asked for or stored. It is a display app that shows custom balances on a realistic wallet interface.",
             },
             {
               q: "Will it look exactly like the real crypto apps?",
@@ -526,7 +518,7 @@ export default function LandingContent() {
             },
             {
               q: "Does it work on iPhone and Android?",
-              a: "Yes. RP Wallet is a PWA (Progressive Web App) that installs directly to your home screen. Use Safari on iOS or Chrome on Android — no App Store download required.",
+              a: "Yes. LarperWallet is a PWA (Progressive Web App) that installs directly to your home screen. Use Safari on iOS or Chrome on Android — no App Store download required.",
             },
             {
               q: "Can I add custom tokens or memecoins?",
@@ -542,7 +534,7 @@ export default function LandingContent() {
             },
             {
               q: "Is my payment anonymous?",
-              a: "Yes. RP Wallet accepts crypto only — SOL, ETH, BTC, TRX, and USDT. No account, no email, no personal information required. Your license key is all you need.",
+              a: "Yes. LarperWallet accepts crypto only — SOL, ETH, BTC, TRX, and USDT. No account, no email, no personal information required. Your license key is all you need.",
             },
           ].map((item, i) => {
             const isOpen = openFaqIndex === i;
@@ -572,9 +564,6 @@ export default function LandingContent() {
           })}
         </motion.div>
       </section>
-
-      {captcha}
-      {checkoutModal}
       <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </div>
   );

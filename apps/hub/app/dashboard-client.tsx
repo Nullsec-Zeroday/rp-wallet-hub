@@ -105,7 +105,7 @@ export default function DashboardClient() {
 
         <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-12 animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-4">
-            <Image src="/logo_white.webp" alt="RP Wallet Logo" width={64} height={64} className="size-16" />
+            <Image src="/logo_white.webp" alt="LarperWallet Logo" width={64} height={64} className="size-16" />
             <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Choose a wallet to launch</h1>
             <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-white/60">
               Your {session.license.plan} session is active until {formatDate(session.license.expiresAt)}.
@@ -240,7 +240,7 @@ export default function DashboardClient() {
 
       <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-12 animate-in fade-in duration-300">
         <div className="flex flex-col items-center gap-4">
-          <Image src="/logo_white.webp" alt="RP Wallet Logo" width={64} height={64} className="size-16" />
+          <Image src="/logo_white.webp" alt="LarperWallet Logo" width={64} height={64} className="size-16" />
           <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Enter License Key</h1>
           {error && <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-[#ef4444] animate-in fade-in duration-300">{error}</p>}
         </div>

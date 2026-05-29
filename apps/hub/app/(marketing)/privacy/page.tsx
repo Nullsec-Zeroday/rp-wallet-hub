@@ -36,10 +36,10 @@ export default function PrivacyPage() {
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">1. Introduction</h2>
               <div className="space-y-4 text-[16px] text-[#A1A1AA] leading-relaxed">
                 <p>
-                  RP Wallet ("we," "us," or "our") operates the RP Wallet progressive web application (PWA) and the website located at larperwallet.com (collectively, the "Service"). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
+                  LarperWallet ("we," "us," or "our") operates the LarperWallet progressive web application (PWA) and the website located at larperwallet.com (collectively, the "Service"). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
                 </p>
                 <p>
-                  RP Wallet is a novelty entertainment application. It is <strong>not</strong> a real cryptocurrency wallet. It does not hold, send, receive, or interact with any real cryptocurrency, blockchain, or digital asset. We are <strong>not affiliated with Phantom, Solana Labs, Ledger SAS, Trust Wallet, Binance, or any other wallet provider or blockchain project</strong>.
+                  LarperWallet is a novelty entertainment application. It is <strong>not</strong> a real cryptocurrency wallet. It does not hold, send, receive, or interact with any real cryptocurrency, blockchain, or digital asset. We are <strong>not affiliated with Phantom, Solana Labs, Ledger SAS, Trust Wallet, Binance, or any other wallet provider or blockchain project</strong>.
                 </p>
               </div>
             </section>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">2. Information We Collect</h2>
               <div className="space-y-6 text-[16px] text-[#A1A1AA] leading-relaxed">
-                <p>RP Wallet is designed with privacy in mind. We collect the absolute minimum information needed to operate the Service:</p>
+                <p>LarperWallet is designed with privacy in mind. We collect the absolute minimum information needed to operate the Service:</p>
                 <ul className="space-y-4 list-none">
                   <li className="flex gap-3">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] mt-2.5 shrink-0" />
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">3. How the App Works</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                RP Wallet is delivered as a Progressive Web App (PWA). This means it is installed through your device's web browser and runs locally on your device. Custom balances, token selections, and other configurations you set within the app are stored locally on your device and are not transmitted to our servers.
+                LarperWallet is delivered as a Progressive Web App (PWA). This means it is installed through your device's web browser and runs locally on your device. Custom balances, token selections, and other configurations you set within the app are stored locally on your device and are not transmitted to our servers.
               </p>
             </section>
           </FadeIn>
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">8. Children's Privacy</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                RP Wallet is not intended for use by anyone under the age of 18. We do not knowingly collect information from minors. If you believe a minor has provided us with personal data, please contact us and we will delete it promptly.
+                LarperWallet is not intended for use by anyone under the age of 18. We do not knowingly collect information from minors. If you believe a minor has provided us with personal data, please contact us and we will delete it promptly.
               </p>
             </section>
           </FadeIn>
@@ -171,12 +171,12 @@ export default function PrivacyPage() {
                 If you have any questions about this Privacy Policy, you can reach us on Telegram for instant support.
               </p>
               <a 
-                href="https://t.me/RPWallet_support_bot" 
+                href="https://t.me/LarperWallet_support_bot" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 py-3 px-8 bg-[#8B5CF6] hover:bg-[#7e53de] rounded-xl text-[15px] font-bold text-white transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]"
               >
-                Message @RPWallet_support_bot
+                Message @LarperWallet_support_bot
               </a>
             </section>
           </FadeIn>
