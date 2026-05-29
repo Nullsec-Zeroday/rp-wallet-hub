@@ -1,5 +1,6 @@
 import React from "react";
 import { Toaster } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent } from "@rp-wallet/types";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -99,6 +100,7 @@ function WalletRouteBody() {
   const [activityVisible, setActivityVisible] = React.useState(false);
   const [activityNestedModalOpen, setActivityNestedModalOpen] = React.useState(false);
   const [modalClosing, setModalClosing] = React.useState(false);
+  const [notificationPromptVisible, setNotificationPromptVisible] = React.useState(false);
   const lastOpenedModalRef = React.useRef<string | null>(null);
 
   const THRESHOLD = 110;
@@ -127,24 +129,42 @@ function WalletRouteBody() {
 
   React.useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    if (window.Notification.permission !== "default") return;
-    if (window.localStorage.getItem(NOTIFICATION_PERMISSION_PROMPT_KEY)) return;
 
-    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
-    requestNotificationPermission()
-      .then((granted) => {
-        if (!granted) return;
-
+    if (window.Notification.permission === "granted" && !notificationSettings.pushEnabled) {
         const nextSettings = { ...notificationSettings, pushEnabled: true };
         updateNotificationSettings(nextSettings);
         updateBackendNotificationSettings(nextSettings).catch((error) => {
           console.warn("Unable to persist notification permission preference", error);
         });
-      })
-      .catch((error) => {
-        console.warn("Unable to request notification permission", error);
-      });
+      return;
+    }
+
+    if (window.Notification.permission !== "default") return;
+    if (window.localStorage.getItem(NOTIFICATION_PERMISSION_PROMPT_KEY)) return;
+
+    setNotificationPromptVisible(true);
   }, [notificationSettings, updateNotificationSettings]);
+
+  const enableNotifications = async () => {
+    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
+    setNotificationPromptVisible(false);
+
+    try {
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+
+      const nextSettings = { ...notificationSettingsRef.current, pushEnabled: true };
+      updateNotificationSettings(nextSettings);
+      await updateBackendNotificationSettings(nextSettings);
+    } catch (error) {
+      console.warn("Unable to request notification permission", error);
+    }
+  };
+
+  const dismissNotificationPrompt = () => {
+    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
+    setNotificationPromptVisible(false);
+  };
 
   React.useEffect(() => {
     let cancelled = false;
@@ -693,6 +713,54 @@ function WalletRouteBody() {
           setModalClosing(false);
         }}
       />
+      <AnimatePresence>
+        {notificationPromptVisible && (
+          <motion.div
+            key="notification-permission-prompt"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100000] flex items-end justify-center bg-black/45 px-4 pb-[calc(18px+env(safe-area-inset-bottom))] backdrop-blur-[2px]"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ type: "spring", damping: 30, stiffness: 380, mass: 0.8 }}
+              className="w-full max-w-[360px] rounded-[28px] border border-white/10 bg-[#1c1c1e]/95 p-5 text-white shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
+            >
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ab9ff2]/15 text-[#ab9ff2]">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </div>
+              <h2 className="text-center text-[20px] font-semibold tracking-[-0.01em] text-white">
+                Enable notifications
+              </h2>
+              <p className="mx-auto mt-2 max-w-[280px] text-center text-[14px] leading-5 text-[#a7a7aa]">
+                Get notified when wallet activity arrives, including simulated receives and live incoming transfers.
+              </p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <button
+                  className="h-12 w-full rounded-2xl bg-[#ab9ff2] text-[16px] font-semibold text-black active:opacity-80"
+                  onClick={enableNotifications}
+                  type="button"
+                >
+                  Enable Notifications
+                </button>
+                <button
+                  className="h-11 w-full rounded-2xl bg-white/[0.06] text-[15px] font-semibold text-white/75 active:bg-white/[0.1]"
+                  onClick={dismissNotificationPrompt}
+                  type="button"
+                >
+                  Not Now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Toaster
         expand={false}
         position="bottom-center"

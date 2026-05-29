@@ -15979,7 +15979,7 @@ var InMemoryPlatformStore = class {
           walletAppId: counterpartProfile.walletAppId,
           accountId: counterpartAccount.id,
           transactionId: counterpartTransaction.id,
-          title: "Received",
+          title: "Notification",
           body: `Received ${counterpartTransaction.amount} ${counterpartTransaction.tokenSymbol}`
         });
         this.createWalletEventRecord(counterpartProfile.id, {
@@ -16548,7 +16548,7 @@ var NeonPlatformStore = class {
           walletAppId: counterpartProfile.walletAppId,
           accountId: counterpartAccount.id,
           transactionId: counterpartTransactionId,
-          title: "Received",
+          title: "Notification",
           body: `Received ${formatAmount(amount)} ${input.tokenSymbol.toUpperCase()}`
         });
         await this.createWalletEvent({

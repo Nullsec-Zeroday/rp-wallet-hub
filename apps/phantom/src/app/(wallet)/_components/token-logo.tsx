@@ -28,14 +28,16 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
     if (imgSrc && !imgErr) {
       return (
         <Image
-          src={imgSrc}
-          alt={token.name}
-          width={size}
-          height={size}
-          priority={priority}
-          className={`rounded-full object-cover w-full h-full ${token.symbol === 'USDC' ? 'scale-[0.82]' : ''}`}
-          onError={() => setImgErr(true)}
-        />
+           src={imgSrc}
+           alt={token.name}
+           width={size}
+           height={size}
+           priority={priority}
+           className={`rounded-full object-cover w-full h-full ${token.symbol === 'USDC' ? 'scale-[0.82]' : ''}`}
+           onError={() => setImgErr(true)}
+           draggable={false}
+           style={{ userSelect: 'none', pointerEvents: 'none' }}
+         />
       );
     }
 
@@ -51,7 +53,7 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <div
+      <div 
         className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
         style={{ backgroundColor: token.color || 'transparent' }}
       >

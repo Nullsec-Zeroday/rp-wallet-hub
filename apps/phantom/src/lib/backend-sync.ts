@@ -37,6 +37,17 @@ function mapTransactions(payload: WalletBootstrapPayload, accountId?: string): T
     .sort((a, b) => b.timestamp - a.timestamp);
 }
 
+function formatLicenseExpiration(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
 export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
   const account = payload.accounts[0];
   const accountBalances = account ? payload.balances.filter((balance) => balance.accountId === account.id) : payload.balances;
@@ -77,6 +88,8 @@ export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
         ? state.notificationSettings
         : backendNotificationSettings || state.notificationSettings,
       profile,
+      licenseExpiration: formatLicenseExpiration(payload.license.expiresAt) || state.licenseExpiration,
+      licensePlan: payload.license.plan || state.licensePlan,
       tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
       transactions,
       walletName: account?.name || profile.name,

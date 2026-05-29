@@ -90,7 +90,7 @@ function PhantomApp() {
           setPayload(cached);
           setInstallReady(true);
         } else if (pendingToken) {
-          setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open Phantom again from the hub."));
+          setError(getFriendlyBootstrapError(loadError, "Open Phantom again from the hub to refresh this wallet session."));
         } else {
           setError("Reconnect through the hub to refresh this wallet session.");
         }
@@ -125,10 +125,7 @@ function PhantomApp() {
         <StrictWalletApp payload={payload} />
       ) : !loading ? (
         <ReconnectPanel
-          api={api}
           body={error || "Launch Phantom from the LarperWallet hub to attach a session to this installed app."}
-          onErrorChange={setError}
-          onPayloadChange={setPayload}
         />
       ) : null}
 
@@ -249,41 +246,8 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
   );
 }
 
-function ReconnectPanel({
-  api,
-  body,
-  onErrorChange,
-  onPayloadChange,
-}: {
-  api: RpWalletApiClient;
-  body: string;
-  onErrorChange: (value: string) => void;
-  onPayloadChange: (value: WalletBootstrapPayload) => void;
-}) {
-  const [token, setToken] = React.useState("");
-  const [submitting, setSubmitting] = React.useState(false);
-
-  async function submitToken(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!token.trim()) return;
-
-    setSubmitting(true);
-    onErrorChange("");
-
-    try {
-      const response = await api.exchangeWalletBootstrap({
-        deviceId: getPlatformDeviceId(),
-        token: token.trim(),
-      });
-      writeCachedBootstrap("phantom", response);
-      clearPendingToken("phantom");
-      onPayloadChange(response);
-    } catch (submitError) {
-      onErrorChange(getFriendlyBootstrapError(submitError, "That one-time token is invalid or has expired."));
-    } finally {
-      setSubmitting(false);
-    }
-  }
+function ReconnectPanel({ body }: { body: string }) {
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || "https://larperwallet.com";
 
   return (
     <main className="min-h-screen bg-[#0d0d0e] text-white px-6 py-12 flex flex-col font-sans">
@@ -295,30 +259,12 @@ function ReconnectPanel({
         </p>
       </section>
 
-      <form 
-        className="flex flex-col gap-5 p-6 rounded-3xl bg-[#121212]/80 border border-white/[0.04] backdrop-blur-md shadow-2xl" 
-        onSubmit={submitToken}
+      <a
+        className="flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+        href={hubUrl}
       >
-        <div className="text-white/80 font-semibold text-xs tracking-widest uppercase">Manual One-Time Token</div>
-        <label className="flex flex-col gap-2">
-          <span className="text-white/40 text-[11px] font-bold uppercase tracking-widest">Launch token</span>
-          <input
-            className="h-12 bg-black/40 border border-white/5 rounded-xl px-4 text-white text-sm focus:outline-none focus:border-[#ab9ff2]/50 transition-colors placeholder:text-white/20"
-            autoCapitalize="off"
-            autoCorrect="off"
-            onChange={(event) => setToken(event.target.value)}
-            placeholder="Paste token from hub"
-            value={token}
-          />
-        </label>
-        <button 
-          className="h-12 mt-2 bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] text-white font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100" 
-          disabled={submitting || !token.trim()} 
-          type="submit"
-        >
-          {submitting ? "Connecting..." : "Connect Wallet"}
-        </button>
-      </form>
+        Open Hub
+      </a>
     </main>
   );
 }
