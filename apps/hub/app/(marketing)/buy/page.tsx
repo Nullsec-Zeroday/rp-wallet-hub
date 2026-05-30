@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 import Link from "next/link";
+import { useRef } from "react";
+import { useInView, motion, AnimatePresence } from "framer-motion";
 
 const PLANS = Object.values(PRICING_PLANS);
 
@@ -23,6 +25,10 @@ function BuyContent() {
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>("popular");
+
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
+  const showSticky = !isButtonInView && selectedPlanId;
 
   const handleCheckout = () => {
     if (!selectedPlanId || isLoading) return;
@@ -128,7 +134,7 @@ function BuyContent() {
         </div>
 
         {/* ── C H E C K O U T  B U T T O N ── */}
-        <div className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
+        <div ref={buttonRef} className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
           <button
             disabled={!selectedPlanId || isLoading}
             onClick={handleCheckout}
@@ -171,6 +177,40 @@ function BuyContent() {
           </p>
         </div>
       </main>
+
+      {/* ── S T I C K Y  C H E C K O U T  B U T T O N ── */}
+      <AnimatePresence>
+        {showSticky && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-[#0d0d0e]/80 backdrop-blur-xl border-t border-white/[0.05]"
+          >
+            <div className="max-w-[440px] mx-auto">
+              <button
+                disabled={isLoading}
+                onClick={handleCheckout}
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${
+                  selectedPlanId === "yearly"
+                    ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
+                    : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white"
+                }`}
+              >
+                {isLoading ? (
+                  <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                  </svg>
+                ) : (
+                  <>Checkout {selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access"} <ArrowRight size={20} /></>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {captcha}
       {checkoutModal}
