@@ -95,17 +95,9 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
 
   const unlockSendAudio = () => {
     const audio = getSendAudio();
-    audio.volume = 0;
+    audio.preload = "auto";
+    audio.load();
     audio.currentTime = 0;
-    audio.play()
-      .then(() => {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 1;
-      })
-      .catch(() => {
-        audio.volume = 1;
-      });
   };
 
   const playSendAudio = () => {
