@@ -316,7 +316,7 @@ export default function LandingContent() {
             {[...Array(2)].map((_, loopIdx) => (
               <div key={loopIdx} className="flex gap-16 items-center shrink-0 pr-16">
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <div key={num} className="w-[200px] shrink-0 rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
+                  <div key={num} className="w-[200px] shrink-0 drop-shadow-2xl">
                     <Image
                       src={getAssetUrl(`/product/ph-${num}.webp`)}
                       alt={`LarperWallet Screenshot ${num}`}
