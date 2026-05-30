@@ -1,12 +1,14 @@
 export interface ApiEnv {
   DATABASE_URL?: string;
   COINGECKO_API_KEY?: string;
+  RESEND_API_KEY?: string;
   SESSION_COOKIE_NAME?: string;
   HUB_ORIGIN?: string;
   PHANTOM_ORIGIN?: string;
   TRUST_ORIGIN?: string;
   PHANTOM_ENABLED?: string;
   TRUST_ENABLED?: string;
+  SELLAUTH_API_KEY?: string;
   SELLAUTH_WEBHOOK_SECRET?: string;
   SELLAUTH_SHOP_ID?: string;
   NEXT_PUBLIC_SELLAUTH_SHOP_ID?: string;

@@ -152,6 +152,25 @@ app.post("/webhooks/sellauth", async (c) => {
   });
 
   console.log(`[sellauth-webhook] Created license for order ${orderId} | plan=${plan.id} | expires=${expiresAt.toISOString()}`);
+  if (buyerEmail) {
+    c.executionCtx.waitUntil(
+      sendPurchaseEmail(c.env, {
+        expirationDate: expiresAt.toLocaleDateString("en-US", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }),
+        licenseKey,
+        planLabel: plan.label,
+        to: buyerEmail,
+      }).catch((error) => {
+        console.error("[sellauth-webhook] Email send failed", error);
+      }),
+    );
+  } else {
+    console.warn("[sellauth-webhook] No buyer email found in payload; skipping email notification");
+  }
+
   return c.text(licenseKey, 200, { "Content-Type": "text/plain" });
 });
 
@@ -1028,6 +1047,83 @@ function extractSellAuthEmail(payload: Record<string, any>) {
       payload.customer?.email ??
       payload.buyer?.email,
   );
+}
+
+async function sendPurchaseEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    licenseKey: string;
+    planLabel: string;
+    expirationDate: string;
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[sendPurchaseEmail] RESEND_API_KEY is not set; skipping email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "RP Wallet <noreply@rpwallet.app>",
+      html: buildPurchaseEmailHtml(params),
+      subject: `Your RP Wallet License Key — ${params.planLabel}`,
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+}
+
+function buildPurchaseEmailHtml(params: {
+  licenseKey: string;
+  planLabel: string;
+  expirationDate: string;
+}) {
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
+        <p style="margin:0 0 14px;color:#ab9ff2;font-size:13px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;">RP Wallet</p>
+        <h1 style="margin:0 0 12px;font-size:30px;line-height:1.08;letter-spacing:-0.04em;">Your license key is ready</h1>
+        <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
+          Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your LarperWallet access.
+        </p>
+        <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
+          <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
+            ${escapeHtml(params.licenseKey)}
+          </div>
+        </div>
+        <p style="margin:0;color:rgba(255,255,255,0.62);font-size:14px;line-height:1.55;">
+          Plan: <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong><br />
+          Expires: <strong style="color:#fff;">${escapeHtml(params.expirationDate)}</strong>
+        </p>
+        <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
+          If you need help, contact support through the official LarperWallet site.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function resolveSellAuthPlan(env: ApiEnv, payload: Record<string, any>): SellAuthPlan {

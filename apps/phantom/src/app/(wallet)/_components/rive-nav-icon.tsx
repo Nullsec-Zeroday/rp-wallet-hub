@@ -52,6 +52,7 @@ const RiveNavIcon: React.FC<RiveNavIconProps> = ({
         width: size,
         height: size,
         pointerEvents: "none",
+        contain: "strict",
       }}
     >
       {assetBuffer && (

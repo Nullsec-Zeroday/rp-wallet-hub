@@ -64,7 +64,6 @@ const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = fa
       className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0 pointer-events-none"}`}
       style={{ 
         height: "calc(60px + env(safe-area-inset-bottom, 0px))",
-        isolation: "isolate",
       }}
     >
       <div 
@@ -73,6 +72,7 @@ const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = fa
           backgroundColor: blurred ? "rgba(17, 17, 17, 0.82)" : "#111111",
           backdropFilter: blurred ? "blur(20px) saturate(150%)" : "none",
           WebkitBackdropFilter: blurred ? "blur(20px) saturate(150%)" : "none",
+          willChange: blurred ? "backdrop-filter" : "auto",
         }}
       />
       
@@ -100,7 +100,7 @@ const WalletFooterNavigation = ({ activeTabOverride, blurred = true, hidden = fa
                     transition: "opacity 80ms ease-out",
                   }}
                 >
-                  <div className="relative w-10 h-10 pointer-events-none">
+                  <div className="relative w-10 h-10 pointer-events-none" style={{ transform: "translateZ(0)", willChange: "transform" }}>
                     <RiveNavIcon
                       src={item.riveSrc}
                       isActive={isActive || tappedItem === item.href}
