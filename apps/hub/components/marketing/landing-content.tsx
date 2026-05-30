@@ -302,6 +302,10 @@ export default function LandingContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="md:hidden relative z-0 w-full overflow-hidden mt-8 mb-4 pointer-events-none flex flex-col items-center"
+          style={{
+            maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+          }}
         >
           <style>{`
             @keyframes marquee-drift {
@@ -309,7 +313,7 @@ export default function LandingContent() {
               100% { transform: translateX(-50%); }
             }
             .animate-marquee-drift {
-              animation: marquee-drift 90s linear infinite;
+              animation: marquee-drift 75s linear infinite;
             }
           `}</style>
           <div className="flex animate-marquee-drift items-center w-[max-content]">
