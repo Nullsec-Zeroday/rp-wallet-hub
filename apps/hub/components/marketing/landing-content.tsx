@@ -195,6 +195,7 @@ export default function LandingContent() {
           <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} />
         </motion.div>
 
+        {/*
         <motion.div
           initial={isMobile ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -293,6 +294,41 @@ export default function LandingContent() {
               .
             </div>
           </motion.div>
+        </motion.div>
+        */}
+
+        <motion.div
+          initial={isMobile ? false : { opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="md:hidden relative z-0 w-full overflow-hidden mt-8 mb-4 pointer-events-none flex flex-col items-center"
+        >
+          <style>{`
+            @keyframes marquee-drift {
+              0% { transform: translateX(0%); }
+              100% { transform: translateX(-50%); }
+            }
+            .animate-marquee-drift {
+              animation: marquee-drift 90s linear infinite;
+            }
+          `}</style>
+          <div className="flex animate-marquee-drift items-center w-[max-content]">
+            {[...Array(2)].map((_, loopIdx) => (
+              <div key={loopIdx} className="flex gap-16 items-center shrink-0 pr-16">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                  <div key={num} className="w-[200px] shrink-0 rounded-[28px] overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
+                    <Image
+                      src={getAssetUrl(`/product/ph-${num}.webp`)}
+                      alt={`LarperWallet Screenshot ${num}`}
+                      width={240}
+                      height={500}
+                      className="w-full h-auto object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </motion.div>
 
         <Suspense fallback={null}>
