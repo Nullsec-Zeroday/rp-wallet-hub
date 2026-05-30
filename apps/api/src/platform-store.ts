@@ -45,6 +45,7 @@ export class InvalidLicenseError extends Error {
 
 interface LicenseRecord extends LicenseSummary {
   keyHash: string;
+  keyPlaintext?: string | null;
   userId: string;
 }
 
@@ -178,6 +179,7 @@ class InMemoryPlatformStore implements PlatformStore {
     const license: LicenseRecord = {
       id: createId("lic"),
       keyHash,
+      keyPlaintext: normalizeLicenseKey(input.licenseKey),
       userId: user.id,
       plan: input.plan,
       expiresAt: input.expiresAt.toISOString(),
@@ -843,6 +845,7 @@ class NeonPlatformStore implements PlatformStore {
       .values({
         id: createId("lic"),
         keyHash,
+        keyPlaintext: normalizeLicenseKey(input.licenseKey),
         userId: user.id,
         plan: input.plan,
         expiresAt: input.expiresAt,

@@ -27,6 +27,7 @@ export const licenses = pgTable(
   {
     id: text("id").primaryKey(),
     keyHash: text("key_hash").notNull(),
+    keyPlaintext: text("key_plaintext"),
     userId: text("user_id")
       .notNull()
       .references(() => users.id),
