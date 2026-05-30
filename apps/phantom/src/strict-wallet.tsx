@@ -762,19 +762,19 @@ function WalletRouteBody() {
         )}
       </AnimatePresence>
       <Toaster
-        expand={false}
         position="bottom-center"
-        richColors={false}
         toastOptions={{
-          classNames: {
-            actionButton: "phantom-swap-toast-action",
-            cancelButton: "phantom-swap-toast-cancel",
-            closeButton: "phantom-swap-toast-close",
-            description: "phantom-swap-toast-description",
-            icon: "phantom-swap-toast-icon",
-            title: "phantom-swap-toast-title",
-            toast: "phantom-swap-toast",
+          style: {
+            background: '#2c2c2e',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            color: 'white',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            padding: '12px 16px',
+            fontSize: '14px',
+            fontWeight: 600,
           },
+          className: 'flex items-center gap-2',
           duration: 2600,
         }}
       />
