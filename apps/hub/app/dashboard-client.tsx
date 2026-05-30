@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, LogOut } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
 
@@ -19,6 +19,8 @@ export default function DashboardClient() {
   const [session, setSession] = useState<HubSessionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     api
@@ -53,6 +55,7 @@ export default function DashboardClient() {
 
     try {
       const response = await api.createWalletLaunch({
+        deviceId: getDeviceId(),
         walletAppId,
         returnTo: WALLET_RETURN_TO[walletAppId],
       });
@@ -62,6 +65,20 @@ export default function DashboardClient() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await api.logout();
+    } catch {
+      // Even if the API call fails, clear state locally
+    }
+    setSession(null);
+    setLicenseKey("");
+    setError("");
+    setShowSignOutModal(false);
+    setSigningOut(false);
   }
 
   if (session) {
@@ -75,9 +92,17 @@ export default function DashboardClient() {
           Go Back
         </Link>
 
+        <button
+          onClick={() => setShowSignOutModal(true)}
+          className="absolute right-6 top-6 z-50 flex cursor-pointer items-center gap-2 rounded-full bg-white/5 px-3.5 py-2 text-[13px] font-medium text-white/50 backdrop-blur-sm transition-colors hover:bg-red-500/10 hover:text-red-400 md:right-8 md:top-8"
+        >
+          <LogOut size={15} />
+          Sign Out
+        </button>
+
         <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-12 animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-4">
-            <Image src="/logo_white.webp" alt="LarperWallet Logo" width={64} height={64} className="size-16" />
+            <Image src="/logo_white.webp" alt="LarperWallet Logo" width={64} height={64} className="height-16 aspect-auto" />
             <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Choose a wallet to launch</h1>
             <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-white/60">
               Your {session.license.plan} session is active until {formatDate(session.license.expiresAt)}.
@@ -107,6 +132,60 @@ export default function DashboardClient() {
             ))}
           </div>
         </main>
+
+        {/* Sign Out Confirmation Modal */}
+        {showSignOutModal && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !signingOut) setShowSignOutModal(false);
+            }}
+          >
+            <div className="mx-4 w-full max-w-[340px] rounded-2xl border border-white/[0.05] bg-[#0d0d0e] p-6 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+              <div className="flex flex-col items-center gap-4 text-center">
+                {/* Warning icon */}
+                <div className="flex size-14 items-center justify-center rounded-full bg-white/[0.03] border border-white/[0.05]">
+                  <LogOut size={22} className="text-[#9c8df6]" />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-[20px] font-semibold tracking-tight text-white">Sign out?</h2>
+                  <p className="text-[13px] leading-relaxed text-white/60">
+                    Your <span className="font-medium text-white">{session.license.plan}</span> session is active. Signing out will clear your session from this device.
+                  </p>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: "rgba(255, 230, 0, 0.05)",
+                    border: "1px solid rgba(255, 230, 0, 0.2)",
+                    color: "#ffe600",
+                  }}
+                  className="w-full rounded-xl p-4 text-left text-[12.5px] leading-relaxed"
+                >
+                  <span style={{ fontWeight: 600, color: "#ffe600" }}>⚠️ Note:</span> You will need to re-enter your license key to access the dashboard again.
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="flex h-[48px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#9c8df6] text-sm font-semibold text-white transition-all duration-300 hover:bg-[#aba0f7] disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {signingOut ? <Loader2 size={18} className="animate-spin text-white" /> : "Sign Out"}
+                </button>
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  disabled={signingOut}
+                  className="flex h-[48px] w-full cursor-pointer items-center justify-center rounded-lg bg-white/[0.06] text-sm font-semibold text-white transition-all duration-300 hover:bg-white/[0.1] active:scale-[0.98]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

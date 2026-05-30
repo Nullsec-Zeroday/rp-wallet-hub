@@ -2,6 +2,7 @@ import type { WalletAppId } from "@rp-wallet/types";
 
 export interface WalletLaunchRequest {
   walletAppId: WalletAppId;
+  deviceId?: string;
   returnTo?: string;
 }
 

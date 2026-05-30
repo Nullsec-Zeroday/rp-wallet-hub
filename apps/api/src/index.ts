@@ -554,6 +554,19 @@ app.post("/auth/license/activate", async (c) => {
   return c.json(applyWalletAvailabilityToHubSession(c.env, response));
 });
 
+app.post("/auth/logout", (c) => {
+  const cookieName = getSessionCookieName(c);
+  setCookie(c, cookieName, "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+    path: "/",
+    expires: new Date(0),
+    maxAge: 0,
+  });
+  return c.json({ ok: true });
+});
+
 app.get("/me", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
   if (!sessionId) {
@@ -592,7 +605,7 @@ app.post("/wallet-launch", async (c) => {
 
   return c.json({
     walletAppId: body.walletAppId,
-    launchUrl: buildLaunchUrl(c.env, body.walletAppId, launchToken.token, body.returnTo),
+    launchUrl: buildLaunchUrl(c.env, body.walletAppId, launchToken.token, body.returnTo, body.deviceId),
     expiresAt: launchToken.expiresAt,
   });
 });
@@ -929,11 +942,12 @@ function getSessionCookieName(c: Context<HonoEnv>) {
   return c.env.SESSION_COOKIE_NAME || DEFAULT_SESSION_COOKIE;
 }
 
-function buildLaunchUrl(env: ApiEnv, walletAppId: WalletAppId, token: string, returnTo?: string) {
+function buildLaunchUrl(env: ApiEnv, walletAppId: WalletAppId, token: string, returnTo?: string, deviceId?: string) {
   const defaultOrigin = walletAppId === "phantom" ? env.PHANTOM_ORIGIN || "http://localhost:5173" : env.TRUST_ORIGIN || "http://localhost:5174";
   const target = returnTo?.trim() || `${defaultOrigin}/bootstrap`;
   const url = new URL(target);
   url.searchParams.set("token", token);
+  if (deviceId?.trim()) url.searchParams.set("deviceId", deviceId.trim());
   return url.toString();
 }
 

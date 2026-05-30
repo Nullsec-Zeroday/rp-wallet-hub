@@ -55,6 +55,7 @@ function PhantomApp() {
     }
 
     const token = new URL(window.location.href).searchParams.get("token");
+    const launchDeviceId = new URL(window.location.href).searchParams.get("deviceId");
     if (token) {
       writePendingToken("phantom", token);
       window.history.replaceState({}, "", window.location.pathname);
@@ -66,7 +67,7 @@ function PhantomApp() {
     const loadWallet = pendingToken
       ? api
         .exchangeWalletBootstrap({
-          deviceId: getPlatformDeviceId(),
+          deviceId: launchDeviceId || getPlatformDeviceId(),
           token: pendingToken,
         })
         .then((response) => {

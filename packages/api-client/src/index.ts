@@ -38,6 +38,12 @@ export class RpWalletApiClient {
     return this.request<HubSessionResponse>("/me");
   }
 
+  async logout() {
+    return this.request<{ ok: boolean }>("/auth/logout", {
+      method: "POST",
+    });
+  }
+
   async createWalletLaunch(body: WalletLaunchRequest) {
     return this.request<WalletLaunchResponse>("/wallet-launch", {
       method: "POST",
