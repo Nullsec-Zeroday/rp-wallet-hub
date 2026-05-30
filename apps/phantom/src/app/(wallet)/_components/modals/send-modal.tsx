@@ -86,6 +86,34 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const hasPlayedConfetti = useRef(false);
+  const sendAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const getSendAudio = () => {
+    sendAudioRef.current ??= new Audio("/sound-effect/confetti.mp3");
+    return sendAudioRef.current;
+  };
+
+  const unlockSendAudio = () => {
+    const audio = getSendAudio();
+    audio.volume = 0;
+    audio.currentTime = 0;
+    audio.play()
+      .then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 1;
+      })
+      .catch(() => {
+        audio.volume = 1;
+      });
+  };
+
+  const playSendAudio = () => {
+    const audio = getSendAudio();
+    audio.volume = 1;
+    audio.currentTime = 0;
+    audio.play().catch(e => console.log("Audio play failed:", e));
+  };
 
   // Handle initial token
   useEffect(() => {
@@ -126,8 +154,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   useEffect(() => {
     if (step === "SUCCESS" && !hasPlayedConfetti.current) {
       hasPlayedConfetti.current = true;
-      const audio = new Audio("/sound-effect/confetti.mp3");
-      audio.play().catch(e => console.log("Audio play failed:", e));
+      playSendAudio();
     }
   }, [step]);
 
@@ -165,6 +192,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const canAdvanceAddress = normalizedRecipientAddress.length > 0 && !recipientAddressError;
 
   const handleSend = async () => {
+    unlockSendAudio();
     if (!selectedToken) return;
     if (recipientAddressError) {
       toast.error(recipientAddressError);

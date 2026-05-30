@@ -26,12 +26,11 @@ function mapTransactions(payload: WalletBootstrapPayload, accountId?: string): T
       token: tx.tokenSymbol,
       type: (
         tx.type === "send" || tx.type === "cross_wallet_transfer"
+          || tx.type === "same_wallet_transfer"
           ? "send"
-          : tx.type === "same_wallet_transfer"
-            ? "swap"
-            : tx.type === "manual_adjustment"
-              ? "buy"
-              : "receive"
+          : tx.type === "manual_adjustment"
+            ? "buy"
+            : "receive"
       ) as Transaction["type"],
     }))
     .sort((a, b) => b.timestamp - a.timestamp);
