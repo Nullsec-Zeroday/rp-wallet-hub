@@ -6,7 +6,7 @@ const defaultApiBaseUrl = import.meta.env.DEV
 
 export const walletFlags = {
   phantom: import.meta.env.VITE_WALLET_PHANTOM_ENABLED !== "false",
-  trust: import.meta.env.VITE_WALLET_TRUST_ENABLED === "true",
+  trust: import.meta.env.DEV || import.meta.env.VITE_WALLET_TRUST_ENABLED === "true",
 } as const;
 
 export const appEnv = {

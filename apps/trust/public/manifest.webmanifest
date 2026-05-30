@@ -1,0 +1,19 @@
+{
+  "name": "Trust Wallet",
+  "short_name": "Trust",
+  "description": "LarperWallet Trust Wallet PWA.",
+  "start_url": "/bootstrap",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071621",
+  "theme_color": "#071621",
+  "icons": [
+    {
+      "src": "/logos/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+import React from "react";
+import { useRouter } from "./next-navigation";
+
+type LinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  href: string;
+  prefetch?: boolean;
+};
+
+export default function Link({ href, onClick, children, ...props }: LinkProps) {
+  const router = useRouter();
+
+  return (
+    <a
+      {...props}
+      href={href}
+      onClick={(event) => {
+        onClick?.(event);
+        if (
+          event.defaultPrevented ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          props.target === "_blank"
+        ) {
+          return;
+        }
+        event.preventDefault();
+        router.push(href);
+      }}
+    >
+      {children}
+    </a>
+  );
+}

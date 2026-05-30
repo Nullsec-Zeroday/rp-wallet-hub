@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Loader2, LogOut } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, LogOut } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
 
@@ -12,6 +12,7 @@ const WALLET_RETURN_TO: Record<WalletAppId, string> = {
   phantom: `${process.env.NEXT_PUBLIC_PHANTOM_URL || "http://localhost:5173"}/bootstrap`,
   trust: `${process.env.NEXT_PUBLIC_TRUST_URL || "http://localhost:5174"}/bootstrap`,
 };
+const SHOW_DEV_WALLET_TOOLS = process.env.NODE_ENV !== "production";
 
 export default function DashboardClient() {
   const api = useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
@@ -19,6 +20,8 @@ export default function DashboardClient() {
   const [session, setSession] = useState<HubSessionResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [copiedWalletId, setCopiedWalletId] = useState<WalletAppId | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
@@ -35,6 +38,7 @@ export default function DashboardClient() {
     event.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
 
     try {
       const response = await api.activateLicense({
@@ -52,16 +56,44 @@ export default function DashboardClient() {
   async function launchWallet(walletAppId: WalletAppId) {
     setLoading(true);
     setError("");
+    setNotice("");
 
     try {
-      const response = await api.createWalletLaunch({
-        deviceId: getDeviceId(),
-        walletAppId,
-        returnTo: WALLET_RETURN_TO[walletAppId],
-      });
+      const response = await createWalletLaunch(walletAppId);
       window.location.href = response.launchUrl;
     } catch {
       setError("Unable to open this wallet. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createWalletLaunch(walletAppId: WalletAppId) {
+    return api.createWalletLaunch({
+      deviceId: getDeviceId(),
+      walletAppId,
+      returnTo: WALLET_RETURN_TO[walletAppId],
+    });
+  }
+
+  async function copyWalletLaunchToken(walletAppId: WalletAppId) {
+    setLoading(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await createWalletLaunch(walletAppId);
+      const token = new URL(response.launchUrl).searchParams.get("token");
+      if (!token) throw new Error("Launch token missing");
+
+      await navigator.clipboard.writeText(response.launchUrl);
+      setCopiedWalletId(walletAppId);
+      setNotice(`${walletAppId === "trust" ? "Trust" : "Phantom"} dev launch URL copied.`);
+      window.setTimeout(() => {
+        setCopiedWalletId((current) => (current === walletAppId ? null : current));
+      }, 1800);
+    } catch {
+      setError("Unable to copy launch token. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -77,6 +109,7 @@ export default function DashboardClient() {
     setSession(null);
     setLicenseKey("");
     setError("");
+    setNotice("");
     setShowSignOutModal(false);
     setSigningOut(false);
   }
@@ -110,6 +143,7 @@ export default function DashboardClient() {
           </div>
 
           {error && <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-[#ef4444] animate-in fade-in duration-300">{error}</p>}
+          {notice && <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-[#9c8df6] animate-in fade-in duration-300">{notice}</p>}
 
           <div className="flex w-full flex-col gap-4">
             {session.wallets.map((wallet) => (
@@ -128,6 +162,17 @@ export default function DashboardClient() {
                 >
                   {wallet.activated ? "Open Wallet" : `Launch ${wallet.name}`}
                 </button>
+
+                {SHOW_DEV_WALLET_TOOLS && wallet.enabled && (
+                  <button
+                    className="flex h-[42px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] text-[13px] font-semibold text-white/70 transition-all duration-300 hover:bg-white/[0.08] hover:text-white disabled:opacity-50 active:scale-[0.98]"
+                    disabled={loading}
+                    onClick={() => copyWalletLaunchToken(wallet.id)}
+                  >
+                    {copiedWalletId === wallet.id ? <Check size={15} /> : <Copy size={15} />}
+                    {copiedWalletId === wallet.id ? "Copied Token" : "Copy Dev Token"}
+                  </button>
+                )}
               </div>
             ))}
           </div>
