@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { buildDefaultMetadata } from "@/lib/seo";
 import "./styles.css";
 
 const satoshi = localFont({
@@ -7,14 +8,7 @@ const satoshi = localFont({
   variable: "--font-satoshi",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Premium Phantom Simulator & Fake Crypto App",
-    template: "%s | LarperWallet",
-  },
-  description:
-    "The world's most realistic phantom simulator and fake crypto app for content creation. Create perfect screenshots and roleplay portfolios with our premium fake wallet.",
-};
+export const metadata: Metadata = buildDefaultMetadata();
 
 export const viewport: Viewport = {
   themeColor: "#0c0a18",
