@@ -66,6 +66,11 @@ function registerTrustServiceWorker() {
   }
 }
 
+function getSafeTokenClearedPath() {
+  const pathname = window.location.pathname.replace(/^\/+/, "/") || "/";
+  return `${pathname}${window.location.hash}`;
+}
+
 function TrustApp() {
   const api = useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => readCachedBootstrap("trust"));
@@ -99,7 +104,7 @@ function TrustApp() {
     const launchDeviceId = new URL(window.location.href).searchParams.get("deviceId");
     if (token) {
       writePendingToken("trust", token);
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState({}, "", getSafeTokenClearedPath());
     }
 
     const pendingToken = readPendingToken("trust");

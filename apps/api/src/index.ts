@@ -990,6 +990,7 @@ function buildLaunchUrl(env: ApiEnv, walletAppId: WalletAppId, token: string, re
   const defaultOrigin = walletAppId === "phantom" ? env.PHANTOM_ORIGIN || "http://localhost:5173" : env.TRUST_ORIGIN || "http://localhost:5174";
   const target = returnTo?.trim() || `${defaultOrigin}/bootstrap`;
   const url = new URL(target);
+  url.pathname = url.pathname.replace(/\/{2,}/g, "/") || "/";
   url.searchParams.set("token", token);
   if (deviceId?.trim()) url.searchParams.set("deviceId", deviceId.trim());
   return url.toString();

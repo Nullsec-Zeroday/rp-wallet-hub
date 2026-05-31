@@ -8,9 +8,10 @@ import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
 
 const DEVICE_ID_KEY = "rp_wallet_hub_device_id";
+const walletReturnTo = (value: string) => `${value.replace(/\/+$/, "")}/bootstrap`;
 const WALLET_RETURN_TO: Record<WalletAppId, string> = {
-  phantom: `${process.env.NEXT_PUBLIC_PHANTOM_URL || "http://localhost:5173"}/bootstrap`,
-  trust: `${process.env.NEXT_PUBLIC_TRUST_URL || "http://localhost:5174"}/bootstrap`,
+  phantom: walletReturnTo(process.env.NEXT_PUBLIC_PHANTOM_URL || "http://localhost:5173"),
+  trust: walletReturnTo(process.env.NEXT_PUBLIC_TRUST_URL || "http://localhost:5174"),
 };
 const SHOW_DEV_WALLET_TOOLS = process.env.NODE_ENV !== "production";
 
