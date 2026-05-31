@@ -285,7 +285,7 @@ export default function DashboardClient() {
           </Link>
 
           <Link
-            href="https://t.me/larpzwalletcom"
+            href="https://t.me/LarperWallet"
             target="_blank"
             className="mb-2 mt-2 flex h-[54px] w-full cursor-pointer items-center justify-center rounded-lg bg-white/[0.06] text-sm font-semibold text-white transition-all duration-300 hover:bg-white/[0.1] active:scale-[0.98]"
           >

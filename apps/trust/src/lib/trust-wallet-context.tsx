@@ -139,7 +139,7 @@ export function TrustWalletProvider({
   );
   const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
-  const walletName = payload.profile.displayName || account?.name || "Larpz Wallet";
+  const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
 
   const settingsInitialValues = useMemo<TrustSettingsInput>(() => {
     const balances = Object.fromEntries(tokenSymbols.map((symbol) => [symbol, balanceMap[symbol] ? String(balanceMap[symbol]) : ""]));

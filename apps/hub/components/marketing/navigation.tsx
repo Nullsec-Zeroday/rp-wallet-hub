@@ -30,7 +30,7 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden items-center gap-6 md:flex lg:gap-8">
-            <Link href="https://t.me/LarpzWallet" target="_blank" rel="noopener noreferrer" className="font-medium text-white/80 transition-colors hover:text-[#ab9ff2]">
+            <Link href="https://t.me/LarperWallet" target="_blank" rel="noopener noreferrer" className="font-medium text-white/80 transition-colors hover:text-[#ab9ff2]">
               Telegram
             </Link>
             <Link href="/#features" className="font-medium text-white/80 transition-colors hover:text-[#ab9ff2]">
@@ -65,7 +65,7 @@ export default function Navigation() {
         )}
       >
         <div className="flex w-full flex-col items-center gap-8 p-6">
-          <Link href="https://t.me/LarpzWallet" target="_blank" rel="noopener noreferrer" className="cursor-pointer text-2xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">
+          <Link href="https://t.me/LarperWallet" target="_blank" rel="noopener noreferrer" className="cursor-pointer text-2xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">
             Telegram
           </Link>
           <Link href="/#features" className="cursor-pointer text-2xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">
