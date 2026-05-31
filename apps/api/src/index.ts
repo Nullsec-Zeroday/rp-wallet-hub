@@ -95,7 +95,10 @@ app.get("/health", (c) =>
   }),
 );
 
-app.post("/webhooks/sellauth", async (c) => {
+app.post("/webhooks/sellauth", handleSellAuthWebhook);
+app.post("/api/webhooks/sellauth", handleSellAuthWebhook);
+
+async function handleSellAuthWebhook(c: Context<HonoEnv>) {
   const secret = c.env.SELLAUTH_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[sellauth-webhook] SELLAUTH_WEBHOOK_SECRET is not set");
@@ -114,6 +117,14 @@ app.post("/webhooks/sellauth", async (c) => {
   }
 
   if (!(await verifySellAuthSignature(rawBody, signature, secret))) {
+    console.warn("[sellauth-webhook] Signature verification failed", {
+      bodyLength: rawBody.length,
+      contentType: c.req.header("content-type") || null,
+      hasIdempotencyKey: Boolean(c.req.header("idempotency-key")),
+      hasTimestamp: Boolean(c.req.header("x-timestamp")),
+      path: new URL(c.req.url).pathname,
+      ...await buildSellAuthSignatureDiagnostics(rawBody, signature, secret),
+    });
     return c.text("Invalid signature", 403);
   }
 
@@ -172,7 +183,7 @@ app.post("/webhooks/sellauth", async (c) => {
   }
 
   return c.text(licenseKey, 200, { "Content-Type": "text/plain" });
-});
+}
 
 app.get("/prices", async (c) => {
   try {
@@ -997,8 +1008,33 @@ function buildLaunchUrl(env: ApiEnv, walletAppId: WalletAppId, token: string, re
 }
 
 async function verifySellAuthSignature(rawBody: string, signature: string, secret: string) {
-  const computed = await hmacSha256Hex(secret, rawBody);
-  return timingSafeHexEqual(computed, signature);
+  const normalizedSignature = normalizeSignature(signature);
+  if (!normalizedSignature) return false;
+
+  const rawComputed = await hmacSha256Hex(secret, rawBody);
+  if (timingSafeHexEqual(rawComputed, normalizedSignature)) return true;
+
+  const canonicalBody = canonicalizeJsonString(rawBody);
+  if (!canonicalBody || canonicalBody === rawBody) return false;
+
+  const canonicalComputed = await hmacSha256Hex(secret, canonicalBody);
+  return timingSafeHexEqual(canonicalComputed, normalizedSignature);
+}
+
+async function buildSellAuthSignatureDiagnostics(rawBody: string, signature: string, secret: string) {
+  const normalizedSignature = normalizeSignature(signature);
+  const rawComputed = await hmacSha256Hex(secret, rawBody);
+  const canonicalBody = canonicalizeJsonString(rawBody);
+  const canonicalComputed = canonicalBody && canonicalBody !== rawBody ? await hmacSha256Hex(secret, canonicalBody) : null;
+
+  return {
+    rawComputedPreview: rawComputed.slice(0, 12),
+    canonicalComputedPreview: canonicalComputed?.slice(0, 12) || null,
+    signatureIsHex: /^[a-f0-9]+$/i.test(normalizedSignature),
+    signatureLength: normalizedSignature.length,
+    signaturePreview: normalizedSignature.slice(0, 12),
+    secretHasOuterWhitespace: secret.trim() !== secret,
+  };
 }
 
 async function hmacSha256Hex(secret: string, message: string) {
@@ -1027,6 +1063,18 @@ function timingSafeHexEqual(leftHex: string, rightHex: string) {
 
 function bytesToHex(bytes: Uint8Array) {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function normalizeSignature(signature: string) {
+  return signature.trim().toLowerCase().replace(/^sha256=/, "");
+}
+
+function canonicalizeJsonString(rawBody: string) {
+  try {
+    return JSON.stringify(JSON.parse(rawBody));
+  } catch {
+    return null;
+  }
 }
 
 function hexToBytes(hex: string) {
@@ -1096,7 +1144,7 @@ async function sendPurchaseEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RP Wallet <noreply@rpwallet.app>",
+      from: "LarperWallet <noreply@larperwallet.com>",
       html: buildPurchaseEmailHtml(params),
       subject: `Your RP Wallet License Key — ${params.planLabel}`,
       to: params.to,

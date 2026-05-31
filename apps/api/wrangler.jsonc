@@ -6,6 +6,12 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "routes": [
+    {
+      "pattern": "api.larperwallet.com/*",
+      "zone_name": "larperwallet.com"
+    }
+  ],
   // Keep only safe, non-secret defaults here.
   // Secrets should be set in the Cloudflare dashboard / Wrangler secrets.
   // Never commit DATABASE_URL, API keys, or other credentials to this file.
