@@ -169,7 +169,7 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
+            <span className="text-white/90 font-semibold">The #1 LARP Crypto Wallet App 🥇</span>
             <p>LarperWallet is a crypto wallet simulator made for entertainment. Create any balance, add any token, and display it on a pixel-perfect Phantom or Trust Wallet interface — no real crypto involved.</p>
           </motion.div>
         </div>
