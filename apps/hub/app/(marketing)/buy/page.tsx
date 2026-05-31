@@ -37,6 +37,17 @@ function BuyContent() {
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
   const checkoutLocked = isLoading || checkoutPhase !== "idle";
 
+  React.useEffect(() => {
+    const resetReturnedCheckout = () => {
+      setCheckoutError("");
+      setCheckoutPhase("idle");
+      setIsSlowCheckout(false);
+    };
+
+    window.addEventListener("pageshow", resetReturnedCheckout);
+    return () => window.removeEventListener("pageshow", resetReturnedCheckout);
+  }, []);
+
   const handleCheckout = () => {
     if (!selectedPlanId || checkoutLocked) return;
     const plan = selectedPlan;
