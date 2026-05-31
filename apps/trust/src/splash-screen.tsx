@@ -14,7 +14,7 @@ export default function SplashScreen() {
       }}
     >
       <img 
-        src="/logos/trust_icon_350x350.png" 
+        src="/logos/trust-wallet-icon.webp" 
         alt="Trust Logo" 
         style={{ width: 140, height: 140 }} 
       />
