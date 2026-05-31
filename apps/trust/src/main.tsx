@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { motion } from "framer-motion";
 import {
   Activity,
   ArrowDownToLine,
+  ArrowLeft,
   ArrowRightLeft,
   ChevronRight,
   Clock3,
@@ -225,21 +227,95 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
       "Open the app from your home screen",
     ];
 
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://larperwallet.com");
+
   return (
-    <main className="installShell">
-      <section className="installPanel">
-        <h1 className="installTitle">{heading}</h1>
-        <p className="muted">{tone}</p>
-        <div className="stepList">
-          {steps.map((step, index) => (
-            <div className="stepRow" key={step}>
-              <span className="stepBadge">{index + 1}</span>
-              <span className="stepText">{step}</span>
-            </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="fixed inset-0 z-[100000000] flex items-center justify-center"
+      style={{ backgroundColor: "#0a0a0a" }}
+    >
+      <a 
+        href={hubUrl} 
+        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/50 hover:text-white transition-colors flex items-center gap-2 text-[13px] font-medium z-50 bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-full backdrop-blur-sm"
+        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+      >
+        <ArrowLeft size={16} />
+        Go Back
+      </a>
+      <div className="w-full max-w-[340px] px-6 flex flex-col items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-white text-[25px] font-bold text-center tracking-tight mb-2"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+        >
+          {heading}
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-[#8e8e93] text-[14px] leading-snug font-medium text-center mb-8"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+        >
+          {tone}
+        </motion.div>
+
+        <div className="w-full flex flex-col gap-4">
+          {steps.map((step, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{
+                delay: 0.15 + i * 0.07,
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="flex flex-row items-center gap-4 w-full"
+            >
+              <div
+                className="flex items-center justify-center rounded-full font-bold text-white shrink-0"
+                style={{
+                  width: 32,
+                  height: 32,
+                  backgroundColor: "#8c78f0",
+                  fontSize: 14,
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                }}
+              >
+                {i + 1}
+              </div>
+
+              <div
+                className="flex-1 text-[#efefef] text-[15px] font-medium leading-snug"
+                style={{
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                }}
+              >
+                {step}
+              </div>
+            </motion.div>
           ))}
         </div>
-      </section>
-    </main>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.55, duration: 0.5 }}
+          className="text-[#555557] text-[13px] font-medium text-center mt-10"
+          style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+        >
+          Your license key will be saved automatically.
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 
