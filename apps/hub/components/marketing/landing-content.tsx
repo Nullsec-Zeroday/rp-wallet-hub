@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, X } from "lucide-react";
+import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useState, useRef, useEffect } from "react";
@@ -54,6 +54,15 @@ export default function LandingContent() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [phase, setPhase] = useState<"text" | "video">("text");
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  const [activeProductIdx, setActiveProductIdx] = useState(1);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveProductIdx((prev) => (prev === 1 ? 2 : 1));
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
 
   const oldVideoRef = useRef<HTMLVideoElement>(null);
   const [oldVideoSrc] = useState<string>(() => getAssetUrl("/video/product_loop.mp4"));
@@ -123,27 +132,6 @@ export default function LandingContent() {
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const demoEnabled = isDemoFeatureEnabled();
 
-  const compactSteps = [
-    {
-      title: "Purchase a License",
-      desc: "Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.",
-    },
-    {
-      title: "Receive Your Key",
-      desc: "After payment, you'll receive a unique license key in your email. Keep it safe.",
-    },
-    {
-      title: "Activate & Flex",
-      desc: (
-        <>
-          <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
-            Install the app
-          </Link>
-          , enter your license key, and start customizing your dream portfolio. Time to larp.
-        </>
-      ),
-    },
-  ];
 
   return (
     <div className="w-full overflow-visible pb-12 pt-2 md:pb-0">
@@ -301,38 +289,26 @@ export default function LandingContent() {
           initial={isMobile ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="md:hidden relative z-0 w-full overflow-hidden mt-8 mb-4 pointer-events-none flex flex-col items-center"
-          style={{
-            maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-            WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-          }}
+          className="md:hidden relative z-0 w-full overflow-hidden mt-8 mb-4 pointer-events-none flex flex-col items-center h-[500px]"
         >
-          <style>{`
-            @keyframes marquee-drift {
-              0% { transform: translateX(0%); }
-              100% { transform: translateX(-50%); }
-            }
-            .animate-marquee-drift {
-              animation: marquee-drift 75s linear infinite;
-            }
-          `}</style>
-          <div className="flex animate-marquee-drift items-center w-[max-content]">
-            {[...Array(2)].map((_, loopIdx) => (
-              <div key={loopIdx} className="flex gap-16 items-center shrink-0 pr-16">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <div key={num} className="w-[200px] shrink-0 drop-shadow-2xl">
-                    <Image
-                      src={getAssetUrl(`/product/ph-${num}.webp`)}
-                      alt={`LarperWallet Screenshot ${num}`}
-                      width={240}
-                      height={500}
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={activeProductIdx}
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="w-[240px] shrink-0 drop-shadow-2xl"
+            >
+              <Image
+                src={getAssetUrl(`/product/new-product-${activeProductIdx}.webp`)}
+                alt={`LarperWallet Screenshot ${activeProductIdx}`}
+                width={240}
+                height={500}
+                className="w-full h-auto object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
 
         <Suspense fallback={null}>
@@ -346,6 +322,74 @@ export default function LandingContent() {
           </motion.div>
         </Suspense>
       </motion.section>
+
+      <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
+        <motion.div
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true }}
+          className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
+        >
+          {/* subtle background glow inside the panel */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
+
+          {/* Centered Column */}
+          <div className="relative z-10 w-full flex flex-col items-center">
+            {/* <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 text-[11px] font-semibold text-white/80 uppercase tracking-widest mb-6">
+              Highlight Feature
+            </div> */}
+
+            <h2 className="font-display text-2xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
+              Peer-to-peer <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">simulated transactions.</span>
+            </h2>
+            <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
+              Send simulated crypto to another LarperWallet user. They get a notification, balance update, and new transaction.
+            </p>
+
+            <div className="relative flex flex-col gap-8 mb-10 w-full max-w-sm mx-auto text-left">
+              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent" />
+
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <Send size={16} className="text-white/80" />
+                </div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Send P2P</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">Enter another LarperWallet user's address, select token and amount.</p>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <Bell size={16} className="text-white/80" />
+                </div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">They get notified</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">A push notification appears on their device.</p>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <Zap size={16} className="text-white/80" />
+                </div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Wallet updates</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">Balance and transaction history update instantly.</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
+              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full text-[15px] font-medium transition-all flex items-center justify-center gap-2"
+            >
+              Watch it happen <ArrowRight size={16} />
+            </button>
+          </div>
+        </motion.div>
+      </section>
 
       <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
         <div className="text-center mb-10 md:mb-14">
@@ -375,12 +419,10 @@ export default function LandingContent() {
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            <h3 className="font-medium text-white/90 text-sm md:text-base">Every Screen Works</h3>
+            <h3 className="font-medium text-white/90 text-sm md:text-base">100% Private</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
@@ -410,41 +452,72 @@ export default function LandingContent() {
       </section>
 
       <section className="pb-12 px-6 max-w-[1000px] mx-auto relative">
-        <div className="text-center mb-4 md:mb-14">
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">How LarperWallet Works</h2>
-        </div>
-
         <motion.div
           variants={fadeInUp}
           initial="initial"
           whileInView="whileInView"
           viewport={{ once: true }}
-          className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col items-center shadow-xl hover:shadow-2xl transition-all duration-300"
+          className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
         >
-          <div className="w-full flex flex-col items-start text-left max-w-md mx-auto gap-8 relative mt-2 mb-10">
-            {compactSteps.map((step, index) => (
-              <div key={index} className="w-full flex gap-6 relative">
-                {index !== compactSteps.length - 1 && <div className="absolute left-[19px] top-[40px] bottom-[-44px] w-[2px] bg-gradient-to-b from-[#ab9ff2] to-transparent opacity-40" />}
-                <div className="shrink-0 flex items-start justify-center">
-                  <div className="w-10 h-10 rounded-full border-[1.5px] border-[#ab9ff2] bg-transparent flex items-center justify-center text-white font-semibold text-[15px] relative z-10 shadow-[0_0_15px_rgba(171,159,242,0.15)]">
-                    {index + 1}
-                  </div>
+          {/* subtle background glow inside the panel */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
+
+          {/* Centered Column */}
+          <div className="relative z-10 w-full flex flex-col items-center">
+            <h2 className="font-display text-2xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
+              How LarperWallet <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">works.</span>
+            </h2>
+            <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
+              Get set up in less than 2 minutes. No complicated installations.
+            </p>
+
+            <div className="relative flex flex-col gap-8 mb-10 w-full max-w-sm mx-auto text-left">
+              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent" />
+
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <ShoppingCart size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-1">
-                  <h3 className="text-white text-[17px] font-semibold mb-2">{step.title}</h3>
-                  <div className="text-white/60 text-[14px] leading-relaxed pr-4">{step.desc}</div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                 </div>
               </div>
-            ))}
-          </div>
 
-          <p className="text-white/60 text-[13px] mt-6 font-medium text-center">
-            Have any questions? We have 24/7 support,{" "}
-            <a href="https://t.me/LarperWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
-              click here to contact us
-            </a>
-            .
-          </p>
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <Key size={16} className="text-white/80" />
+                </div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-5">
+                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                  <Smartphone size={16} className="text-white/80" />
+                </div>
+                <div className="flex flex-col pt-2">
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Activate & Flex</h4>
+                  <p className="text-white/50 text-[14px] leading-snug">
+                    <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
+                      Install the app
+                    </Link>
+                    , enter your license key, follow the steps and your wallet is ready in seconds.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-white/60 text-[13px] mt-2 font-medium text-center">
+              Have any questions? We have 24/7 support,{" "}
+              <a href="https://t.me/LarperWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+                click here to contact us
+              </a>
+              .
+            </p>
+          </div>
         </motion.div>
       </section>
 
