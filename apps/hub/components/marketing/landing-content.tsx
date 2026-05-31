@@ -449,12 +449,12 @@ export default function LandingContent() {
       </section>
 
       <section id="pricing" className="pb-12 md:pb-24 max-w-[1000px] mx-auto px-6 relative">
-        <motion.div variants={fadeInUp} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="text-center mb-10">
+        <div className="text-center mb-10">
           <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit card, or debit card.</p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch relative">
           {Object.values(PRICING_PLANS).map((plan) => {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
@@ -463,9 +463,8 @@ export default function LandingContent() {
             const hasEmbedConfig = plan.sellauthProductId && plan.sellauthVariantId && plan.sellauthProductId > 0 && plan.sellauthVariantId > 0;
 
             return (
-              <motion.div
+              <div
                 key={plan.id}
-                variants={fadeInUp}
                 className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] ${isPopular
                   ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_40px_rgba(139,92,246,0.15)] z-10"
                   : isYearly
@@ -521,10 +520,10 @@ export default function LandingContent() {
                     Buy <ArrowRight size={18} />
                   </>
                 </Link>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
         <div
           className="mt-16 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
