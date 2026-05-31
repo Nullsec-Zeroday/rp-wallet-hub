@@ -569,7 +569,7 @@ export default function LandingContent() {
                 <div className="text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
 
                 <div className="flex items-baseline justify-center gap-1 mb-10">
-                  {plan.originalPrice && <span className="text-2xl md:text-3xl font-display font-medium text-white/40 line-through mr-1">{plan.originalPrice}</span>}
+                  {plan.originalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-current">{plan.originalPrice}</span>}
                   <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{plan.price}</span>
                 </div>
 
