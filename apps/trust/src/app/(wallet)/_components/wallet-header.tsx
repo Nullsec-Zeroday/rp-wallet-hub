@@ -115,7 +115,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }} data-i18n="settings.coin_balances">Coin Balances</div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Solana (SOL)</div>
                             <input id="set-sol" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.SOL || ""} onChange={(event) => updateBalanceDraft("SOL", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -123,7 +123,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Bitcoin (BTC)</div>
                             <input id="set-btc" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.BTC || ""} onChange={(event) => updateBalanceDraft("BTC", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -131,7 +131,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ethereum/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/ethereum/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Ethereum (ETH)</div>
                             <input id="set-eth" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.ETH || ""} onChange={(event) => updateBalanceDraft("ETH", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -139,7 +139,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>TRON (TRX)</div>
                             <input id="set-trx" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.TRX || ""} onChange={(event) => updateBalanceDraft("TRX", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -147,7 +147,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>BNB (BNB)</div>
                             <input id="set-bnb" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.BNB || ""} onChange={(event) => updateBalanceDraft("BNB", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -155,7 +155,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Tether USD (USDT)</div>
                             <input id="set-usdt" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.USDT || ""} onChange={(event) => updateBalanceDraft("USDT", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -171,7 +171,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ripple/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/ripple/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>XRP (XRP)</div>
                             <input id="set-xrp" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.XRP || ""} onChange={(event) => updateBalanceDraft("XRP", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -179,7 +179,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/litecoin/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/litecoin/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Litecoin (LTC)</div>
                             <input id="set-ltc" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.LTC || ""} onChange={(event) => updateBalanceDraft("LTC", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -187,7 +187,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/zcash/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/zcash/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Zcash (ZEC)</div>
                             <input id="set-zec" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.ZEC || ""} onChange={(event) => updateBalanceDraft("ZEC", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -195,7 +195,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/algorand/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/algorand/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Algorand (ALGO)</div>
                             <input id="set-algo" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.ALGO || ""} onChange={(event) => updateBalanceDraft("ALGO", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -203,7 +203,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
                     
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/stellar/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/stellar/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Stellar (XLM)</div>
                             <input id="set-xlm" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.XLM || ""} onChange={(event) => updateBalanceDraft("XLM", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -211,7 +211,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
                     
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/sui/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/sui/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Sui (SUI)</div>
                             <input id="set-sui" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.SUI || ""} onChange={(event) => updateBalanceDraft("SUI", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -219,7 +219,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     </div>
                     
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                        <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/doge/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                        <img src="https://assets-cdn.trustwallet.com/blockchains/doge/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                         <div style={{ flex: 1 }}>
                             <div style={{ color: "#fff", fontSize: "14px" }}>Dogecoin (DOGE)</div>
                             <input id="set-doge" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.DOGE || ""} onChange={(event) => updateBalanceDraft("DOGE", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -238,7 +238,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
 
                     <div id="coinsExtra" style={{ display: isExtraCoinsVisible ? "block" : "none" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", marginTop: "8px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ton/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/ton/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Toncoin (TON)</div>
                                 <input id="set-ton" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.TON || ""} onChange={(event) => updateBalanceDraft("TON", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -252,21 +252,21 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                             </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/polkadot/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/polkadot/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Polkadot (DOT)</div>
                                 <input id="set-dot" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.DOT || ""} onChange={(event) => updateBalanceDraft("DOT", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
                             </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Ondo (ONDO)</div>
                                 <input id="set-ondo" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.ONDO || ""} onChange={(event) => updateBalanceDraft("ONDO", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
                             </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0x0D8775F648430679A709E98d2b0Cb6250d2887EF/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0x0D8775F648430679A709E98d2b0Cb6250d2887EF/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Basic Attention Token (BAT)</div>
                                 <input id="set-bat" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.BAT || ""} onChange={(event) => updateBalanceDraft("BAT", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
@@ -281,14 +281,14 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                             </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/hedera/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/hedera/info/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Hedera (HBAR)</div>
                                 <input id="set-hbar" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.HBAR || ""} onChange={(event) => updateBalanceDraft("HBAR", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />
                             </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0xD533a949740bb3306d119CC777fa900bA034cd52/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
+                            <img src="https://assets-cdn.trustwallet.com/blockchains/ethereum/assets/0xD533a949740bb3306d119CC777fa900bA034cd52/logo.png" style={{ width: "32px", height: "32px", borderRadius: "50%" }} />
                             <div style={{ flex: 1 }}>
                                 <div style={{ color: "#fff", fontSize: "14px" }}>Curve DAO Token (CRV)</div>
                                 <input id="set-crv" type="number" min="0" step="any" placeholder="0" value={settingsDraft.balances.CRV || ""} onChange={(event) => updateBalanceDraft("CRV", event.target.value)} style={{ width: "100%", padding: "8px", background: "#252525", border: "1px solid #333", borderRadius: "8px", color: "#fff", fontSize: "14px", marginTop: "4px" }} />

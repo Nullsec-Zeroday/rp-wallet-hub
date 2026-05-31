@@ -31,8 +31,8 @@ export default function WalletShell() {
   const [scrolled, setScrolled] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
 
-  const THRESHOLD = 110;
-  const SETTLED_Y = 140;
+  const THRESHOLD = 75;
+  const SETTLED_Y = 90;
   const SPINNER_PULL_SENSITIVITY = 0.00001;
 
   React.useEffect(() => {

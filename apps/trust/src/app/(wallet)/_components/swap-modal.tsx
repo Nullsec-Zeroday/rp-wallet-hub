@@ -529,7 +529,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                     <div id="swapToBadge">
                       <div style={{ position: "absolute", bottom: "-1px", right: "-1px", borderRadius: "50%", boxShadow: "0 0 3px 1px rgba(35,191,125,0.07)" }}>
                         <div style={{ width: "16px", height: "16px", borderRadius: "50%", overflow: "hidden", background: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <img alt="Tron" style={{ width: "16px", height: "16px", borderRadius: "50%", objectFit: "contain" }} src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png" />
+                          <img alt="Tron" style={{ width: "16px", height: "16px", borderRadius: "50%", objectFit: "contain" }} src="https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png" />
                         </div>
                       </div>
                     </div>
@@ -745,16 +745,16 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             <span style={{ color: "#48FF91", fontSize: "13px", fontWeight: 600 }}>All</span>
           </div>
           <div style={{ aspectRatio: "1/1", borderRadius: "10px", overflow: "hidden", border: "3px solid #f8a239", boxSizing: "border-box", background: "#f8a239" }}>
-            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png" alt="BTC" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
+            <img src="https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png" alt="BTC" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
           </div>
           <div style={{ aspectRatio: "1/1", borderRadius: "10px", overflow: "hidden", border: "3px solid #0a0e11", boxSizing: "border-box", background: "#0a0e11" }}>
-            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png" alt="BNB" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
+            <img src="https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png" alt="BNB" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
           </div>
           <div style={{ aspectRatio: "1/1", borderRadius: "10px", overflow: "hidden", border: "3px solid #f3f4f7", boxSizing: "border-box", background: "#f3f4f7" }}>
-            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/ethereum/info/logo.png" alt="ETH" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
+            <img src="https://assets-cdn.trustwallet.com/blockchains/ethereum/info/logo.png" alt="ETH" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
           </div>
           <div style={{ aspectRatio: "1/1", borderRadius: "10px", overflow: "hidden", border: "3px solid #000", boxSizing: "border-box", background: "#000" }}>
-            <img src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png" alt="SOL" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
+            <img src="https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png" alt="SOL" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transform: "scale(1.3)" }} />
           </div>
           <div style={{ padding: "0 10px", borderRadius: "999px", background: "rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", gap: "3px", cursor: "pointer", WebkitTapHighlightColor: "transparent", alignSelf: "center", height: "100%" }}>
             <span style={{ color: "#888", fontSize: "12px", fontWeight: 500 }}>26+</span>

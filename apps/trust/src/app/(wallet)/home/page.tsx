@@ -247,7 +247,7 @@ export default function HomePage() {
             <div className="rounded-4 bg-background-2 px-4 py-4 border-solid transition" style={{ minWidth: "210px" }}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: "32px", height: "32px" }}>
-                  <img alt="ETH" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://wsrv.nl/?url=https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png" />
+                  <img alt="ETH" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png" />
                 </div>
                 <p className="typography-subheader-16  text-utility-1-default font-semibold   text-unset    whitespace-nowrap">ETHUSDT</p>
               </div>
@@ -259,7 +259,7 @@ export default function HomePage() {
             <div className="rounded-4 bg-background-2 px-4 py-4  border-solid transition" style={{ minWidth: "210px" }}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: "32px", height: "32px" }}>
-                  <img alt="SOL" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://wsrv.nl/?url=https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" />
+                  <img alt="SOL" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" />
                 </div>
                 <p className="typography-subheader-16  text-utility-1-default font-semibold   text-unset    whitespace-nowrap">SOLUSDT</p>
               </div>
@@ -271,7 +271,7 @@ export default function HomePage() {
             <div className="rounded-4 bg-background-2 px-4 py-4  border-solid transition" style={{ minWidth: "210px" }}>
               <div className="flex items-center gap-2 mb-4">
                 <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: "32px", height: "32px" }}>
-                  <img alt="BTC" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://wsrv.nl/?url=https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png" />
+                  <img alt="BTC" className="rounded-full object-contain border-1" style={{ width: "32px", height: "32px" }} src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png" />
                 </div>
                 <p className="typography-subheader-16  text-utility-1-default font-semibold   text-unset    whitespace-nowrap">BTCUSDT</p>
               </div>
@@ -373,7 +373,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-center w-full h-full flex-1 flex-row">
                     <div className="rounded-full overflow-hidden  ">
                       <div className="w-10 h-10 flex items-center">
-                        <img alt="Tron" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://wsrv.nl/?url=https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/tron/info/logo.png" />
+                        <img alt="Tron" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/tron/info/logo.png" />
                       </div>
                     </div>
                   </div>
@@ -398,7 +398,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-center w-full h-full flex-1 flex-row">
                     <div className="rounded-full overflow-hidden  ">
                       <div className="w-10 h-10 flex items-center">
-                        <img alt="Stargaze" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/stargaze/info/logo.png" />
+                        <img alt="Stargaze" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://assets-cdn.trustwallet.com/blockchains/stargaze/info/logo.png" />
                       </div>
                     </div>
                   </div>
@@ -423,7 +423,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-center w-full h-full flex-1 flex-row">
                     <div className="rounded-full overflow-hidden  ">
                       <div className="w-10 h-10 flex items-center">
-                        <img alt="Juno" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/juno/info/logo.png" />
+                        <img alt="Juno" className="w-full h-full rounded-full object-contain border-1" width="100%" height="100%" src="https://assets-cdn.trustwallet.com/blockchains/juno/info/logo.png" />
                       </div>
                     </div>
                   </div>

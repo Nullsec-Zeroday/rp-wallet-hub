@@ -16,7 +16,7 @@ export interface TrustPriceData {
 export type TrustLivePrices = Record<string, TrustPriceData>;
 
 const trustAssetLogo = (chain: string, path = "info/logo.png") =>
-  `https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/${chain}/${path}`;
+  `https://assets-cdn.trustwallet.com/blockchains/${chain}/${path}`;
 
 export const TRUST_TOKENS: TrustTokenInfo[] = [
   { symbol: "BTC", name: "Bitcoin", chain: "Bitcoin", price: 73778, coingeckoId: "bitcoin", logo: trustAssetLogo("bitcoin") },
