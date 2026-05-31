@@ -288,7 +288,7 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
                 style={{
                   width: 32,
                   height: 32,
-                  backgroundColor: "#8c78f0",
+                  backgroundColor: "#47e18d",
                   fontSize: 14,
                   fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
                 }}
