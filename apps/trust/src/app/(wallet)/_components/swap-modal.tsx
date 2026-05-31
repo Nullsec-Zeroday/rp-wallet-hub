@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
+import { useTrustWallet } from "@/lib/trust-wallet-context";
 
 interface SwapModalProps {
   isOpen: boolean;
@@ -9,11 +11,53 @@ interface SwapModalProps {
 
 export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const [show, setShow] = useState(false);
+  const [isRendered, setIsRendered] = useState(isOpen);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
+  const [fromSymbol, setFromSymbol] = useState("SOL");
+  const [pickerTarget, setPickerTarget] = useState<"from" | "to" | null>(null);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [swapStatus, setSwapStatus] = useState<"idle" | "swapping" | "success">("idle");
+  const [toSymbol, setToSymbol] = useState("USDT");
+  const { balanceMap, baseCurrency, prices, tokenSymbols } = useTrustWallet();
+
+  // Slider state
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [sliderX, setSliderX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const trackWidth = useRef(350);
+
+  // Kbd Slider state
+  const kbdTrackRef = useRef<HTMLDivElement>(null);
+  const [isKbdDragging, setIsKbdDragging] = useState(false);
 
   const keyboardRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  
+  // Quote fetching state
+  const [isFetchingQuote, setIsFetchingQuote] = useState(false);
+  const [quoteProgress, setQuoteProgress] = useState(0);
+
+  const fromToken = getTrustToken(fromSymbol);
+  const toToken = getTrustToken(toSymbol);
+  const fromPrice = prices[fromSymbol]?.usd ?? fromToken.price;
+  const toPrice = prices[toSymbol]?.usd ?? toToken.price;
+  const numericAmount = Number(swapAmount) || 0;
+  const fromBalance = balanceMap[fromSymbol] || 0;
+  const toBalance = balanceMap[toSymbol] || 0;
+  const fromUsd = numericAmount * fromPrice;
+  const toAmount = toPrice > 0 ? fromUsd / toPrice : 0;
+  const insufficient = numericAmount > fromBalance;
+  const pickerTokens = tokenSymbols
+    .filter((symbol) => symbol !== (pickerTarget === "from" ? toSymbol : fromSymbol))
+    .filter((symbol) => {
+      const token = getTrustToken(symbol);
+      const query = pickerSearch.trim().toLowerCase();
+      return !query || token.name.toLowerCase().includes(query) || symbol.toLowerCase().includes(query);
+    });
+
+  const maxBalance = Number(formatTrustBalance(balanceMap[fromSymbol] || 0).replace(/,/g, ''));
+  const currentRatio = (maxBalance > 0 && numericAmount) ? Math.min(1, numericAmount / maxBalance) : 0;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
@@ -35,6 +79,93 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
     };
   }, [isKeyboardOpen]);
 
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (isDragging && trackRef.current) {
+        if (swapStatus !== "idle" || insufficient || !numericAmount) return;
+        const rect = trackRef.current.getBoundingClientRect();
+        const sliderMaxX = rect.width - 80;
+        const newX = Math.max(0, Math.min(e.clientX - rect.left - 40, sliderMaxX));
+        setSliderX(newX);
+        if (newX >= sliderMaxX * 0.95) {
+          setIsDragging(false);
+          setSliderX(sliderMaxX);
+          completeVisualSwap();
+        }
+      } else if (isKbdDragging && kbdTrackRef.current) {
+        const rect = kbdTrackRef.current.getBoundingClientRect();
+        const newRatio = Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1));
+        setPercentAmount(newRatio);
+      }
+    };
+    
+    const handlePointerUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        if (swapStatus === "idle") setSliderX(0);
+      }
+      if (isKbdDragging) {
+        setIsKbdDragging(false);
+      }
+    };
+    
+    if (isDragging || isKbdDragging) {
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("pointercancel", handlePointerUp);
+    }
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [isDragging, isKbdDragging, swapStatus, insufficient, numericAmount]);
+
+  useEffect(() => {
+    if (numericAmount <= 0) {
+      setIsFetchingQuote(false);
+      setQuoteProgress(0);
+      return;
+    }
+
+    let startTime = Date.now();
+    let animationFrameId: number;
+
+    const tick = () => {
+      const elapsed = Date.now() - startTime;
+      
+      if (isFetchingQuote) {
+        if (elapsed >= 1500) {
+          setIsFetchingQuote(false);
+          startTime = Date.now();
+          setQuoteProgress(0);
+        }
+      } else {
+        const percent = Math.min(100, (elapsed / 10000) * 100);
+        setQuoteProgress(percent);
+        if (elapsed >= 10000) {
+          setIsFetchingQuote(true);
+          startTime = Date.now();
+        }
+      }
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    animationFrameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [numericAmount, isFetchingQuote]);
+
+  useEffect(() => {
+    if (swapStatus === "success") {
+      if (trackRef.current) {
+        const rect = trackRef.current.getBoundingClientRect();
+        setSliderX(rect.width - 80);
+      }
+    } else if (swapStatus === "idle") {
+      setSliderX(0);
+    }
+  }, [swapStatus]);
+
   const handleKeyPress = (key: string) => {
     if (key === "del") {
       setSwapAmount(prev => prev.slice(0, -1));
@@ -48,16 +179,54 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   };
 
   const displayVal = swapAmount || "0";
+  const setPercentAmount = (percent: number) => {
+    const nextAmount = fromBalance * percent;
+    setSwapAmount(nextAmount > 0 ? String(Number(nextAmount.toFixed(6))) : "");
+    setIsKeyboardOpen(true);
+  };
+
+  const flipTokens = () => {
+    setFromSymbol(toSymbol);
+    setToSymbol(fromSymbol);
+    setSwapAmount("");
+    setSwapStatus("idle");
+  };
+
+  const completeVisualSwap = () => {
+    if (!numericAmount || insufficient || swapStatus === "swapping") return;
+    setSwapStatus("swapping");
+    window.setTimeout(() => {
+      setSwapStatus("success");
+      onClose();
+      window.setTimeout(() => {
+        setSwapStatus("idle");
+        setSwapAmount("");
+        setSliderX(0);
+      }, 500);
+    }, 650);
+  };
+
+  const selectToken = (symbol: string) => {
+    if (pickerTarget === "from") setFromSymbol(symbol);
+    if (pickerTarget === "to") setToSymbol(symbol);
+    setPickerTarget(null);
+    setPickerSearch("");
+    setSwapStatus("idle");
+  };
 
   useEffect(() => {
+    let timer: number;
     if (isOpen) {
+      setIsRendered(true);
       requestAnimationFrame(() => setShow(true));
     } else {
       setShow(false);
+      timer = window.setTimeout(() => setIsRendered(false), 450);
     }
+    return () => clearTimeout(timer);
   }, [isOpen]);
 
-  if (!isOpen && !show) return null;
+  if (!isRendered) return null;
 
   return (
     <div
@@ -89,11 +258,19 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
           padding: "6px 16px 12px",
           flexShrink: 0,
           paddingTop: "max(env(safe-area-inset-top), 12px)",
+          position: "relative",
         }}
       >
         <button
           id="trustSwapBack"
-          onClick={onClose}
+          onClick={() => {
+            if (pickerTarget) {
+              setPickerTarget(null);
+              setPickerSearch("");
+            } else {
+              onClose();
+            }
+          }}
           style={{
             background: "none",
             border: "none",
@@ -123,9 +300,16 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
         </button>
         <span
           id="swapPanelTitle"
-          style={{ color: "#fff", fontSize: "19px", fontWeight: 600 }}
+          style={{ 
+            color: "#fff", 
+            fontSize: "19px", 
+            fontWeight: 600,
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)"
+          }}
         >
-          Swap
+          {pickerTarget ? "Select token" : "Swap"}
         </span>
         <button
           id="trustSwapFilter"
@@ -191,18 +375,21 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
       {/* Main swap content */}
       <div
         id="swapMainContent"
-        style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={() => setIsKeyboardOpen(false)}
+        style={{ flex: 1, display: pickerTarget ? "none" : "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {/* Swap cells area */}
         <div style={{ flex: 1, padding: "0 16px", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
           {/* FROM cell */}
-          <div className="swap-cell" style={{ background: "rgba(255, 255, 255, 0.04)", borderRadius: "16px", padding: "16px", marginBottom: "8px" }}>
-            <div className="swap-cell-inner" style={{ display: "flex", justifyContent: "space-between" }}>
-              <div className="swap-cell-left" style={{ flex: 1 }}>
+          <div className="swap-cell">
+            <div className="swap-cell-inner">
+              <div className="swap-cell-left">
                 <div
                   id="swapFromDisplay"
-                  ref={inputRef}
-                  onClick={() => setIsKeyboardOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsKeyboardOpen(true);
+                  }}
                   style={{
                     width: "100%",
                     minHeight: "43px",
@@ -216,7 +403,6 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   <span
                     id="swapFromDisplayVal"
                     className="swap-amount"
-                    style={{ color: "rgb(136, 136, 136)", fontSize: "32px" }}
                   >
                     {displayVal}
                   </span>
@@ -224,10 +410,10 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 </div>
                 <input id="swapFromAmount" type="text" style={{ display: "none" }} readOnly />
                 <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "10px" }}>
-                  <span id="swapFromUSD" className="swap-usd" style={{ color: "#fff", fontSize: "13px" }}>
-                    $0.00
+                  <span id="swapFromUSD" className="swap-usd">
+                    {formatTrustCurrency(fromUsd, baseCurrency)}
                   </span>
-                  <svg fill="none" width="11" height="11" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, color: "#fff" }}>
+                  <svg fill="none" width="11" height="11" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
                     <path d="M22.7877 5.215C22.1977 5.025 21.5677 5.355 21.3777 5.945L20.7177 8.025C20.6277 7.835 20.5377 7.655 20.4377 7.455C18.7777 4.475 15.6277 2.625 12.2277 2.625C8.82771 2.625 5.67771 4.475 4.01771 7.455C3.71771 7.995 3.90771 8.685 4.45771 8.985C4.99771 9.285 5.68771 9.095 5.98771 8.545C7.24771 6.285 9.63771 4.875 12.2277 4.875C14.8177 4.875 17.2077 6.285 18.4577 8.545C18.5677 8.745 18.6577 8.935 18.7477 9.125L16.5677 8.425C15.9777 8.235 15.3477 8.565 15.1577 9.155C14.9677 9.745 15.2977 10.375 15.8877 10.565L20.6077 12.065C20.7177 12.105 20.8377 12.115 20.9477 12.115C21.4277 12.115 21.8677 11.815 22.0177 11.335L23.5177 6.615C23.7077 6.025 23.3777 5.395 22.7877 5.205V5.215Z" fill="currentColor"></path>
                     <path d="M19.9875 15.015C19.4475 14.715 18.7575 14.905 18.4575 15.455C17.1975 17.715 14.8075 19.125 12.2175 19.125C9.62752 19.125 7.23752 17.715 5.98752 15.455C5.92752 15.345 5.87752 15.235 5.82752 15.135L8.09752 15.865C8.68752 16.055 9.31752 15.725 9.50752 15.135C9.69752 14.545 9.36752 13.915 8.77752 13.725L4.05752 12.225C3.46752 12.035 2.83752 12.365 2.64752 12.955L1.14752 17.655C0.957522 18.245 1.28752 18.875 1.87752 19.065C1.98752 19.105 2.10752 19.115 2.21752 19.115C2.69752 19.115 3.13752 18.815 3.28752 18.335L3.91752 16.355C3.94752 16.415 3.97752 16.475 4.00752 16.545C5.65752 19.525 8.80752 21.375 12.2075 21.375C15.6075 21.375 18.7575 19.525 20.4075 16.545C20.7075 16.005 20.5175 15.315 19.9675 15.015H19.9875Z" fill="currentColor"></path>
                   </svg>
@@ -235,68 +421,55 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               </div>
               <div
                 className="swap-cell-right"
-                style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center" }}
               >
                 <div
                   id="swapFromPill"
                   className="swap-pill"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    padding: "6px 12px 6px 6px",
-                    borderRadius: "24px",
-                  }}
+                  onClick={() => setPickerTarget("from")}
                 >
                   <div
                     id="swapFromIconWrap"
                     className="swap-icon-wrap"
-                    style={{ width: "24px", height: "24px", borderRadius: "50%", overflow: "hidden" }}
                   >
                     <img
                       id="swapFromIcon"
-                      src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/solana/info/logo.png"
-                      alt=""
+                      src={fromToken.logo}
+                      alt={fromToken.name}
                       className="swap-icon"
-                      style={{ width: "100%", height: "100%" }}
                     />
                     <div id="swapFromBadge"></div>
                   </div>
-                  <span id="swapFromTicker" className="swap-ticker" style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>
-                    SOL
+                  <span id="swapFromTicker" className="swap-ticker">
+                    {fromSymbol}
                   </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M6 9l6 6 6-6" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                  </svg>
                 </div>
                 <div
                   id="swapFromBalance"
                   className="swap-balance"
-                  style={{ color: "#fff", display: "flex", alignItems: "center", gap: "4px", marginTop: "12px", fontSize: "13px" }}
                 >
                   <svg className="text-iconNormal" fill="none" width="12" height="12" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style={{ paddingLeft: "1px" }}>
                     <path d="M16.495 4.75012H4.995C4.375 4.75012 3.875 5.25012 3.875 5.87012C3.875 6.49012 4.375 6.99012 4.995 6.99012H16.495C16.985 6.99012 17.375 7.38012 17.375 7.87012V16.1101C17.375 16.6001 16.975 16.9901 16.495 16.9901H3.505C3.015 16.9901 2.625 16.5901 2.625 16.1101V3.87012C2.625 3.39012 3.015 2.99012 3.495 2.99012H16.495C17.115 2.99012 17.615 2.49012 17.615 1.87012C17.615 1.25012 17.115 0.750122 16.495 0.750122H3.495C1.775 0.750122 0.375 2.15012 0.375 3.87012V16.1101C0.375 17.8401 1.785 19.2401 3.505 19.2401H16.495C18.225 19.2401 19.625 17.8401 19.625 16.1101V7.87012C19.625 6.15012 18.215 4.75012 16.495 4.75012Z" fill="currentColor"></path>
                     <path d="M14.6249 12.5001C15.2449 12.5001 15.7449 12.0001 15.7449 11.3801C15.7449 10.7601 15.2449 10.2601 14.6249 10.2601H12.3749C11.7549 10.2601 11.2549 10.7601 11.2549 11.3801C11.2549 12.0001 11.7549 12.5001 12.3749 12.5001H14.6249Z" fill="currentColor"></path>
                   </svg>
-                  <span>0</span>
+                  <span>{formatTrustBalance(fromBalance)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Flip button */}
-          <div style={{ display: "flex", justifyContent: "center", margin: "-16px 0", position: "relative", zIndex: 2 }}>
+          <div style={{ display: "flex", justifyContent: "center", margin: "-13px 0", position: "relative", zIndex: 2 }}>
             <div style={{ position: "relative", display: "inline-flex" }}>
               <button
                 id="trustSwapFlip"
+                onClick={flipTokens}
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "50%",
-                  background: "#1B1B1C",
-                  border: "4px solid hsl(var(--twc-backgroundPrimary,240 1.8% 10.8%))",
-                  color: "#888",
+                  background: "rgb(27, 27, 28)",
+                  boxShadow: "rgba(255, 255, 255, 0.08) 0px 0px 4px 1px",
+                  color: "rgb(136, 136, 136)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -306,97 +479,75 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   flexShrink: 0,
                 }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"></path>
                 </svg>
               </button>
-              <svg id="swapFlipRing" width="42" height="42" viewBox="0 0 42 42" style={{ position: "absolute", top: "-5px", left: "-5px", pointerEvents: "none", display: "none", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}>
+              <svg id="swapFlipRing" width="42" height="42" viewBox="0 0 42 42" style={{ position: "absolute", top: "-5px", left: "-5px", pointerEvents: "none", display: numericAmount > 0 ? "block" : "none", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}>
                 <circle cx="21" cy="21" r="19" fill="none" stroke="#20372A" strokeWidth="2.5"></circle>
-                <circle id="swapFlipRingProgress" cx="21" cy="21" r="19" fill="none" stroke="#48FF91" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="119.4" strokeDashoffset="0"></circle>
+                <circle id="swapFlipRingProgress" cx="21" cy="21" r="19" fill="none" stroke="#48FF91" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="119.4" strokeDashoffset={isFetchingQuote ? 119.4 : (quoteProgress / 100) * 119.4}></circle>
               </svg>
             </div>
           </div>
 
           {/* TO cell */}
-          <div className="swap-cell" style={{ background: "rgba(255, 255, 255, 0.04)", borderRadius: "16px", padding: "16px", marginBottom: "8px" }}>
-            <div className="swap-cell-inner" style={{ display: "flex", justifyContent: "space-between" }}>
-              <div className="swap-cell-left" style={{ flex: 1 }}>
-                <div id="swapToAmount" className="swap-amount" style={{ fontSize: "32px", color: "#fff" }}>
-                  0
-                </div>
-                <div id="swapToUSD" className="swap-usd" style={{ color: "#888", marginTop: "10px", fontSize: "13px" }}>
-                  $0.00
-                </div>
+          <div className="swap-cell" style={{ marginBottom: "8px" }}>
+            <div className="swap-cell-inner">
+              <div className="swap-cell-left">
+                {isFetchingQuote ? (
+                  <>
+                    <div id="swapToAmount" className="swap-amount swap-skeleton" style={{ fontSize: "32px", width: "218px", minHeight: "34px", display: "block" }}></div>
+                    <div id="swapToUSD" className="swap-usd swap-skeleton" style={{ color: "rgb(255, 255, 255)", marginTop: "15px", width: "44px", minHeight: "14px", display: "block" }}></div>
+                  </>
+                ) : (
+                  <>
+                    <div id="swapToAmount" className="swap-amount" style={{ fontSize: "32px" }}>
+                      {toAmount ? formatTrustBalance(toAmount) : "0"}
+                    </div>
+                    <div id="swapToUSD" className="swap-usd" style={{ color: "rgb(255, 255, 255)", marginTop: "15px" }}>
+                      {formatTrustCurrency(fromUsd, baseCurrency)}
+                    </div>
+                  </>
+                )}
               </div>
-              <div
-                className="swap-cell-right"
-                style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "center" }}
-              >
+              <div className="swap-cell-right">
                 <div
                   id="swapToPill"
                   className="swap-pill"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    background: "rgba(255, 255, 255, 0.1)",
-                    padding: "6px 12px 6px 6px",
-                    borderRadius: "24px",
-                  }}
+                  onClick={() => setPickerTarget("to")}
                 >
                   <div
                     id="swapToIconWrap"
                     className="swap-icon-wrap"
-                    style={{ position: "relative", width: "24px", height: "24px" }}
                   >
                     <img
                       id="swapToIcon"
-                      src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x55d398326f99059fF775485246999027B3197955/logo.png"
-                      alt=""
+                      src={toToken.logo}
+                      alt={toToken.name}
                       className="swap-icon"
-                      style={{ width: "100%", height: "100%", borderRadius: "50%" }}
                     />
-                    <div
-                      id="swapToBadge"
-                      style={{
-                        position: "absolute",
-                        bottom: "-2px",
-                        right: "-2px",
-                        borderRadius: "50%",
-                        border: "1px solid #1B1B1C",
-                        width: "12px",
-                        height: "12px",
-                        background: "#000",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <img
-                        alt="Tron"
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                        src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png"
-                      />
+                    <div id="swapToBadge">
+                      <div style={{ position: "absolute", bottom: "-1px", right: "-1px", borderRadius: "50%", boxShadow: "0 0 3px 1px rgba(35,191,125,0.07)" }}>
+                        <div style={{ width: "16px", height: "16px", borderRadius: "50%", overflow: "hidden", background: "#1A1A1A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <img alt="Tron" style={{ width: "16px", height: "16px", borderRadius: "50%", objectFit: "contain" }} src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/tron/info/logo.png" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <span id="swapToTicker" className="swap-ticker" style={{ color: "#fff", fontWeight: 600, fontSize: "15px" }}>
-                    USDT
+                  <span id="swapToTicker" className="swap-ticker">
+                    {toSymbol}
                   </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M6 9l6 6 6-6" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                  </svg>
                 </div>
                 <div
                   id="swapToBalance"
                   className="swap-balance"
-                  style={{ color: "#888", display: "flex", alignItems: "center", gap: "4px", marginTop: "12px", fontSize: "13px" }}
+                  style={{ color: "#888" }}
                 >
                   <svg className="text-iconNormal" fill="none" width="12" height="12" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style={{ paddingLeft: "1px" }}>
                     <path d="M16.495 4.75012H4.995C4.375 4.75012 3.875 5.25012 3.875 5.87012C3.875 6.49012 4.375 6.99012 4.995 6.99012H16.495C16.985 6.99012 17.375 7.38012 17.375 7.87012V16.1101C17.375 16.6001 16.975 16.9901 16.495 16.9901H3.505C3.015 16.9901 2.625 16.5901 2.625 16.1101V3.87012C2.625 3.39012 3.015 2.99012 3.495 2.99012H16.495C17.115 2.99012 17.615 2.49012 17.615 1.87012C17.615 1.25012 17.115 0.750122 16.495 0.750122H3.495C1.775 0.750122 0.375 2.15012 0.375 3.87012V16.1101C0.375 17.8401 1.785 19.2401 3.505 19.2401H16.495C18.225 19.2401 19.625 17.8401 19.625 16.1101V7.87012C19.625 6.15012 18.215 4.75012 16.495 4.75012Z" fill="currentColor"></path>
                     <path d="M14.6249 12.5001C15.2449 12.5001 15.7449 12.0001 15.7449 11.3801C15.7449 10.7601 15.2449 10.2601 14.6249 10.2601H12.3749C11.7549 10.2601 11.2549 10.7601 11.2549 11.3801C11.2549 12.0001 11.7549 12.5001 12.3749 12.5001H14.6249Z" fill="currentColor"></path>
                   </svg>
-                  <span>0</span>
+                  <span>{formatTrustBalance(toBalance)}</span>
                 </div>
               </div>
             </div>
@@ -404,7 +555,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
           {/* Fetching quote pill */}
           <div style={{ display: "flex", justifyContent: "center", marginTop: "6px" }}>
-            <div id="fetchQuotePill" style={{ display: "none", alignItems: "center", gap: "5px", background: "rgba(255,255,255,0.09)", borderRadius: "50px", padding: "4px 8px 4px 10px", fontSize: "11px", color: "#aaa", whiteSpace: "nowrap" }}>
+            <div id="fetchQuotePill" style={{ display: isFetchingQuote ? "flex" : "none", alignItems: "center", gap: "5px", background: "rgba(255,255,255,0.09)", borderRadius: "50px", padding: "4px 8px 4px 10px", fontSize: "11px", color: "#aaa", whiteSpace: "nowrap" }}>
               Fetching quote
               <svg className="fetch-spinner" width="10" height="10" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2a10 10 0 0 1 10 10" stroke="#aaa" strokeWidth="3" strokeLinecap="round"></path>
@@ -413,7 +564,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
           </div>
 
           {/* Insufficient balance badge */}
-          <div id="swapInsufficientBadge" style={{ display: "none", alignItems: "center", gap: "8px", background: "#3F2526", borderRadius: "12px", padding: "12px 16px", marginTop: "4px" }}>
+          <div id="swapInsufficientBadge" style={{ display: insufficient ? "flex" : "none", alignItems: "center", gap: "8px", background: "#3F2526", borderRadius: "12px", padding: "12px 16px", marginTop: "4px" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
               <circle cx="12" cy="12" r="10" stroke="#FE5D5D" strokeWidth="1.8"></circle>
               <path d="M15 9l-6 6M9 9l6 6" stroke="#FE5D5D" strokeWidth="1.8" strokeLinecap="round"></path>
@@ -423,26 +574,26 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
         </div>
 
         {/* Custom Keyboard */}
-        <div id="swapKeyboard" ref={keyboardRef} style={{ overflow: "hidden", maxHeight: isKeyboardOpen ? "340px" : "0px", transition: "max-height 0.35s cubic-bezier(0.25, 1, 0.5, 1)", flexShrink: 0 }}>
+        <div id="swapKeyboard" onClick={(e) => e.stopPropagation()} ref={keyboardRef} style={{ overflow: "hidden", maxHeight: isKeyboardOpen ? "340px" : "0px", transition: "max-height 0.35s cubic-bezier(0.25, 1, 0.5, 1)", flexShrink: 0 }}>
           {/* % slider row */}
           <div style={{ display: "flex", alignItems: "center", padding: "14px 20px 4px", gap: "20px" }}>
-            <span id="kbdMinBtn" className="kbd-minmax">Min</span>
-            <div id="kbdTrack" style={{ flex: 1, position: "relative", height: "14px", borderRadius: "7px", background: "#333", cursor: "pointer", touchAction: "none" }}>
-              <div id="kbdFill" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 0, background: "#48FF91", borderRadius: "7px", pointerEvents: "none" }}></div>
-              <div id="kbdDot" style={{ position: "absolute", top: "50%", left: 0, transform: "translate(-50%,-50%)", width: "22px", height: "22px", borderRadius: "50%", background: "#fff", cursor: "grab", touchAction: "none", zIndex: 2 }}>
-                <div id="kbdTip" style={{ position: "absolute", bottom: "calc(100% + 7px)", left: "50%", transform: "translateX(-50%)", background: "#444", color: "#fff", fontSize: "11px", fontWeight: 500, padding: "3px 8px", borderRadius: "6px", whiteSpace: "nowrap", display: "none", pointerEvents: "none" }}>0%</div>
+            <span id="kbdMinBtn" className="kbd-minmax" onClick={() => setPercentAmount(0)}>Min</span>
+            <div id="kbdTrack" ref={kbdTrackRef} style={{ flex: 1, position: "relative", height: "14px", borderRadius: "7px", background: "#333", cursor: "pointer", touchAction: "none" }} onPointerDown={(e) => { e.preventDefault(); setIsKbdDragging(true); const rect = e.currentTarget.getBoundingClientRect(); setPercentAmount(Math.max(0, Math.min((e.clientX - rect.left) / rect.width, 1))); }}>
+              <div id="kbdFill" style={{ position: "absolute", left: "0px", top: "0px", bottom: "0px", width: `${currentRatio * 100}%`, background: "rgb(72, 255, 145)", borderRadius: "7px", pointerEvents: "none" }}></div>
+              <div id="kbdDot" style={{ position: "absolute", top: "50%", left: `${currentRatio * 100}%`, transform: "translate(-50%,-50%)", width: "22px", height: "22px", borderRadius: "50%", background: "#fff", cursor: "grab", touchAction: "none", zIndex: 2 }}>
+                <div id="kbdTip" style={{ position: "absolute", bottom: "calc(100% + 7px)", left: "50%", transform: "translateX(-50%)", background: "#444", color: "#fff", fontSize: "11px", fontWeight: 500, padding: "3px 8px", borderRadius: "6px", whiteSpace: "nowrap", display: isKbdDragging ? "block" : "none", pointerEvents: "none" }}>{Math.round(currentRatio * 100)}%</div>
               </div>
             </div>
-            <span id="kbdMaxBtn" className="kbd-minmax">Max</span>
+            <span id="kbdMaxBtn" className="kbd-minmax" onClick={() => setPercentAmount(1)}>Max</span>
           </div>
 
           {/* 25% / 50% / 75% shortcut buttons */}
           <div style={{ display: "flex", alignItems: "center", padding: "0px 20px", gap: "12px" }}>
             <span style={{ color: "transparent", fontSize: "12px", fontWeight: 500, pointerEvents: "none", userSelect: "none" }}>Min</span>
             <div style={{ flex: 1, position: "relative", height: "22px" }}>
-              <button className="kbd-pct" data-pct="0.25" style={{ left: "26%" }}>25%</button>
-              <button className="kbd-pct" data-pct="0.5" style={{ left: "50%" }}>50%</button>
-              <button className="kbd-pct" data-pct="0.75" style={{ left: "74%" }}>75%</button>
+              <button className="kbd-pct" data-pct="0.25" onClick={() => setPercentAmount(0.25)} style={{ left: "26%" }}>25%</button>
+              <button className="kbd-pct" data-pct="0.5" onClick={() => setPercentAmount(0.5)} style={{ left: "50%" }}>50%</button>
+              <button className="kbd-pct" data-pct="0.75" onClick={() => setPercentAmount(0.75)} style={{ left: "74%" }}>75%</button>
             </div>
             <span style={{ color: "transparent", fontSize: "12px", fontWeight: 500, pointerEvents: "none", userSelect: "none" }}>Max</span>
           </div>
@@ -454,7 +605,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 key={k} 
                 className="kbd-key" 
                 data-k={k}
-                onClick={(e) => { e.stopPropagation(); handleKeyPress(k.toString()); }}
+                onClick={() => handleKeyPress(k.toString())}
               >
                 {k}
               </button>
@@ -462,7 +613,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             <button 
               className="kbd-key" 
               data-k="del"
-              onClick={(e) => { e.stopPropagation(); handleKeyPress("del"); }}
+              onClick={() => handleKeyPress("del")}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <path d="M17.23 9.78L15.01 12L17.23 14.22C17.52 14.51 17.52 14.99 17.23 15.28C17.08 15.43 16.89 15.5 16.7 15.5C16.51 15.5 16.32 15.43 16.17 15.28L13.95 13.06L11.73 15.28C11.58 15.43 11.39 15.5 11.2 15.5C11.01 15.5 10.82 15.43 10.67 15.28C10.38 14.99 10.38 14.51 10.67 14.22L12.89 12L10.67 9.78C10.38 9.49 10.38 9.01 10.67 8.72C10.96 8.43 11.44 8.43 11.73 8.72L13.95 10.94L16.17 8.72C16.46 8.43 16.94 8.43 17.23 8.72C17.52 9.01 17.52 9.49 17.23 9.78ZM21.32 7V17C21.32 17.96 20.54 18.75 19.57 18.75H7.64C7.02999 18.75 6.48 18.44 6.16 17.93L2.87 12.66C2.62 12.26 2.62 11.74 2.87 11.33L6.16 6.07C6.48 5.56 7.04 5.25 7.64 5.25H19.58C20.54 5.25 21.33 6.04 21.33 7H21.32ZM19.82 7C19.82 6.86 19.71 6.75 19.57 6.75H7.64C7.54999 6.75 7.47 6.79 7.43 6.87L4.22 12L7.43 17.13C7.48 17.2 7.56 17.25 7.64 17.25H19.58C19.72 17.25 19.83 17.14 19.83 17V7H19.82Z" fill="currentColor"></path>
@@ -475,13 +626,13 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
         <div style={{ padding: "14px 16px 34px", flexShrink: 0 }}>
           <div
             id="swapSliderTrack"
+            ref={trackRef}
             style={{
               position: "relative",
               height: "56px",
               borderRadius: "28px",
-              background: "#296441",
+              background: "rgb(41, 100, 65)",
               overflow: "hidden",
-              userSelect: "none",
               touchAction: "none",
             }}
           >
@@ -489,21 +640,22 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               id="swapSliderFill"
               style={{
                 position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 0,
+                left: "0px",
+                top: "0px",
+                bottom: "0px",
+                width: swapStatus === "swapping" ? "62%" : `${sliderX + 40}px`,
                 background: "rgb(72, 255, 145)",
                 overflow: "hidden",
                 zIndex: 2,
                 borderRadius: "28px",
+                transition: isDragging ? "none" : "width 0.3s ease",
               }}
             >
               <span
                 id="swapSliderLabelFill"
                 style={{
                   position: "absolute",
-                  top: 0,
+                  top: "0px",
                   height: "100%",
                   display: "flex",
                   alignItems: "center",
@@ -513,17 +665,27 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   fontSize: "15px",
                   pointerEvents: "none",
                   whiteSpace: "nowrap",
+                  width: trackRef.current ? `${trackRef.current.getBoundingClientRect().width}px` : "370px",
                 }}
               >
-                Slide to swap
+                {swapStatus === "success" ? "Swapped" : swapStatus === "swapping" ? "Swapping..." : "Slide to swap"}
               </span>
             </div>
             <div
               id="swapSliderThumb"
+              onPointerDown={(e) => {
+                if (insufficient || !numericAmount || swapStatus !== "idle") return;
+                setIsDragging(true);
+                const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+                if (rect) {
+                  const sliderMaxX = rect.width - 80;
+                  setSliderX(Math.max(0, Math.min(e.clientX - rect.left - 40, sliderMaxX)));
+                }
+              }}
               style={{
                 position: "absolute",
-                left: 0,
-                top: 0,
+                left: "0px",
+                top: "0px",
                 width: "80px",
                 height: "56px",
                 borderRadius: "28px",
@@ -531,11 +693,12 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                cursor: "grab",
+                cursor: (insufficient || !numericAmount) ? "not-allowed" : "grab",
                 flexShrink: 0,
                 willChange: "transform",
                 zIndex: 3,
-                transform: "translateX(0px)",
+                transform: `translateX(${sliderX}px)`,
+                transition: isDragging ? "none" : "transform 0.3s ease",
               }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -546,8 +709,8 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
               id="swapSliderLabel"
               style={{
                 position: "absolute",
-                left: 0,
-                right: 0,
+                left: "0px",
+                right: "0px",
                 top: "50%",
                 transform: "translateY(-50%)",
                 textAlign: "center",
@@ -560,20 +723,20 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 opacity: 1,
               }}
             >
-              Slide to swap
+              {insufficient ? "Insufficient balance" : swapStatus === "success" ? "Swapped" : swapStatus === "swapping" ? "Swapping..." : "Slide to swap"}
             </span>
           </div>
         </div>
       </div>
 
       {/* Picker content (hidden by default) */}
-      <div id="swapPickerContent" style={{ flex: 1, display: "none", flexDirection: "column", overflow: "hidden" }}>
+      <div id="swapPickerContent" style={{ flex: 1, display: pickerTarget ? "flex" : "none", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "0 16px 12px", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.06)", borderRadius: "999px", padding: "10px 16px", gap: "10px" }}>
             <svg fill="none" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ color: "#666", flexShrink: 0 }}>
               <path fillRule="evenodd" clipRule="evenodd" d="M10.6262 1.99976C15.3904 1.99976 19.2527 5.86217 19.2528 10.6263C19.2528 12.3718 18.7333 13.9969 17.8415 15.355L21.4847 18.9983L21.6059 19.1326C22.1688 19.8231 22.1282 20.8412 21.4847 21.4848C20.841 22.1285 19.8222 22.1693 19.1316 21.6059L18.9983 21.4848L15.355 17.8415C13.9969 18.7333 12.3718 19.2528 10.6262 19.2528C5.86214 19.2527 1.99973 15.3904 1.99973 10.6263C1.99981 5.86222 5.86219 1.99984 10.6262 1.99976ZM10.6262 5.51628C7.80427 5.51636 5.51633 7.8043 5.51625 10.6263C5.51625 13.4483 7.80422 15.7362 10.6262 15.7363C13.4483 15.7363 15.7362 13.4484 15.7362 10.6263C15.7362 7.80425 13.4483 5.51628 10.6262 5.51628Z" fill="currentColor"></path>
             </svg>
-            <input id="swapPickerSearch" type="text" placeholder="Search your holdings" style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#fff", fontSize: "15px", caretColor: "#48FF91" }} />
+            <input id="swapPickerSearch" type="text" placeholder="Search your holdings" value={pickerSearch} onChange={(event) => setPickerSearch(event.target.value)} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#fff", fontSize: "15px", caretColor: "#48FF91" }} />
           </div>
         </div>
         {/* Chain filter row */}
@@ -600,7 +763,47 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             </svg>
           </div>
         </div>
-        <div id="swapPickerList" style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}></div>
+        <div id="swapPickerList" style={{ flex: 1, overflowY: "auto", padding: "0 16px 24px" }}>
+          {pickerTokens.map((symbol) => {
+            const token = getTrustToken(symbol);
+            const balance = balanceMap[symbol] || 0;
+            const price = prices[symbol]?.usd ?? token.price;
+            return (
+              <button
+                key={symbol}
+                onClick={() => selectToken(symbol)}
+                type="button"
+                style={{
+                  alignItems: "center",
+                  background: "rgba(255,255,255,0.04)",
+                  border: "0",
+                  borderRadius: "16px",
+                  color: "#fff",
+                  display: "flex",
+                  gap: "12px",
+                  marginBottom: "8px",
+                  padding: "12px",
+                  textAlign: "left",
+                  width: "100%",
+                }}
+              >
+                {token.logo ? (
+                  <img alt={token.name} src={token.logo} style={{ borderRadius: "50%", height: "34px", width: "34px" }} />
+                ) : (
+                  <span style={{ alignItems: "center", background: "#2f3136", borderRadius: "50%", display: "grid", height: "34px", justifyItems: "center", width: "34px" }}>{symbol.slice(0, 2)}</span>
+                )}
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <strong style={{ display: "block", fontSize: "15px" }}>{symbol}</strong>
+                  <span style={{ color: "#888", display: "block", fontSize: "12px" }}>{token.name}</span>
+                </span>
+                <span style={{ textAlign: "right" }}>
+                  <strong style={{ display: "block", fontSize: "14px" }}>{formatTrustBalance(balance)}</strong>
+                  <span style={{ color: "#888", display: "block", fontSize: "12px" }}>{formatTrustCurrency(balance * price, baseCurrency)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { RouterProvider } from "./shims/router-context";
 import WalletShell from "./wallet-shell";
+import { TrustWalletProvider } from "@/lib/trust-wallet-context";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletMutationType } from "@rp-wallet/types";
 import {
@@ -184,10 +185,7 @@ function TrustApp() {
 
 function BootstrappedWallet({
   api,
-  mutating,
-  onMutatingChange,
   onPayloadChange,
-  onErrorChange,
   payload,
 }: {
   api: RpWalletApiClient;
@@ -199,7 +197,9 @@ function BootstrappedWallet({
 }) {
   return (
     <RouterProvider>
-      <WalletShell />
+      <TrustWalletProvider api={api} initialPayload={payload} onPayloadChange={onPayloadChange}>
+        <WalletShell />
+      </TrustWalletProvider>
     </RouterProvider>
   );
 }

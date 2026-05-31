@@ -419,6 +419,7 @@ app.get("/chart", async (c) => {
     else if (timeframe === "1D") queryDays = "1";
     else if (timeframe === "1W") queryDays = "7";
     else if (timeframe === "1M") queryDays = "30";
+    else if (timeframe === "1Y") queryDays = "365";
     else if (timeframe === "YTD") {
       const startOfYear = new Date(new Date().getFullYear(), 0, 1).getTime();
       queryDays = String(Math.ceil((Date.now() - startOfYear) / (1000 * 60 * 60 * 24)));
@@ -525,6 +526,8 @@ app.get("/token-details", async (c) => {
     }
 
     const data = await response.json() as {
+      categories?: string[];
+      coingecko_rank?: number;
       market_data?: {
         market_cap?: Record<string, number>;
         total_supply?: number;
@@ -532,15 +535,37 @@ app.get("/token-details", async (c) => {
         total_volume?: Record<string, number>;
       };
       description?: { en?: string };
+      genesis_date?: string | null;
+      links?: {
+        homepage?: string[];
+        repos_url?: { github?: string[] };
+        subreddit_url?: string;
+        twitter_screen_name?: string;
+        whitepaper?: string;
+      };
+      sentiment_votes_down_percentage?: number;
+      sentiment_votes_up_percentage?: number;
     };
 
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     return c.json({
+      categories: data.categories || [],
+      coingeckoRank: data.coingecko_rank || null,
       marketCap: data.market_data?.market_cap?.[currency] || data.market_data?.market_cap?.usd || 0,
       totalSupply: data.market_data?.total_supply || 0,
       circulatingSupply: data.market_data?.circulating_supply || 0,
       totalVolume: data.market_data?.total_volume?.[currency] || data.market_data?.total_volume?.usd || 0,
       description: data.description?.en || "",
+      genesisDate: data.genesis_date || null,
+      links: {
+        github: data.links?.repos_url?.github?.find(Boolean) || "",
+        reddit: data.links?.subreddit_url || "",
+        twitter: data.links?.twitter_screen_name ? `https://x.com/${data.links.twitter_screen_name}` : "",
+        website: data.links?.homepage?.find(Boolean) || "",
+        whitepaper: data.links?.whitepaper || "",
+      },
+      sentimentVotesDownPercentage: data.sentiment_votes_down_percentage || 0,
+      sentimentVotesUpPercentage: data.sentiment_votes_up_percentage || 0,
     });
   } catch (error) {
     console.error("[token-details] Error fetching token details:", error);

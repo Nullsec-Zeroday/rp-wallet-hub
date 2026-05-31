@@ -1,6 +1,79 @@
 import React from "react";
+import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
+import { useTrustWallet } from "@/lib/trust-wallet-context";
+import SwapModal from "../_components/swap-modal";
+import CoinModal from "../_components/coin-modal";
+
+function TrustAssetRow({
+  amount,
+  currency,
+  price,
+  priceChange,
+  symbol,
+}: {
+  amount: number;
+  currency: string;
+  price: number;
+  priceChange: number;
+  symbol: string;
+}) {
+  const token = getTrustToken(symbol);
+  const isPositive = priceChange >= 0;
+
+  return (
+    <div data-testid="asset-row" role="button" className="outline-0 cursor-pointer">
+      <div className="flex justify-between space-x-3 py-2 cursor-pointer items-center">
+        <div className="relative min-w-min" style={{ borderRadius: "50%", boxShadow: "0 0 4px 1px rgba(35,191,125,0.08)" }}>
+          <div className="flex items-center justify-center w-full h-full flex-1 flex-row">
+            <div className="rounded-full overflow-hidden">
+              <div className="w-10 h-10 flex items-center">
+                {token.logo ? (
+                  <img alt={token.name} className="w-full h-full rounded-full object-contain border-1" src={token.logo} />
+                ) : (
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[#2f3136] text-[12px] font-semibold text-white">{symbol.slice(0, 2)}</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex-grow space-y-1">
+          <div className="flex flex-row space-x-1 items-center">
+            <p data-testid="asset-symbol" className="typography-body-16 text-utility-1-default font-medium">{symbol}</p>
+            <div className="asset-chain-pill flex items-center justify-center typography-caption-12 font-medium rounded-6 bg-utility-1-opacity-4 text-utility-1-default px-2 py-0.5 min-h-5">{token.chain}</div>
+          </div>
+          <div className="flex flex-row space-x-1 items-center">
+            <p data-testid="asset-fiat-price" className="typography-body-12 text-utility-1-opacity-1 font-normal">{formatTrustCurrency(price, currency)}</p>
+            <p data-testid="asset-fiat-percentage-change" className="typography-body-12 font-normal" style={{ color: isPositive ? "#23BF7D" : "#FE5D5D" }}>{isPositive ? "+" : ""}{priceChange.toFixed(2)}%</p>
+          </div>
+        </div>
+        <div className="text-right space-y-1">
+          <div>
+            <p data-testid="asset-crypto-balance" className="typography-body-16 text-utility-1-default font-medium">{formatTrustBalance(amount)}</p>
+          </div>
+          <div>
+            <span className="text-textSecondary typography-body-12" data-testid="asset-fiat-balance">{formatTrustCurrency(amount * price, currency)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
+  const { balanceMap, baseCurrency, prices, tokenSymbols, totalChange, totalValue, walletName } = useTrustWallet();
+  const [swapOpen, setSwapOpen] = React.useState(false);
+  const [coinOpen, setCoinOpen] = React.useState(false);
+  const [selectedCoinSymbol, setSelectedCoinSymbol] = React.useState("BTC");
+  const portfolioTokens = tokenSymbols
+    .filter((symbol) => (balanceMap[symbol] || 0) > 0)
+    .sort((a, b) => {
+      const aToken = getTrustToken(a);
+      const bToken = getTrustToken(b);
+      return (balanceMap[b] || 0) * (prices[b]?.usd ?? bToken.price) - (balanceMap[a] || 0) * (prices[a]?.usd ?? aToken.price);
+    });
+  const displayChange = `${totalChange.dollar >= 0 ? "" : "-"}${formatTrustCurrency(Math.abs(totalChange.dollar), baseCurrency)} (${totalChange.percent >= 0 ? "+" : ""}${totalChange.percent.toFixed(2)}%)`;
+  const changeColor = totalChange.dollar >= 0 ? "#23BF7D" : "#FE5D5D";
+
   return (
     <>
       <div className="flex flex-col space-y-4 mb-6 mt-8 px-4">
@@ -8,7 +81,7 @@ export default function HomePage() {
           <div className="relative flex items-center">
             <div className="flex items-center rounded-full px-3 py-1 wallet-pill">
               <span className="typography-header-16 flex items-center gap-2 text-utility-1-default font-semibold">
-                <span id="walletNameDisplay">Larpz Wallet</span>
+                <span id="walletNameDisplay">{walletName}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="grey" width="14" height="14">
                   <path d="M471.1 297.4C483.6 309.9 483.6 330.2 471.1 342.7L279.1 534.7C266.6 547.2 246.3 547.2 233.8 534.7C221.3 522.2 221.3 501.9 233.8 489.4L403.2 320L233.9 150.6C221.4 138.1 221.4 117.8 233.9 105.3C246.4 92.8 266.7 92.8 279.2 105.3L471.2 297.3z"></path>
                 </svg>
@@ -23,15 +96,15 @@ export default function HomePage() {
         </div>
         <div className="flex flex-col items-center justify-center !mt-[0px]">
           <h2 data-testid="total-asset-balance" className="text-utility-1-default font-bold" style={{ fontSize: "40px" }}>
-            <span id="totalBalance">$2,081,808.60</span>
+            <span id="totalBalance">{formatTrustCurrency(totalValue, baseCurrency)}</span>
           </h2>
           <p id="dailyChange" className="typography-body-14 text-success-1-default font-normal">
             <span className="daily-change-value font-semibold">
-              <span style={{ color: "#23BF7D", display: "inline-flex", alignItems: "center", gap: "3px" }}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" style={{ verticalAlign: "middle", fill: "#23BF7D", flexShrink: 0 }}>
+              <span style={{ color: changeColor, display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="20" height="20" style={{ verticalAlign: "middle", fill: changeColor, flexShrink: 0, transform: totalChange.dollar >= 0 ? "none" : "rotate(180deg)" }}>
                   <path d="M300.3 199.2C312.9 188.9 331.4 189.7 343.1 201.4L471.1 329.4C480.3 338.6 483 352.3 478 364.3C473 376.3 461.4 384 448.5 384L192.5 384C179.6 384 167.9 376.2 162.9 364.2C157.9 352.2 160.7 338.5 169.9 329.4L297.9 201.4L300.3 199.2z"></path>
                 </svg>
-                $5,396.73 (+0.26%)
+                {displayChange}
               </span>
             </span>
           </p>
@@ -68,7 +141,7 @@ export default function HomePage() {
           <div className="flex flex-col space-y-2 items-center">
             <div className="flex justify-center" data-tooltip-id="circle-action-tooltip-18" data-tooltip-place="top" data-tooltip-role="tooltip">
               <div className="flex " data-tooltip-id="button-tooltip-19" data-tooltip-place="top-end" data-tooltip-role="tooltip">
-                <button data-testid="wallet-board-swap-button" type="button" className="outline-none bg-button-primary text-on-primary hover:bg-button-primary-hovered active:bg-button-primary-pressed disabled:bg-button-primary-pressed p-3.5 icon-square-button">
+                <button data-testid="wallet-board-swap-button" type="button" className="outline-none bg-button-primary text-on-primary hover:bg-button-primary-hovered active:bg-button-primary-pressed disabled:bg-button-primary-pressed p-3.5 icon-square-button" onClick={() => setSwapOpen(true)}>
                   <svg className="text-backgroundPrimary" fill="none" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.7877 5.215C22.1977 5.025 21.5677 5.355 21.3777 5.945L20.7177 8.025C20.6277 7.835 20.5377 7.655 20.4377 7.455C18.7777 4.475 15.6277 2.625 12.2277 2.625C8.82771 2.625 5.67771 4.475 4.01771 7.455C3.71771 7.995 3.90771 8.685 4.45771 8.985C4.99771 9.285 5.68771 9.095 5.98771 8.545C7.24771 6.285 9.63771 4.875 12.2277 4.875C14.8177 4.875 17.2077 6.285 18.4577 8.545C18.5677 8.745 18.6577 8.935 18.7477 9.125L16.5677 8.425C15.9777 8.235 15.3477 8.565 15.1577 9.155C14.9677 9.745 15.2977 10.375 15.8877 10.565L20.6077 12.065C20.7177 12.105 20.8377 12.115 20.9477 12.115C21.4277 12.115 21.8677 11.815 22.0177 11.335L23.5177 6.615C23.7077 6.025 23.3777 5.395 22.7877 5.205V5.215Z" fill="currentColor"></path>
                     <path d="M19.9875 15.015C19.4475 14.715 18.7575 14.905 18.4575 15.455C17.1975 17.715 14.8075 19.125 12.2175 19.125C9.62752 19.125 7.23752 17.715 5.98752 15.455C5.92752 15.345 5.87752 15.235 5.82752 15.135L8.09752 15.865C8.68752 16.055 9.31752 15.725 9.50752 15.135C9.69752 14.545 9.36752 13.915 8.77752 13.725L4.05752 12.225C3.46752 12.035 2.83752 12.365 2.64752 12.955L1.14752 17.655C0.957522 18.245 1.28752 18.875 1.87752 19.065C1.98752 19.105 2.10752 19.115 2.21752 19.115C2.69752 19.115 3.13752 18.815 3.28752 18.335L3.91752 16.355C3.94752 16.415 3.97752 16.475 4.00752 16.545C5.65752 19.525 8.80752 21.375 12.2075 21.375C15.6075 21.375 18.7575 19.525 20.4075 16.545C20.7075 16.005 20.5175 15.315 19.9675 15.015H19.9875Z" fill="currentColor"></path>
@@ -145,37 +218,24 @@ export default function HomePage() {
       <div className="flex flex-1 pt-2 mb-6 px-4">
         <div className="flex w-full outline-none" id="headlessui-tabs-panel-:rg:" role="tabpanel" tabIndex={0} data-headlessui-state="selected" data-selected="" aria-labelledby="headlessui-tabs-tab-:rc:">
           <div id="assetList" className="flex flex-col w-full">
-            <div data-testid="asset-row" role="button" className="outline-0 cursor-pointer">
-              <div className="flex justify-between space-x-3 py-2 cursor-pointer items-center">
-                <div className="relative min-w-min" style={{ borderRadius: "50%", boxShadow: "0 0 4px 1px rgba(35,191,125,0.08)" }}>
-                  <div className="flex items-center justify-center w-full h-full flex-1 flex-row">
-                    <div className="rounded-full overflow-hidden">
-                      <div className="w-10 h-10 flex items-center">
-                        <img alt="Bitcoin" className="w-full h-full rounded-full object-contain border-1" src="https://wsrv.nl/?url=https://assets-cdn.trustwallet.com/blockchains/bitcoin/info/logo.png" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex-grow space-y-1">
-                  <div className="flex flex-row space-x-1 items-center">
-                    <p data-testid="asset-symbol" className="typography-body-16 text-utility-1-default font-medium">BTC</p>
-                    <div className="asset-chain-pill flex items-center justify-center typography-caption-12 font-medium rounded-6 bg-utility-1-opacity-4 text-utility-1-default px-2 py-0.5 min-h-5">Bitcoin</div>
-                  </div>
-                  <div className="flex flex-row space-x-1 items-center">
-                    <p data-testid="asset-fiat-price" className="typography-body-12 text-utility-1-opacity-1 font-normal">$73,778.00</p>
-                    <p data-testid="asset-fiat-percentage-change" className="typography-body-12 font-normal" style={{ color: "#23BF7D" }}>+0.48%</p>
-                  </div>
-                </div>
-                <div className="text-right space-y-1">
-                  <div>
-                    <p data-testid="asset-crypto-balance" className="typography-body-16 text-utility-1-default font-medium">28.2</p>
-                  </div>
-                  <div>
-                    <span className="text-textSecondary typography-body-12" data-testid="asset-fiat-balance">$2,080,539.60</span>
-                  </div>
-                </div>
+            {portfolioTokens.map((symbol) => (
+              <div
+                key={symbol}
+                onClick={() => {
+                  setSelectedCoinSymbol(symbol);
+                  setCoinOpen(true);
+                }}
+                className="cursor-pointer"
+              >
+                <TrustAssetRow
+                  amount={balanceMap[symbol] || 0}
+                  currency={baseCurrency}
+                  price={prices[symbol]?.usd ?? getTrustToken(symbol).price}
+                  priceChange={prices[symbol]?.usd_24h_change ?? 0}
+                  symbol={symbol}
+                />
               </div>
-            </div>
+            ))}
           </div>
         </div>
         <span aria-hidden="true" id="headlessui-tabs-panel-:ri:" role="tabpanel" tabIndex={-1} aria-labelledby="headlessui-tabs-tab-:re:" style={{ position: "fixed", top: "1px", left: "1px", width: "1px", height: "0px", padding: "0px", margin: "-1px", overflow: "hidden", clip: "rect(0px, 0px, 0px, 0px)", whiteSpace: "nowrap", borderWidth: "0px" }}></span>
@@ -222,7 +282,7 @@ export default function HomePage() {
         </div>
       </div>
       <div className="flex flex-col gap-2 w-full mb-4 px-4">
-        <p className="typography-subheader-16 px-4 text-utility-1-default font-medium text-unset" data-i18n="trust.popular_tokens">Popular tokens</p>
+        <p className="typography-subheader-16 text-utility-1-default font-medium text-unset" data-i18n="trust.popular_tokens">Popular Tokens</p>
         <div className="rounded-4 bg-background-2 px-4 py-2 border-solid transition w-full">
           <div className="grid grid-cols-4 h-10 justify-center" role="tablist" aria-orientation="horizontal">
             <button data-testid="tab-0" className="outline-none flex flex-col items-center justify-center pl-2" id="headlessui-tabs-tab-:r10:" role="tab" type="button" aria-selected="true" tabIndex={0} data-headlessui-state="selected" data-selected="" aria-controls="headlessui-tabs-panel-:r18:">
@@ -230,7 +290,7 @@ export default function HomePage() {
                 <div className="flex items-center h-full">
                   <p className="typography-subheader-16  text-utility-1-default font-medium   text-unset    " data-i18n="tab.top">Top</p>
                 </div>
-                <div data-selected="true" className="w-full h-1 rounded-full data-[selected='true']:bg-primary"></div>
+                <div data-selected="true" className="w-full h-1 rounded-full data-[selected='true']:bg-[#48FF91]"></div>
               </div>
             </button>
             <button data-testid="tab-1" className="outline-none flex flex-col items-center justify-center " id="headlessui-tabs-tab-:r12:" role="tab" type="button" aria-selected="false" tabIndex={-1} data-headlessui-state="" aria-controls="headlessui-tabs-panel-:r1a:">
@@ -238,7 +298,7 @@ export default function HomePage() {
                 <div className="flex items-center h-full">
                   <p className="typography-subheader-16  text-utility-1-opacity-2 font-medium   text-unset    ">BNB</p>
                 </div>
-                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-primary"></div>
+                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-[#48FF91]"></div>
               </div>
             </button>
             <button data-testid="tab-2" className="outline-none flex flex-col items-center justify-center " id="headlessui-tabs-tab-:r14:" role="tab" type="button" aria-selected="false" tabIndex={-1} data-headlessui-state="" aria-controls="headlessui-tabs-panel-:r1c:">
@@ -246,7 +306,7 @@ export default function HomePage() {
                 <div className="flex items-center h-full">
                   <p className="typography-subheader-16  text-utility-1-opacity-2 font-medium   text-unset    ">ETH</p>
                 </div>
-                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-primary"></div>
+                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-[#48FF91]"></div>
               </div>
             </button>
             <button data-testid="tab-3" className="outline-none flex flex-col items-center justify-center " id="headlessui-tabs-tab-:r16:" role="tab" type="button" aria-selected="false" tabIndex={-1} data-headlessui-state="" aria-controls="headlessui-tabs-panel-:r1e:">
@@ -254,7 +314,7 @@ export default function HomePage() {
                 <div className="flex items-center h-full">
                   <p className="typography-subheader-16  text-utility-1-opacity-2 font-medium   text-unset    ">SOL</p>
                 </div>
-                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-primary"></div>
+                <div data-selected="false" className="w-full h-1 rounded-full data-[selected='true']:bg-[#48FF91]"></div>
               </div>
             </button>
           </div>
@@ -373,6 +433,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      <SwapModal isOpen={swapOpen} onClose={() => setSwapOpen(false)} />
+      <CoinModal isOpen={coinOpen} onClose={() => setCoinOpen(false)} symbol={selectedCoinSymbol} />
     </>
   );
 }

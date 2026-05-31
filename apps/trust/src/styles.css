@@ -1801,6 +1801,11 @@ body {
     opacity: .7
 }
 
+.t-about-pill:disabled {
+    cursor: default;
+    opacity: .42
+}
+
 @keyframes tcp-ring-pulse {
     0% {
         r: 5px;
