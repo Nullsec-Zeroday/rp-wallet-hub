@@ -687,10 +687,8 @@ export default function LandingContent() {
                   </div>
                 </div>
 
-                <div className={`grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
-                  <div className="overflow-hidden">
-                    <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1">{item.a}</div>
-                  </div>
+                <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"}`}>
+                  <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1">{item.a}</div>
                 </div>
               </div>
             );
