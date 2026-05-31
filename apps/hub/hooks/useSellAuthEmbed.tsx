@@ -17,6 +17,10 @@ export interface CheckoutOptions {
   shopId: number;
   modal?: boolean;
   scrollTop?: boolean;
+  onPreparing?: () => void;
+  onCheckoutUrlReady?: () => void;
+  onError?: (error: Error) => void;
+  onSettled?: (result: { status: 'success' | 'error'; redirected: boolean }) => void;
 }
 
 export interface SellAuthEmbedHook {
@@ -61,21 +65,21 @@ function CheckoutModal({ url, onClose }: { url: string; onClose: () => void }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm cursor-pointer pointer-events-auto"
+        className="fixed inset-0 bg-[#0c0a18]/80 backdrop-blur-md cursor-pointer pointer-events-auto"
         onClick={onClose}
       />
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="relative bg-[#141414] text-white border border-white/10 rounded-2xl max-w-[98vw] md:max-w-[32rem] w-full max-h-[90vh] overflow-hidden shadow-2xl z-10 pointer-events-auto"
+        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 10 }}
+        transition={{ duration: 0.3, type: "spring", bounce: 0.2 }}
+        className="relative bg-[#121212]/95 text-white border border-white/10 rounded-3xl max-w-[98vw] md:max-w-[32rem] w-full max-h-[90vh] overflow-hidden shadow-[0_0_80px_rgba(139,92,246,0.15)] z-10 pointer-events-auto backdrop-blur-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           type="button"
-          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white/70 hover:text-white transition-all cursor-pointer backdrop-blur-md border border-white/5 active:scale-95 pointer-events-auto"
+          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer backdrop-blur-xl border border-white/10 active:scale-95 pointer-events-auto shadow-lg"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
             <path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z" />
@@ -108,7 +112,7 @@ function CheckoutModal({ url, onClose }: { url: string; onClose: () => void }) {
               </div>
               <button
                 onClick={() => setRedirectedAway(false)}
-                className="mt-2 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium transition-all"
+                className="mt-2 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white/90 text-[14px] font-medium transition-all backdrop-blur-md shadow-lg"
               >
                 ← Back to checkout
               </button>
@@ -135,8 +139,12 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
       setIsLoading(true);
       let widget: HTMLElement | null = null;
       let handleStateChange: ((ev: Event) => void) | null = null;
+      let settledStatus: 'success' | 'error' = 'success';
+      let redirected = false;
 
       try {
+        options.onPreparing?.();
+
         if (typeof window !== 'undefined' && !window.customElements?.get('altcha-widget')) {
           await new Promise<void>((resolve, reject) => {
             const script = document.createElement('script');
@@ -216,11 +224,14 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
           throw new Error('No checkout URL returned. Please try again.');
         }
 
+        options.onCheckoutUrlReady?.();
+
         // On mobile, skip the iframe modal and redirect directly.
         // Mobile browsers block popups from iframes (e.g. Whop payment opening a new window).
         const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         if (isMobileDevice) {
+          redirected = true;
           window.location.href = responseData.url;
         } else if (options.modal !== false) {
           setModalUrl(responseData.url);
@@ -231,8 +242,14 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
           window.open(responseData.url, '_blank');
         }
       } catch (error: unknown) {
+        settledStatus = 'error';
+        const checkoutError = error instanceof Error ? error : new Error('An error occurred during verification');
         console.error('SellAuth Checkout Error:', error);
-        alert(error instanceof Error ? error.message : 'An error occurred during verification');
+        if (options.onError) {
+          options.onError(checkoutError);
+        } else {
+          alert(checkoutError.message);
+        }
       } finally {
         if (widget) {
           if (handleStateChange) {
@@ -241,6 +258,7 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
           widget.remove();
         }
         setIsLoading(false);
+        options.onSettled?.({ status: settledStatus, redirected });
       }
     },
     [isLoading],

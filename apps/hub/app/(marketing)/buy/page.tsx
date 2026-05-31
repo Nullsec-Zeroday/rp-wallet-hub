@@ -10,6 +10,7 @@ import { useRef } from "react";
 import { useInView, motion, AnimatePresence } from "framer-motion";
 
 const PLANS = Object.values(PRICING_PLANS);
+type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
 
 export default function BuyPage() {
   return (
@@ -25,29 +26,65 @@ function BuyContent() {
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>("popular");
+  const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [isSlowCheckout, setIsSlowCheckout] = useState(false);
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
   const showSticky = !isButtonInView && selectedPlanId;
+  const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
+  const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
+  const checkoutLocked = isLoading || checkoutPhase !== "idle";
 
   const handleCheckout = () => {
-    if (!selectedPlanId || isLoading) return;
-    const plan = PLANS.find(p => p.id === selectedPlanId);
+    if (!selectedPlanId || checkoutLocked) return;
+    const plan = selectedPlan;
     if (!plan) return;
-    
-    const hasEmbedConfig = 
-      plan.sellauthProductId && 
-      plan.sellauthVariantId && 
-      plan.sellauthProductId > 0 && 
+    const slowTimer = window.setTimeout(() => setIsSlowCheckout(true), 4000);
+    const clearSlowTimer = () => window.clearTimeout(slowTimer);
+
+    const hasEmbedConfig =
+      plan.sellauthProductId &&
+      plan.sellauthVariantId &&
+      plan.sellauthProductId > 0 &&
       plan.sellauthVariantId > 0;
 
     if (hasEmbedConfig) {
+      setCheckoutError("");
+      setIsSlowCheckout(false);
+      setCheckoutPhase("preparing");
       checkout({
         cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
         shopId,
+        onPreparing: () => {
+          setCheckoutPhase("preparing");
+        },
+        onCheckoutUrlReady: () => {
+          setCheckoutPhase("opening");
+        },
+        onError: (error) => {
+          clearSlowTimer();
+          setCheckoutError(error.message || "Please try again.");
+          setCheckoutPhase("error");
+        },
+        onSettled: ({ status, redirected }) => {
+          clearSlowTimer();
+          setIsSlowCheckout(false);
+          if (status === "success" && !redirected) {
+            setCheckoutPhase("idle");
+          }
+        },
       });
     } else {
+      setCheckoutError("");
+      setIsSlowCheckout(false);
+      setCheckoutPhase("opening");
       window.open(plan.buyUrl, "_blank");
+      window.setTimeout(() => {
+        clearSlowTimer();
+        setCheckoutPhase("idle");
+      }, 800);
     }
   };
 
@@ -59,7 +96,7 @@ function BuyContent() {
         </div>
       )}
 
-      <main className="relative z-10 w-full max-w-[1000px] mx-auto px-6 pt-12 md:pt-24 flex flex-col items-center">
+      <main className="relative z-10 w-full max-w-[1200px] mx-auto px-6 pt-12 flex flex-col items-center">
         {/* ── H E A D E R ── */}
         <div className="flex flex-col items-center text-center mb-16 relative">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#9c8df6]/10 border border-[#9c8df6]/20 text-[#c7bdff] text-sm font-medium mb-6 shadow-[0_0_12px_rgba(156,141,246,0.15)]">
@@ -69,8 +106,8 @@ function BuyContent() {
           <h1 className="font-display text-4xl md:text-5xl tracking-tight font-medium text-white mb-3">
             Choose Your Plan
           </h1>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-sm mx-auto leading-relaxed">
-            Select your preferred tier to instantly activate your LarperWallet license.
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
+            Select your preferred tier. You'll receive a unique license key instantly after purchase.
           </p>
         </div>
 
@@ -85,14 +122,15 @@ function BuyContent() {
             return (
               <div
                 key={plan.id}
-                onClick={() => setSelectedPlanId(plan.id)}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] cursor-pointer outline-none group ${
-                  isSelected 
+                onClick={() => {
+                  if (!checkoutLocked) setSelectedPlanId(plan.id);
+                }}
+                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none" : "cursor-pointer"} ${isSelected
                     ? isYearly
-                        ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_40px_rgba(212,175,55,0.25)] scale-[1.02] ring-1 ring-[#fde047] z-10"
-                        : "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_50px_rgba(139,92,246,0.3)] scale-[1.02] ring-1 ring-[#8b5cf6] z-10"
+                      ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_40px_rgba(212,175,55,0.25)] scale-[1.02] ring-1 ring-[#fde047] z-10"
+                      : "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_50px_rgba(139,92,246,0.3)] scale-[1.02] ring-1 ring-[#8b5cf6] z-10"
                     : "bg-[#121212]/80 border border-white/[0.04] hover:bg-[#151515] hover:border-white/[0.08] hover:scale-[1.01] opacity-70 hover:opacity-100"
-                }`}
+                  }`}
               >
                 {isPopular && (
                   <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded-full whitespace-nowrap transition-all duration-300 ${isSelected ? "bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]" : "bg-white/10 text-white/60"}`}>
@@ -136,28 +174,30 @@ function BuyContent() {
         {/* ── C H E C K O U T  B U T T O N ── */}
         <div ref={buttonRef} className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
           <button
-            disabled={!selectedPlanId || isLoading}
+            disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
-            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${
-              selectedPlanId 
+            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${selectedPlanId
                 ? selectedPlanId === "yearly"
-                    ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
-                    : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
+                  ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
+                  : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
                 : "bg-white/5 text-white/40 border border-white/10 pointer-events-none"
-            }`}
+              }`}
           >
-            {isLoading ? (
-              <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
+            {checkoutLocked ? (
+              <>
+                <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                Opening checkout...
+              </>
             ) : selectedPlanId ? (
-              <>Checkout {selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access"} <ArrowRight size={20} /></>
+              <>Checkout {selectedPlanLabel} <ArrowRight size={20} /></>
             ) : (
               "Select a package to continue"
             )}
           </button>
-          
+
           <p className="text-center text-[12px] text-white/40 max-w-[400px]">
             By completing your purchase, you agree to our{" "}
             <Link href="/terms" className="underline hover:text-white transition-colors">Terms & Conditions</Link>{" "}
@@ -190,21 +230,23 @@ function BuyContent() {
           >
             <div className="max-w-[440px] mx-auto">
               <button
-                disabled={isLoading}
+                disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${
-                  selectedPlanId === "yearly"
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${selectedPlanId === "yearly"
                     ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
                     : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white"
-                }`}
+                  }`}
               >
-                {isLoading ? (
-                  <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                  </svg>
+                {checkoutLocked ? (
+                  <>
+                    <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    Opening checkout...
+                  </>
                 ) : (
-                  <>Checkout {selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access"} <ArrowRight size={20} /></>
+                  <>Checkout {selectedPlanLabel} <ArrowRight size={20} /></>
                 )}
               </button>
             </div>
@@ -212,8 +254,91 @@ function BuyContent() {
         )}
       </AnimatePresence>
 
+      <CheckoutStatusOverlay
+        errorMessage={checkoutError}
+        isSlowCheckout={isSlowCheckout}
+        onRetry={() => {
+          setCheckoutError("");
+          setCheckoutPhase("idle");
+          setIsSlowCheckout(false);
+        }}
+        phase={checkoutPhase}
+        planLabel={selectedPlanLabel}
+      />
+
       {captcha}
       {checkoutModal}
     </div>
+  );
+}
+
+function CheckoutStatusOverlay({
+  errorMessage,
+  isSlowCheckout,
+  onRetry,
+  phase,
+  planLabel,
+}: {
+  errorMessage: string;
+  isSlowCheckout: boolean;
+  onRetry: () => void;
+  phase: CheckoutPhase;
+  planLabel: string;
+}) {
+  if (phase === "idle") return null;
+
+  const isError = phase === "error";
+  const title = isError
+    ? "Checkout could not open"
+    : phase === "opening"
+      ? "Opening SellAuth checkout..."
+      : "Preparing secure checkout...";
+  const description = isError
+    ? errorMessage || "Please try again."
+    : isSlowCheckout
+      ? "SellAuth is taking a little longer. Please wait, do not refresh or tap again."
+      : "This can take a few seconds. Please do not tap checkout again.";
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-[100000020] flex items-center justify-center bg-[#0c0a18]/80 px-4 backdrop-blur-md"
+        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <motion.div
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="w-full max-w-[360px] rounded-3xl border border-white/10 bg-[#121212]/95 p-7 text-center shadow-[0_0_80px_rgba(139,92,246,0.15)] backdrop-blur-2xl"
+          exit={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          transition={{ duration: 0.3, type: "spring", bounce: 0.2 }}
+        >
+          <div className={`mx-auto mb-5 flex size-14 items-center justify-center rounded-full border ${isError ? "border-red-400/30 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "border-[#ab9ff2]/25 bg-[#ab9ff2]/10 shadow-[0_0_20px_rgba(171,159,242,0.2)]"}`}>
+            {isError ? (
+              <X size={24} className="text-red-400" />
+            ) : (
+              <svg className="size-7 animate-spin text-[#ab9ff2]" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+            )}
+          </div>
+          <div className="mb-2 text-[12px] font-semibold uppercase tracking-widest text-[#ab9ff2]">{planLabel}</div>
+          <h2 className="mb-3 text-[21px] font-semibold tracking-tight text-white">{title}</h2>
+          <p className="mx-auto max-w-[280px] text-[14px] leading-relaxed text-white/60">{description}</p>
+          {isError && (
+            <button
+              className="mt-6 w-full rounded-full border border-white/10 bg-white/5 px-5 py-3 text-[15px] font-semibold text-white transition-all hover:bg-white/10 backdrop-blur-md shadow-lg"
+              onClick={onRetry}
+              type="button"
+            >
+              Try again
+            </button>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
