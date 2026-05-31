@@ -17,14 +17,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...staticRoutes.map((route) => ({
       url: absoluteUrl(route || "/"),
       lastModified: now,
-      changeFrequency: route === "" ? "weekly" as const : "monthly" as const,
-      priority: route === "" ? 1 : route === "/buy" ? 0.9 : 0.7,
+      changeFrequency: (route === "" ? "weekly" : route === "/blog" ? "weekly" : "monthly") as "weekly" | "monthly",
+      priority: route === "" ? 1 : route === "/buy" ? 0.9 : route === "/blog" ? 0.85 : 0.7,
     })),
     ...blogPosts.map((post) => ({
       url: absoluteUrl(`/blog/${post.slug}`),
       lastModified: new Date(post.date),
       changeFrequency: "monthly" as const,
-      priority: 0.65,
+      priority: 0.8,
     })),
   ];
 }

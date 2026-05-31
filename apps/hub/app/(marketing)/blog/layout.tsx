@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: "Blog — Crypto Wallet Simulator Guides, LARP Wallet Tips & Fake Wallet Tutorials",
   description:
-    "Articles about LarperWallet, wallet mockups, roleplay screenshots, product updates, and simulator design.",
+    "Guides and tutorials on crypto wallet simulators, fake wallet apps, LARP wallets, Phantom wallet simulation, Trust Wallet simulators, Ledger wallet demos, and crypto content creation workflows.",
   alternates: {
     canonical: "/blog",
   },
