@@ -10,10 +10,9 @@
   "theme_color": "#071621",
   "icons": [
     {
-      "src": "/logos/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/logos/trust_icon_350x350.png",
+      "sizes": "350x350",
+      "type": "image/png"
     }
   ]
 }

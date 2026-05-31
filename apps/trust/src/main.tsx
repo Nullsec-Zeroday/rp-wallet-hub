@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import SplashScreen from "./splash-screen";
 import {
   Activity,
   ArrowDownToLine,
@@ -167,8 +168,6 @@ function TrustApp() {
                 : "Your launch is waiting. Add this app to your home screen, then open it from there to finish setup."
             }
           />
-        ) : loading ? (
-          <StatusPanel eyebrow="Larper Wallet PWA" title="Preparing your wallet" body="Syncing your launch token and profile." />
         ) : payload ? (
           <BootstrappedWallet
             api={api}
@@ -178,14 +177,18 @@ function TrustApp() {
             onErrorChange={setError}
             payload={payload}
           />
-        ) : (
+        ) : !loading ? (
           <DevTokenPanel
             body={error || "Launch the app from the LarperWallet hub to attach a session to this installed app."}
             onErrorChange={setError}
             onExchangeToken={exchangeTrustToken}
           />
-        )}
+        ) : null}
       </div>
+
+      <AnimatePresence>
+        {loading && <SplashScreen />}
+      </AnimatePresence>
     </>
   );
 }
