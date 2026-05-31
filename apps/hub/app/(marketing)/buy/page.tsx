@@ -24,7 +24,7 @@ function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
+  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>("popular");
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");

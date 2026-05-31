@@ -129,7 +129,7 @@ export default function LandingContent() {
   };
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   // SellAuth logic moved to /buy page
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
+  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
   const demoEnabled = isDemoFeatureEnabled();
 
 
