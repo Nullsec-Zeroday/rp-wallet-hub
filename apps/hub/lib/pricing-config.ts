@@ -25,7 +25,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 7,
     allowedRedemptions: 1,
     features: [
-      { text: "Full app access on iOS & Android", included: true },
+      { text: "Ph4ntom & Tru5t Wallet access on iOS or Android", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: false },
@@ -45,7 +45,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 30,
     allowedRedemptions: 1,
     features: [
-      { text: "Full app access on iOS & Android", included: true },
+      { text: "Ph4ntom & Tru5t app access on iOS or Android", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: true },
@@ -54,6 +54,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     buyUrl: process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_URL || "https://rp-wallet.sellauth.com/product/monthly",
     badgeText: "MOST POPULAR",
     popular: true,
+    originalPrice: "$49",
     sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID || 0),
     sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_VARIANT_ID || 0),
   },
@@ -66,7 +67,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 365,
     allowedRedemptions: 2,
     features: [
-      { text: "Full app access on iOS & Android", included: true },
+      { text: "Ph4ntom & Tru5t app access on iOS or Android", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "2 active devices", included: true },
       { text: "Priority Telegram support", included: true },

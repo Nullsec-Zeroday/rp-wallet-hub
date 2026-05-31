@@ -347,34 +347,37 @@ export default function LandingContent() {
               Send simulated crypto to another LarperWallet user. They get a notification, balance update, and new transaction.
             </p>
 
-            <div className="relative flex flex-col gap-8 mb-10 w-full max-w-sm mx-auto text-left">
-              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent" />
+            <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
+              {/* Vertical line for mobile */}
+              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
+              {/* Horizontal line for desktop */}
+              <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <Send size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Send P2P</h4>
                   <p className="text-white/50 text-[14px] leading-snug">Enter another LarperWallet user's address, select token and amount.</p>
                 </div>
               </div>
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <Bell size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">They get notified</h4>
                   <p className="text-white/50 text-[14px] leading-snug">A push notification appears on their device.</p>
                 </div>
               </div>
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <Zap size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Wallet updates</h4>
                   <p className="text-white/50 text-[14px] leading-snug">Balance and transaction history update instantly.</p>
                 </div>
@@ -471,34 +474,37 @@ export default function LandingContent() {
               Get set up in less than 2 minutes. No complicated installations.
             </p>
 
-            <div className="relative flex flex-col gap-8 mb-10 w-full max-w-sm mx-auto text-left">
-              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent" />
+            <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
+              {/* Vertical line for mobile */}
+              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
+              {/* Horizontal line for desktop */}
+              <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <ShoppingCart size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
                   <p className="text-white/50 text-[14px] leading-snug">Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                 </div>
               </div>
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <Key size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
                   <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
                 </div>
               </div>
 
-              <div className="relative flex items-start gap-5">
+              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                 <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
                   <Smartphone size={16} className="text-white/80" />
                 </div>
-                <div className="flex flex-col pt-2">
+                <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Activate & Flex</h4>
                   <p className="text-white/50 text-[14px] leading-snug">
                     <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
@@ -510,10 +516,14 @@ export default function LandingContent() {
               </div>
             </div>
 
-            <p className="text-white/60 text-[13px] mt-2 font-medium text-center">
-              Have any questions? We have 24/7 support,{" "}
+            <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
+              Have any questions? We respond within a few hours, contact us on{" "}
               <a href="https://t.me/LarperWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
-                click here to contact us
+                telegram
+              </a>
+              {" "}or reach out to us at{" "}
+              <a href="mailto:support@larperwallet.com" className="underline underline-offset-2 hover:text-white transition-colors">
+                support@larperwallet.com
               </a>
               .
             </p>
@@ -521,7 +531,7 @@ export default function LandingContent() {
         </motion.div>
       </section>
 
-      <section id="pricing" className="pb-12 md:pb-24 max-w-[1000px] mx-auto px-6 relative">
+      <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
         <div className="text-center mb-10">
           <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit card, or debit card.</p>
@@ -611,39 +621,52 @@ export default function LandingContent() {
       <section className="pb-12 max-w-[760px] mx-auto px-6 relative">
         <div className="absolute inset-0 bg-phantom-purple/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-        <div className="mb-6 text-center">
-          <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white">Frequently Asked Questions</h2>
+        <div className="text-center mb-10 md:mb-14">
+          <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-2">
+            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">Questions.</span>
+          </h2>
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
+            Everything you need to know about LarperWallet.
+          </p>
         </div>
 
         <div className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
           {[
             {
-              q: "Is LarperWallet a real crypto wallet?",
-              a: "No. LarperWallet is an entertainment app only — it does not hold, send, receive, or interact with any real crypto assets. No seed phrases or private keys are ever asked for or stored. It is a display app that shows custom balances on a realistic wallet interface.",
+              q: "What is LarperWallet?",
+              a: "LarperWallet is a crypto wallet simulator for content, demos, and roleplay. It lets you create realistic wallet screens with custom balances, tokens, activity, and simulated transaction moments.",
             },
             {
-              q: "Will it look exactly like the real crypto apps?",
-              a: "Yes. Each wallet is designed to be pixel-perfect — identical to the real app on mobile. Prices are pulled live from CoinGecko, the 24-hour chart is interactive, and the send flow screens look and behave like the real thing.",
+              q: "Is it a real crypto wallet?",
+              a: "No. LarperWallet does not hold, send, receive, withdraw, or swap real crypto. It never asks for seed phrases, private keys, or access to your real wallet.",
+            },
+            {
+              q: "How fast can I set it up?",
+              a: "After purchase, install the app, enter your license key, and follow the setup steps. Most users can start building a wallet scene in seconds.",
+            },
+            {
+              q: "How do P2P simulated transactions work?",
+              a: "Send simulated crypto to another LarperWallet user. Their app can show a push notification, updated balance, and new transaction record, without moving any real crypto.",
+            },
+            {
+              q: "Can I customize tokens and balances?",
+              a: "Yes. You can set balances, add tokens or memecoins, edit wallet details, and create transaction activity that fits the scene you want to capture.",
             },
             {
               q: "Does it work on iPhone and Android?",
-              a: "Yes. LarperWallet is a PWA (Progressive Web App) that installs directly to your home screen. Use Safari on iOS or Chrome on Android — no App Store download required.",
+              a: "Yes. LarperWallet installs as a Progressive Web App from your browser, so you can add it to your home screen without using the App Store or Play Store.",
             },
             {
-              q: "Can I add custom tokens or memecoins?",
-              a: "Yes. On the apps, you can add any Solana or Ethereum token by contract address. The app fetches the live price and token image from DexScreener automatically.",
+              q: "What wallets can I simulate?",
+              a: "LarperWallet includes realistic Phantom-style and Trust Wallet-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
             },
             {
-              q: "How do I receive my license key after purchase?",
-              a: "Delivery is fully automated. Once your crypto payment is detected on-chain, your unique license key is generated and displayed on the order status page — usually within a few minutes. No manual steps needed.",
+              q: "How do I get my license key?",
+              a: "Your license key is delivered after checkout. Use it in the dashboard to activate your access and launch the wallet apps included with your plan.",
             },
             {
-              q: "What's the difference between the wallets?",
-              a: "All plans include all three wallets: Phantom (Solana-style, supports memecoins), Trust Wallet (multi-chain look), and Ledger (hardware wallet style with BTC/SOL/ETH/TRX/BNB). You can switch between them from your dashboard.",
-            },
-            {
-              q: "Is my payment anonymous?",
-              a: "Yes. LarperWallet accepts crypto only — SOL, ETH, BTC, TRX, and USDT. No account, no email, no personal information required. Your license key is all you need.",
+              q: "What if I need help?",
+              a: "You can contact support on Telegram any time. Monthly and yearly plans include priority Telegram support.",
             },
           ].map((item, i) => {
             const isOpen = openFaqIndex === i;
@@ -664,9 +687,11 @@ export default function LandingContent() {
                   </div>
                 </div>
 
-                <motion.div initial={false} animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
-                  <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8">{item.a}</div>
-                </motion.div>
+                <div className={`grid transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                  <div className="overflow-hidden">
+                    <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1">{item.a}</div>
+                  </div>
+                </div>
               </div>
             );
           })}
