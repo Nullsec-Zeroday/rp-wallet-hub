@@ -1146,7 +1146,7 @@ async function sendPurchaseEmail(
     body: JSON.stringify({
       from: "LarperWallet <noreply@larperwallet.com>",
       html: buildPurchaseEmailHtml(params),
-      subject: `Your RP Wallet License Key — ${params.planLabel}`,
+      subject: `Your LarperWallet License Key — ${params.planLabel}`,
       to: params.to,
     }),
   });
@@ -1168,7 +1168,6 @@ function buildPurchaseEmailHtml(params: {
   <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
       <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
-        <p style="margin:0 0 14px;color:#ab9ff2;font-size:13px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;">RP Wallet</p>
         <h1 style="margin:0 0 12px;font-size:30px;line-height:1.08;letter-spacing:-0.04em;">Your license key is ready</h1>
         <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
           Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your LarperWallet access.
