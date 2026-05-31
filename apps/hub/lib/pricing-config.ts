@@ -25,7 +25,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 7,
     allowedRedemptions: 1,
     features: [
-      { text: "Ph4ntom & Tru5t Wallet access on iOS or Android", included: true },
+      { text: "Full access on iOS or Android", included: true },
+      { text: "All wallets access", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: false },
@@ -45,7 +46,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 30,
     allowedRedemptions: 1,
     features: [
-      { text: "Ph4ntom & Tru5t app access on iOS or Android", included: true },
+      { text: "Full access on iOS or Android", included: true },
+      { text: "All wallets access", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: true },
@@ -67,7 +69,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     durationDays: 365,
     allowedRedemptions: 2,
     features: [
-      { text: "Ph4ntom & Tru5t app access on iOS or Android", included: true },
+      { text: "Full app access on iOS or Android", included: true },
+      { text: "All wallets access", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "2 active devices", included: true },
       { text: "Priority Telegram support", included: true },
