@@ -9,7 +9,7 @@ export default function Footer() {
   if (pathname === "/buy") return null;
 
   return (
-    <footer className="w-full border-t border-white/5 relative z-10 px-6 pb-12 overflow-hidden">
+    <footer className="w-full relative z-10 px-6 pb-12 overflow-hidden">
       <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-16 relative z-10">
         <div className="w-full max-w-4xl mx-auto border border-[#d4af37]/20 bg-[#d4af37]/[0.03] rounded-3xl p-6 md:p-8 text-center shadow-lg">
           <p className="text-[#d4af37]/80 text-[14px] md:text-[15px] leading-relaxed font-medium">

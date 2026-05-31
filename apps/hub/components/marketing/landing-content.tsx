@@ -182,7 +182,7 @@ export default function LandingContent() {
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>LarperWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom, Trust (coming soon) wallet interface - no real crypto involved.</p>
+            <p>LarperWallet is a crypto wallet simulator made for entertainment. Create any balance, add any token, and display it on a pixel-perfect Phantom or Trust Wallet interface — no real crypto involved.</p>
           </motion.div>
         </div>
 
@@ -517,36 +517,33 @@ export default function LandingContent() {
                       : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
                     }`}
                 >
-                    <>
-                      Buy <ArrowRight size={18} />
-                    </>
+                  <>
+                    Buy <ArrowRight size={18} />
+                  </>
                 </Link>
               </motion.div>
             );
           })}
         </motion.div>
 
-        <motion.div
-          initial={isMobile ? false : { opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+        <div
           className="mt-16 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
         >
           <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
           <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
             Log In
           </Link>
-        </motion.div>
+        </div>
       </section>
 
       <section className="pb-12 max-w-[760px] mx-auto px-6 relative">
         <div className="absolute inset-0 bg-phantom-purple/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-        <motion.div {...fadeInUp} className="mb-6 text-center">
+        <div className="mb-6 text-center">
           <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white">Frequently Asked Questions</h2>
-        </motion.div>
+        </div>
 
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
+        <div className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
           {[
             {
               q: "Is LarperWallet a real crypto wallet?",
@@ -579,9 +576,8 @@ export default function LandingContent() {
           ].map((item, i) => {
             const isOpen = openFaqIndex === i;
             return (
-              <motion.div
+              <div
                 key={i}
-                variants={fadeInUp}
                 onClick={() => setOpenFaqIndex(isOpen ? null : i)}
                 className="py-5 border-b border-white/5 last:border-b-0 text-left cursor-pointer transition-all duration-300 relative group select-none"
               >
@@ -599,10 +595,10 @@ export default function LandingContent() {
                 <motion.div initial={false} animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="overflow-hidden">
                   <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8">{item.a}</div>
                 </motion.div>
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
       </section>
       <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
     </div>
