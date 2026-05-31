@@ -15,7 +15,7 @@
     "PHANTOM_ORIGIN": "https://app1.larperwallet.com",
     "TRUST_ORIGIN": "https://app2.larperwallet.com",
     "PHANTOM_ENABLED": "true",
-    "TRUST_ENABLED": "false",
+    "TRUST_ENABLED": "true",
     "SELLAUTH_SHOP_ID": "234704",
     "SELLAUTH_STARTER_PRODUCT_ID": "700824",
     "SELLAUTH_MONTHLY_PRODUCT_ID": "700825",
