@@ -26,7 +26,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     allowedRedemptions: 1,
     features: [
       { text: "Full access on iOS or Android", included: true },
-      { text: "All wallets access", included: true },
+      { text: "Access to all wallets", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: false },
@@ -47,7 +47,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     allowedRedemptions: 1,
     features: [
       { text: "Full access on iOS or Android", included: true },
-      { text: "All wallets access", included: true },
+      { text: "Access to all wallets", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "1 active device", included: true },
       { text: "Priority Telegram support", included: true },
@@ -70,7 +70,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     allowedRedemptions: 2,
     features: [
       { text: "Full app access on iOS or Android", included: true },
-      { text: "All wallets access", included: true },
+      { text: "Access to all wallets", included: true },
       { text: "Unlimited custom balances & tokens", included: true },
       { text: "2 active devices", included: true },
       { text: "Priority Telegram support", included: true },
