@@ -134,7 +134,7 @@ export default function DashboardClient() {
           Sign Out
         </button>
 
-        <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-12 animate-in fade-in duration-300">
+        <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-6 animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-4">
             <Image src="/logo_white.webp" alt="LarperWallet Logo" width={64} height={64} className="height-16 aspect-auto" />
             <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Choose a wallet to launch</h1>
