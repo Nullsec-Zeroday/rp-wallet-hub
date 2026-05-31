@@ -130,7 +130,7 @@ function TrustApp() {
           setPayload(cached);
           setInstallReady(true);
         } else if (pendingToken) {
-          setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open Trust again from the hub."));
+          setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open the app again from the hub."));
         } else {
           setError("Reconnect through the hub to refresh this wallet session.");
         }
@@ -153,15 +153,15 @@ function TrustApp() {
           />
         ) : requiresStandalone && !standalone ? (
           <InstallGate
-            heading={installReady ? "Open Trust from your home screen" : "Install Trust on your device"}
+            heading={installReady ? "Open the app from your home screen" : "Install the app on your device"}
             tone={
               installReady
-                ? "Your wallet session is ready. Add this app to your home screen, then relaunch it there to continue."
-                : "Add this to your home screen, then relaunch it there to complete the wallet handoff."
+                ? "Your wallet session is ready. Add this app to your home screen, then open it there to continue."
+                : "Your launch is waiting. Add this app to your home screen, then open it from there to finish setup."
             }
           />
         ) : loading ? (
-          <StatusPanel eyebrow="Trust Wallet PWA" title="Preparing your wallet" body="Syncing your launch token and profile." />
+          <StatusPanel eyebrow="Larper Wallet PWA" title="Preparing your wallet" body="Syncing your launch token and profile." />
         ) : payload ? (
           <BootstrappedWallet
             api={api}
@@ -173,7 +173,7 @@ function TrustApp() {
           />
         ) : (
           <DevTokenPanel
-            body={error || "Launch Trust from the LarperWallet hub to attach a session to this installed app."}
+            body={error || "Launch the app from the LarperWallet hub to attach a session to this installed app."}
             onErrorChange={setError}
             onExchangeToken={exchangeTrustToken}
           />
@@ -211,19 +211,18 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
       "Tap the Share button in Safari",
       'Choose "Add to Home Screen"',
       'Tap "Add"',
-      "Open Trust from your home screen",
+      "Open the app from your home screen",
     ]
     : [
       "Open the browser menu",
       'Choose "Add to Home screen"',
       'Confirm with "Add"',
-      "Open Trust from your home screen",
+      "Open the app from your home screen",
     ];
 
   return (
     <main className="installShell">
       <section className="installPanel">
-        <p className="label">Trust Wallet PWA</p>
         <h1 className="installTitle">{heading}</h1>
         <p className="muted">{tone}</p>
         <div className="stepList">
@@ -243,7 +242,6 @@ function StatusPanel({ eyebrow, title, body }: { eyebrow: string; title: string;
   return (
     <main className="walletShell">
       <section className="balancePanel">
-        <p className="label">{eyebrow}</p>
         <h1 className="statusTitle">{title}</h1>
         <p className="muted">{body}</p>
       </section>
@@ -267,7 +265,7 @@ function DevTokenPanel({
     event.preventDefault();
     const launch = extractLaunchToken(tokenInput);
     if (!launch.token) {
-      onErrorChange("Paste a Trust launch URL or token from the hub.");
+      onErrorChange("Paste a launch URL or token from the hub.");
       return;
     }
 
@@ -276,7 +274,7 @@ function DevTokenPanel({
     try {
       await onExchangeToken(launch.token, launch.deviceId || getPlatformDeviceId());
     } catch (exchangeError) {
-      onErrorChange(getFriendlyBootstrapError(exchangeError, "That launch token could not be used. Open Trust from the hub again."));
+      onErrorChange(getFriendlyBootstrapError(exchangeError, "That launch token could not be used. Open the app from the hub again."));
     } finally {
       setSubmitting(false);
     }
@@ -285,7 +283,6 @@ function DevTokenPanel({
   return (
     <main className="walletShell">
       <section className="balancePanel">
-        <p className="label">Trust Wallet PWA</p>
         <h1 className="statusTitle">Open this from the hub</h1>
         <p className="muted">{body}</p>
 
