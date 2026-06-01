@@ -18,6 +18,7 @@
   "vars": {
     "SESSION_COOKIE_NAME": "rp_session",
     "HUB_ORIGIN": "https://larperwallet.com",
+    "AFFILIATE_ORIGIN": "https://affiliate.larperwallet.com",
     "PHANTOM_ORIGIN": "https://app1.larperwallet.com",
     "TRUST_ORIGIN": "https://app2.larperwallet.com",
     "PHANTOM_ENABLED": "true",

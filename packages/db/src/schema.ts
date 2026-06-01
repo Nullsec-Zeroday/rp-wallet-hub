@@ -312,3 +312,33 @@ export const affiliatePayouts = pgTable("affiliate_payouts", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const affiliateMagicLinks = pgTable(
+  "affiliate_magic_links",
+  {
+    id: text("id").primaryKey(),
+    tokenHash: text("token_hash").notNull(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("affiliate_magic_links_hash_unique").on(table.tokenHash)],
+);
+
+export const affiliateSessions = pgTable(
+  "affiliate_sessions",
+  {
+    id: text("id").primaryKey(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("affiliate_sessions_id_unique").on(table.id)],
+);

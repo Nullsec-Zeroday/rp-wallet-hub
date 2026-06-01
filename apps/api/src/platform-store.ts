@@ -29,6 +29,8 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
 const AFFILIATE_ATTRIBUTION_TTL_MS = 45 * 24 * 60 * 60 * 1000;
 const AFFILIATE_CHECKOUT_MATCH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const AFFILIATE_MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
+const AFFILIATE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_WALLET_USERNAME = "larperwallet";
 
 export class DeviceLimitError extends Error {
@@ -174,6 +176,23 @@ export interface AffiliateAdminSnapshot {
   }>;
 }
 
+export interface AffiliateDashboardSummary {
+  affiliate: AffiliateSummary;
+  referralUrl: string;
+  stats: {
+    clicks: number;
+    checkoutIntents: number;
+    conversions: number;
+    pendingCommission: string;
+    approvedCommission: string;
+    paidCommission: string;
+    totalCommission: string;
+  };
+  recentClicks: AffiliateClickSummary[];
+  recentCheckoutIntents: AffiliateCheckoutIntentSummary[];
+  recentConversions: AffiliateConversionSummary[];
+}
+
 export interface ActivationInput {
   licenseKey: string;
   deviceId: string;
@@ -215,6 +234,10 @@ export interface PlatformStore {
   createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput): Promise<{ accepted: boolean; intent?: AffiliateCheckoutIntentSummary }>;
   createAffiliateConversion(input: AffiliateConversionInput): Promise<{ accepted: boolean; conversion?: AffiliateConversionSummary }>;
   getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot>;
+  createAffiliateMagicLink(email: string): Promise<{ accepted: boolean; token?: string; affiliate?: AffiliateSummary; expiresAt?: string }>;
+  verifyAffiliateMagicLink(token: string): Promise<{ accepted: boolean; sessionId?: string; expiresAt?: string; affiliate?: AffiliateSummary }>;
+  getAffiliateDashboard(sessionId: string, baseUrl: string): Promise<AffiliateDashboardSummary | null>;
+  revokeAffiliateSession(sessionId: string): Promise<void>;
   activateLicense(input: ActivationInput): Promise<HubSessionResponse>;
   getHubSession(sessionId: string): Promise<HubSessionResponse | null>;
   createWalletLaunch(input: WalletLaunchInput): Promise<WalletLaunchResult | null>;
@@ -266,6 +289,8 @@ class InMemoryPlatformStore implements PlatformStore {
   private readonly affiliateAttributions = new Map<string, { visitorId: string; affiliateId: string; affiliateCode: string; clickId: string; expiresAt: string; createdAt: string; updatedAt: string }>();
   private readonly affiliateCheckoutIntents = new Map<string, AffiliateCheckoutIntentSummary>();
   private readonly affiliateConversions = new Map<string, AffiliateConversionSummary>();
+  private readonly affiliateMagicLinks = new Map<string, { id: string; tokenHash: string; affiliateId: string; email: string; expiresAt: string; consumedAt?: string; createdAt: string }>();
+  private readonly affiliateSessions = new Map<string, { id: string; affiliateId: string; expiresAt: string; revokedAt?: string; createdAt: string }>();
 
   async createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary> {
     const code = normalizeAffiliateCode(input.code);
@@ -392,6 +417,55 @@ class InMemoryPlatformStore implements PlatformStore {
       conversions: conversions.slice(0, 250),
       payoutTotals: buildPayoutTotals([...this.affiliates.values()], conversions),
     };
+  }
+
+  async createAffiliateMagicLink(email: string) {
+    const affiliate = this.getAffiliateByEmail(email);
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+
+    const token = `${createId("afm")}.${crypto.randomUUID()}`;
+    const expiresAt = new Date(Date.now() + AFFILIATE_MAGIC_LINK_TTL_MS).toISOString();
+    this.affiliateMagicLinks.set(await hashToken(token), {
+      id: createId("afm"),
+      tokenHash: await hashToken(token),
+      affiliateId: affiliate.id,
+      email: affiliate.email || email,
+      expiresAt,
+      createdAt: new Date().toISOString(),
+    });
+    return { accepted: true, token, affiliate, expiresAt };
+  }
+
+  async verifyAffiliateMagicLink(token: string) {
+    const tokenHash = await hashToken(token);
+    const magicLink = this.affiliateMagicLinks.get(tokenHash);
+    if (!magicLink || magicLink.consumedAt || new Date(magicLink.expiresAt) <= new Date()) return { accepted: false };
+
+    const affiliate = this.affiliates.get(magicLink.affiliateId);
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+
+    magicLink.consumedAt = new Date().toISOString();
+    const session = {
+      id: createId("afs"),
+      affiliateId: affiliate.id,
+      expiresAt: new Date(Date.now() + AFFILIATE_SESSION_TTL_MS).toISOString(),
+      createdAt: new Date().toISOString(),
+    };
+    this.affiliateSessions.set(session.id, session);
+    return { accepted: true, sessionId: session.id, expiresAt: session.expiresAt, affiliate };
+  }
+
+  async getAffiliateDashboard(sessionId: string, baseUrl: string) {
+    const session = this.affiliateSessions.get(sessionId);
+    if (!session || session.revokedAt || new Date(session.expiresAt) <= new Date()) return null;
+    const affiliate = this.affiliates.get(session.affiliateId);
+    if (!affiliate || affiliate.status !== "active") return null;
+    return this.buildAffiliateDashboard(affiliate, baseUrl);
+  }
+
+  async revokeAffiliateSession(sessionId: string) {
+    const session = this.affiliateSessions.get(sessionId);
+    if (session) session.revokedAt = new Date().toISOString();
   }
 
   async activateLicense(input: ActivationInput): Promise<HubSessionResponse> {
@@ -1046,6 +1120,39 @@ class InMemoryPlatformStore implements PlatformStore {
     return [...this.affiliates.values()].find((affiliate) => affiliate.code === code);
   }
 
+  private getAffiliateByEmail(email: string) {
+    const normalized = email.trim().toLowerCase();
+    return [...this.affiliates.values()].find((affiliate) => affiliate.email?.toLowerCase() === normalized);
+  }
+
+  private buildAffiliateDashboard(affiliate: AffiliateSummary, baseUrl: string): AffiliateDashboardSummary {
+    const clicks = [...this.affiliateClicks.values()].filter((click) => click.affiliateId === affiliate.id);
+    const checkoutIntents = [...this.affiliateCheckoutIntents.values()].filter((intent) => intent.affiliateId === affiliate.id);
+    const conversions = [...this.affiliateConversions.values()].filter((conversion) => conversion.affiliateId === affiliate.id);
+    const commission = (status?: AffiliateConversionSummary["status"]) =>
+      conversions
+        .filter((conversion) => !status || conversion.status === status)
+        .reduce((total, conversion) => total + Number(conversion.commissionAmount), 0)
+        .toFixed(2);
+
+    return {
+      affiliate,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      stats: {
+        clicks: clicks.length,
+        checkoutIntents: checkoutIntents.length,
+        conversions: conversions.length,
+        pendingCommission: commission("pending"),
+        approvedCommission: commission("approved"),
+        paidCommission: commission("paid"),
+        totalCommission: commission(),
+      },
+      recentClicks: clicks.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
+      recentCheckoutIntents: checkoutIntents.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
+      recentConversions: conversions.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
+    };
+  }
+
   private findAffiliateForConversion(input: AffiliateConversionInput) {
     const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : undefined;
     const candidates = [...this.affiliateCheckoutIntents.values()]
@@ -1236,6 +1343,79 @@ class NeonPlatformStore implements PlatformStore {
       conversions: conversionSummaries,
       payoutTotals: buildPayoutTotals(affiliateSummaries, conversionSummaries),
     };
+  }
+
+  async createAffiliateMagicLink(email: string) {
+    const affiliate = await this.getActiveAffiliateByEmail(email);
+    if (!affiliate) return { accepted: false };
+
+    const token = `${createId("afm")}.${crypto.randomUUID()}`;
+    const tokenHash = await hashToken(token);
+    const expiresAt = new Date(Date.now() + AFFILIATE_MAGIC_LINK_TTL_MS);
+    await this.db.insert(schema.affiliateMagicLinks).values({
+      id: createId("afm"),
+      tokenHash,
+      affiliateId: affiliate.id,
+      email: affiliate.email || email,
+      expiresAt,
+    });
+
+    return {
+      accepted: true,
+      token,
+      affiliate,
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  async verifyAffiliateMagicLink(token: string) {
+    const tokenHash = await hashToken(token);
+    const [magicLink] = await this.db
+      .select()
+      .from(schema.affiliateMagicLinks)
+      .where(eq(schema.affiliateMagicLinks.tokenHash, tokenHash))
+      .limit(1);
+    if (!magicLink || magicLink.consumedAt || magicLink.expiresAt <= new Date()) return { accepted: false };
+
+    const affiliate = await this.getActiveAffiliateById(magicLink.affiliateId);
+    if (!affiliate) return { accepted: false };
+
+    await this.db
+      .update(schema.affiliateMagicLinks)
+      .set({ consumedAt: new Date() })
+      .where(eq(schema.affiliateMagicLinks.id, magicLink.id));
+
+    const expiresAt = new Date(Date.now() + AFFILIATE_SESSION_TTL_MS);
+    const [session] = await this.db
+      .insert(schema.affiliateSessions)
+      .values({
+        id: createId("afs"),
+        affiliateId: affiliate.id,
+        expiresAt,
+      })
+      .returning();
+
+    return {
+      accepted: true,
+      sessionId: session.id,
+      expiresAt: session.expiresAt.toISOString(),
+      affiliate,
+    };
+  }
+
+  async getAffiliateDashboard(sessionId: string, baseUrl: string) {
+    const session = await this.getAffiliateSession(sessionId);
+    if (!session) return null;
+    const affiliate = await this.getActiveAffiliateById(session.affiliateId);
+    if (!affiliate) return null;
+    return this.buildAffiliateDashboard(affiliate, baseUrl);
+  }
+
+  async revokeAffiliateSession(sessionId: string) {
+    await this.db
+      .update(schema.affiliateSessions)
+      .set({ revokedAt: new Date() })
+      .where(eq(schema.affiliateSessions.id, sessionId));
   }
 
   async activateLicense(input: ActivationInput): Promise<HubSessionResponse> {
@@ -1848,6 +2028,77 @@ class NeonPlatformStore implements PlatformStore {
       .where(and(eq(schema.affiliates.code, normalizeAffiliateCode(code)), eq(schema.affiliates.status, "active")))
       .limit(1);
     return affiliate ? toAffiliateSummary(affiliate) : undefined;
+  }
+
+  private async getActiveAffiliateByEmail(email: string) {
+    const [affiliate] = await this.db
+      .select()
+      .from(schema.affiliates)
+      .where(and(eq(schema.affiliates.email, email.trim().toLowerCase()), eq(schema.affiliates.status, "active")))
+      .limit(1);
+    return affiliate ? toAffiliateSummary(affiliate) : undefined;
+  }
+
+  private async getActiveAffiliateById(affiliateId: string) {
+    const [affiliate] = await this.db
+      .select()
+      .from(schema.affiliates)
+      .where(and(eq(schema.affiliates.id, affiliateId), eq(schema.affiliates.status, "active")))
+      .limit(1);
+    return affiliate ? toAffiliateSummary(affiliate) : undefined;
+  }
+
+  private async getAffiliateSession(sessionId: string) {
+    const [session] = await this.db
+      .select()
+      .from(schema.affiliateSessions)
+      .where(and(eq(schema.affiliateSessions.id, sessionId), isNull(schema.affiliateSessions.revokedAt)))
+      .limit(1);
+    if (!session || session.expiresAt <= new Date()) return null;
+    return session;
+  }
+
+  private async buildAffiliateDashboard(affiliate: AffiliateSummary, baseUrl: string): Promise<AffiliateDashboardSummary> {
+    const [clicks, checkoutIntents, conversions] = await Promise.all([
+      this.db.select().from(schema.affiliateClicks).where(eq(schema.affiliateClicks.affiliateId, affiliate.id)).orderBy(desc(schema.affiliateClicks.createdAt)).limit(250),
+      this.db
+        .select()
+        .from(schema.affiliateCheckoutIntents)
+        .where(eq(schema.affiliateCheckoutIntents.affiliateId, affiliate.id))
+        .orderBy(desc(schema.affiliateCheckoutIntents.createdAt))
+        .limit(250),
+      this.db
+        .select()
+        .from(schema.affiliateConversions)
+        .where(eq(schema.affiliateConversions.affiliateId, affiliate.id))
+        .orderBy(desc(schema.affiliateConversions.createdAt))
+        .limit(250),
+    ]);
+    const clickSummaries = clicks.map(toAffiliateClickSummary);
+    const intentSummaries = checkoutIntents.map(toAffiliateCheckoutIntentSummary);
+    const conversionSummaries = conversions.map(toAffiliateConversionSummary);
+    const commission = (status?: AffiliateConversionSummary["status"]) =>
+      conversionSummaries
+        .filter((conversion) => !status || conversion.status === status)
+        .reduce((total, conversion) => total + Number(conversion.commissionAmount), 0)
+        .toFixed(2);
+
+    return {
+      affiliate,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      stats: {
+        clicks: clickSummaries.length,
+        checkoutIntents: intentSummaries.length,
+        conversions: conversionSummaries.length,
+        pendingCommission: commission("pending"),
+        approvedCommission: commission("approved"),
+        paidCommission: commission("paid"),
+        totalCommission: commission(),
+      },
+      recentClicks: clickSummaries.slice(0, 10),
+      recentCheckoutIntents: intentSummaries.slice(0, 10),
+      recentConversions: conversionSummaries.slice(0, 10),
+    };
   }
 
   private async findAffiliateIntentForConversion(input: AffiliateConversionInput) {

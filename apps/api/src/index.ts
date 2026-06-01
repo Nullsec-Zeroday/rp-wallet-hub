@@ -19,6 +19,7 @@ import { getAllowedOrigins } from "./env";
 import { DeviceLimitError, InvalidLicenseError, getPlatformStore } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
+const AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
 
 type HonoEnv = {
   Bindings: ApiEnv;
@@ -147,6 +148,63 @@ app.post("/affiliate/checkout-intent", async (c) => {
   });
 
   return c.json(result);
+});
+
+app.post("/affiliate/auth/request", async (c) => {
+  const body = await c.req.json<{ email?: string }>();
+  const email = body.email?.trim().toLowerCase();
+  if (!email) return c.json({ ok: true });
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateMagicLink(email);
+  if (result.accepted && result.token && result.affiliate) {
+    c.executionCtx.waitUntil(
+      sendAffiliateMagicLinkEmail(c.env, {
+        affiliateName: result.affiliate.displayName,
+        loginUrl: buildAffiliateLoginUrl(c.env, result.token),
+        to: email,
+      }).catch((error) => {
+        console.error("[affiliate-auth] Magic link email failed", error);
+      }),
+    );
+  }
+
+  return c.json({ ok: true });
+});
+
+app.post("/affiliate/auth/verify", async (c) => {
+  const body = await c.req.json<{ token?: string }>();
+  if (!body.token?.trim()) return c.json({ error: "token is required" }, 400);
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).verifyAffiliateMagicLink(body.token);
+  if (!result.accepted || !result.sessionId || !result.expiresAt || !result.affiliate) {
+    return c.json({ error: "Invalid or expired login link" }, 401);
+  }
+
+  setSessionCookie(c, result.sessionId, result.expiresAt, AFFILIATE_SESSION_COOKIE);
+  return c.json({ affiliate: result.affiliate });
+});
+
+app.get("/affiliate/me", async (c) => {
+  const sessionId = getCookie(c, AFFILIATE_SESSION_COOKIE);
+  if (!sessionId) return c.json({ error: "Unauthorized" }, 401);
+
+  const dashboard = await getPlatformStore(c.env.DATABASE_URL).getAffiliateDashboard(sessionId, getPublicHubOrigin(c.env));
+  if (!dashboard) return c.json({ error: "Unauthorized" }, 401);
+  return c.json(dashboard);
+});
+
+app.post("/affiliate/auth/logout", async (c) => {
+  const sessionId = getCookie(c, AFFILIATE_SESSION_COOKIE);
+  if (sessionId) await getPlatformStore(c.env.DATABASE_URL).revokeAffiliateSession(sessionId);
+  setCookie(c, AFFILIATE_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+    path: "/",
+    expires: new Date(0),
+    maxAge: 0,
+  });
+  return c.json({ ok: true });
 });
 
 app.get("/admin/affiliates", async (c) => {
@@ -1352,6 +1410,66 @@ function buildPurchaseEmailHtml(params: {
 </html>`;
 }
 
+async function sendAffiliateMagicLinkEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    affiliateName: string;
+    loginUrl: string;
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[affiliate-auth] RESEND_API_KEY is not set; skipping affiliate login email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "LarperWallet <noreply@larperwallet.com>",
+      html: buildAffiliateMagicLinkHtml(params),
+      subject: "Your LarperWallet affiliate login link",
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+}
+
+function buildAffiliateMagicLinkHtml(params: {
+  affiliateName: string;
+  loginUrl: string;
+}) {
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
+      <div style="border:1px solid #e2e8f0;border-radius:24px;background:#ffffff;padding:28px;box-shadow:0 18px 60px rgba(15,23,42,0.08);">
+        <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">LarperWallet Affiliate</p>
+        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.04em;">Sign in to your dashboard</h1>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.55;">
+          Hi ${escapeHtml(params.affiliateName)}, use this secure link to view your clicks, conversions, commissions, and payout status.
+        </p>
+        <a href="${escapeHtml(params.loginUrl)}" style="display:inline-block;border-radius:14px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 18px;">
+          Open affiliate dashboard
+        </a>
+        <p style="margin:24px 0 0;color:#64748b;font-size:12px;line-height:1.45;">
+          This link expires in 15 minutes. If you did not request it, you can ignore this email.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -1421,6 +1539,20 @@ function getClientIp(c: Context<HonoEnv>) {
     c.req.header("x-real-ip") ||
     undefined
   );
+}
+
+function getPublicHubOrigin(env: ApiEnv) {
+  return env.HUB_ORIGIN || "https://larperwallet.com";
+}
+
+function getAffiliateOrigin(env: ApiEnv) {
+  return env.AFFILIATE_ORIGIN || "http://localhost:3001";
+}
+
+function buildAffiliateLoginUrl(env: ApiEnv, token: string) {
+  const url = new URL("/verify", getAffiliateOrigin(env));
+  url.searchParams.set("token", token);
+  return url.toString();
 }
 
 export default app;

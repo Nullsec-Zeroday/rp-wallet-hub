@@ -4,6 +4,7 @@ export interface ApiEnv {
   RESEND_API_KEY?: string;
   SESSION_COOKIE_NAME?: string;
   HUB_ORIGIN?: string;
+  AFFILIATE_ORIGIN?: string;
   PHANTOM_ORIGIN?: string;
   TRUST_ORIGIN?: string;
   PHANTOM_ENABLED?: string;
@@ -24,6 +25,8 @@ export interface ApiEnv {
 export function getAllowedOrigins(env: ApiEnv) {
   return [
     env.HUB_ORIGIN || "http://localhost:3000",
+    env.AFFILIATE_ORIGIN || "http://localhost:3001",
+    "https://affiliate.larperwallet.com",
     "https://www.larperwallet.com",
     "http://127.0.0.1:3000",
     env.PHANTOM_ORIGIN || "http://localhost:5173",

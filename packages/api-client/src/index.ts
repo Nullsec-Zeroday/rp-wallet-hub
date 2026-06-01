@@ -59,6 +59,45 @@ export class RpWalletApiClient {
     });
   }
 
+  async requestAffiliateMagicLink(body: { email: string }) {
+    return this.request<{ ok: boolean }>("/affiliate/auth/request", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async verifyAffiliateMagicLink(body: { token: string }) {
+    return this.request<{ affiliate: { id: string; code: string; displayName: string; email?: string } }>("/affiliate/auth/verify", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getAffiliateDashboard() {
+    return this.request<{
+      affiliate: { id: string; code: string; displayName: string; email?: string; commissionRate: string };
+      referralUrl: string;
+      stats: {
+        clicks: number;
+        checkoutIntents: number;
+        conversions: number;
+        pendingCommission: string;
+        approvedCommission: string;
+        paidCommission: string;
+        totalCommission: string;
+      };
+      recentClicks: Array<{ id: string; landingPath: string; source?: string; createdAt: string }>;
+      recentCheckoutIntents: Array<{ id: string; plan: string; productId?: string; createdAt: string }>;
+      recentConversions: Array<{ id: string; plan: string; amount: string; commissionAmount: string; status: string; createdAt: string }>;
+    }>("/affiliate/me");
+  }
+
+  async logoutAffiliate() {
+    return this.request<{ ok: boolean }>("/affiliate/auth/logout", {
+      method: "POST",
+    });
+  }
+
   async createWalletLaunch(body: WalletLaunchRequest) {
     return this.request<WalletLaunchResponse>("/wallet-launch", {
       method: "POST",

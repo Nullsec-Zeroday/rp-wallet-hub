@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "npm run dev:api",
     "dev:hub": "npm run dev -w apps/hub",
+    "dev:affiliate": "npm run dev -w apps/affiliate",
     "dev:api": "npm run dev -w apps/api",
     "dev:phantom": "npm run dev -w apps/phantom",
     "dev:trust": "npm run dev -w apps/trust",
