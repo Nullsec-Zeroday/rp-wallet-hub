@@ -5,6 +5,8 @@ import { Check, ArrowRight, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
+import { getStoredAttribution } from "@/lib/affiliate-attribution";
+import { RpWalletApiClient } from "@rp-wallet/api-client";
 import Link from "next/link";
 import { useRef } from "react";
 import { useInView, motion, AnimatePresence } from "framer-motion";
@@ -24,6 +26,7 @@ function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
+  const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>("popular");
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
@@ -48,7 +51,7 @@ function BuyContent() {
     return () => window.removeEventListener("pageshow", resetReturnedCheckout);
   }, []);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!selectedPlanId || checkoutLocked) return;
     const plan = selectedPlan;
     if (!plan) return;
@@ -65,9 +68,28 @@ function BuyContent() {
       setCheckoutError("");
       setIsSlowCheckout(false);
       setCheckoutPhase("preparing");
+      const attribution = getStoredAttribution();
+      let sellAuthAffiliate: string | undefined;
+      if (attribution) {
+        const intentResult = await api
+          .createAffiliateCheckoutIntent({
+            affiliateCode: attribution.affiliateCode,
+            visitorId: attribution.visitorId,
+            clickId: attribution.clickId,
+            plan: plan.id,
+            productId: plan.sellauthProductId,
+            variantId: plan.sellauthVariantId,
+          })
+          .catch(() => {
+            // Checkout should continue even if attribution tracking is unavailable.
+            return null;
+          });
+        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
+      }
       checkout({
         cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
         shopId,
+        affiliate: sellAuthAffiliate,
         onPreparing: () => {
           setCheckoutPhase("preparing");
         },
@@ -91,7 +113,25 @@ function BuyContent() {
       setCheckoutError("");
       setIsSlowCheckout(false);
       setCheckoutPhase("opening");
-      window.open(plan.buyUrl, "_blank");
+      const attribution = getStoredAttribution();
+      let sellAuthAffiliate: string | undefined;
+      if (attribution) {
+        const intentResult = await api
+          .createAffiliateCheckoutIntent({
+            affiliateCode: attribution.affiliateCode,
+            visitorId: attribution.visitorId,
+            clickId: attribution.clickId,
+            plan: plan.id,
+          })
+          .catch(() => {
+            // Checkout should continue even if attribution tracking is unavailable.
+            return null;
+          });
+        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
+      }
+      const fallbackUrl = new URL(plan.buyUrl);
+      if (sellAuthAffiliate) fallbackUrl.searchParams.set("affiliate", sellAuthAffiliate);
+      window.open(fallbackUrl.toString(), "_blank");
       window.setTimeout(() => {
         clearSlowTimer();
         setCheckoutPhase("idle");

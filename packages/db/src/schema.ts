@@ -14,6 +14,9 @@ export const transactionType = pgEnum("transaction_type", [
 export const transactionStatus = pgEnum("transaction_status", ["pending", "confirmed", "failed"]);
 export const notificationType = pgEnum("notification_type", ["transaction_received", "simulation_started", "simulation_stopped"]);
 export const walletEventType = pgEnum("wallet_event_type", ["wallet_received", "transaction_created", "balance_updated"]);
+export const affiliateStatus = pgEnum("affiliate_status", ["active", "disabled"]);
+export const affiliateConversionStatus = pgEnum("affiliate_conversion_status", ["pending", "approved", "rejected", "paid"]);
+export const affiliatePayoutStatus = pgEnum("affiliate_payout_status", ["pending", "paid", "cancelled"]);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -206,3 +209,106 @@ export const walletLaunchTokens = pgTable(
   },
   (table) => [uniqueIndex("wallet_launch_tokens_hash_unique").on(table.tokenHash)],
 );
+
+export const affiliates = pgTable(
+  "affiliates",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    displayName: text("display_name").notNull(),
+    email: text("email"),
+    status: affiliateStatus("status").default("active").notNull(),
+    commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }).default("0.2000").notNull(),
+    payoutInfoJson: text("payout_info_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("affiliates_code_unique").on(table.code)],
+);
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id),
+  affiliateCode: text("affiliate_code").notNull(),
+  visitorId: text("visitor_id").notNull(),
+  landingPath: text("landing_path").notNull(),
+  referrer: text("referrer"),
+  source: text("source"),
+  userAgentHash: text("user_agent_hash"),
+  ipHash: text("ip_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const affiliateAttributions = pgTable(
+  "affiliate_attributions",
+  {
+    visitorId: text("visitor_id").primaryKey(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id),
+    affiliateCode: text("affiliate_code").notNull(),
+    clickId: text("click_id")
+      .notNull()
+      .references(() => affiliateClicks.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("affiliate_attributions_visitor_unique").on(table.visitorId)],
+);
+
+export const affiliateCheckoutIntents = pgTable("affiliate_checkout_intents", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id),
+  affiliateCode: text("affiliate_code").notNull(),
+  visitorId: text("visitor_id").notNull(),
+  clickId: text("click_id").references(() => affiliateClicks.id),
+  plan: text("plan").notNull(),
+  productId: text("product_id"),
+  variantId: text("variant_id"),
+  sellauthInvoiceId: text("sellauth_invoice_id"),
+  buyerEmail: text("buyer_email"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const affiliateConversions = pgTable(
+  "affiliate_conversions",
+  {
+    id: text("id").primaryKey(),
+    affiliateId: text("affiliate_id")
+      .notNull()
+      .references(() => affiliates.id),
+    affiliateCode: text("affiliate_code").notNull(),
+    checkoutIntentId: text("checkout_intent_id").references(() => affiliateCheckoutIntents.id),
+    licenseId: text("license_id").references(() => licenses.id),
+    userId: text("user_id").references(() => users.id),
+    sellauthOrderId: text("sellauth_order_id").notNull(),
+    buyerEmail: text("buyer_email"),
+    plan: text("plan").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).default("0").notNull(),
+    currency: text("currency").default("USD").notNull(),
+    commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }).notNull(),
+    commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).default("0").notNull(),
+    status: affiliateConversionStatus("status").default("pending").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("affiliate_conversions_order_unique").on(table.sellauthOrderId)],
+);
+
+export const affiliatePayouts = pgTable("affiliate_payouts", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id),
+  amount: numeric("amount", { precision: 12, scale: 2 }).default("0").notNull(),
+  currency: text("currency").default("USD").notNull(),
+  status: affiliatePayoutStatus("status").default("pending").notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

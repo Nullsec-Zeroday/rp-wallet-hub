@@ -95,6 +95,87 @@ app.get("/health", (c) =>
   }),
 );
 
+app.post("/affiliate/click", async (c) => {
+  const body = await c.req.json<{
+    affiliateCode?: string;
+    visitorId?: string;
+    landingPath?: string;
+    referrer?: string;
+    source?: string;
+  }>();
+
+  if (!body.affiliateCode?.trim() || !body.visitorId?.trim()) {
+    return c.json({ accepted: false });
+  }
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).recordAffiliateClick({
+    affiliateCode: body.affiliateCode,
+    visitorId: body.visitorId,
+    landingPath: body.landingPath || "/",
+    referrer: body.referrer,
+    source: body.source,
+    userAgent: c.req.header("user-agent") || undefined,
+    ipAddress: getClientIp(c),
+  });
+
+  return c.json(result);
+});
+
+app.post("/affiliate/checkout-intent", async (c) => {
+  const body = await c.req.json<{
+    affiliateCode?: string;
+    visitorId?: string;
+    clickId?: string;
+    plan?: string;
+    productId?: string | number;
+    variantId?: string | number;
+    buyerEmail?: string;
+  }>();
+
+  if (!body.affiliateCode?.trim() || !body.visitorId?.trim() || !body.plan?.trim()) {
+    return c.json({ accepted: false });
+  }
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateCheckoutIntent({
+    affiliateCode: body.affiliateCode,
+    visitorId: body.visitorId,
+    clickId: body.clickId,
+    plan: body.plan,
+    productId: body.productId?.toString(),
+    variantId: body.variantId?.toString(),
+    buyerEmail: body.buyerEmail,
+  });
+
+  return c.json(result);
+});
+
+app.get("/admin/affiliates", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  return c.json(await getPlatformStore(c.env.DATABASE_URL).getAffiliateAdminSnapshot());
+});
+
+app.post("/admin/affiliates", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{
+    code?: string;
+    displayName?: string;
+    email?: string;
+    commissionRate?: string;
+    payoutInfoJson?: string;
+  }>();
+
+  if (!body.code?.trim()) return c.json({ error: "code is required" }, 400);
+
+  const affiliate = await getPlatformStore(c.env.DATABASE_URL).createAffiliate({
+    code: body.code,
+    displayName: body.displayName || body.code,
+    email: body.email,
+    commissionRate: body.commissionRate,
+    payoutInfoJson: body.payoutInfoJson,
+  });
+  return c.json(affiliate);
+});
+
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
 app.post("/api/webhooks/sellauth", handleSellAuthWebhook);
 
@@ -154,13 +235,32 @@ async function handleSellAuthWebhook(c: Context<HonoEnv>) {
   const expiresAt = new Date(now + plan.durationDays * 24 * 60 * 60 * 1000);
   const buyerEmail = extractSellAuthEmail(payload);
 
-  await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const license = await store.createPurchasedLicense({
     licenseKey,
     email: buyerEmail,
     plan: plan.label,
     expiresAt,
     allowedDevices: plan.allowedDevices,
   });
+
+  c.executionCtx.waitUntil(
+    store
+      .createAffiliateConversion({
+        affiliateCode: extractSellAuthAffiliateCode(payload),
+        sellauthOrderId: orderId,
+        licenseId: license.id,
+        buyerEmail,
+        plan: plan.label,
+        amount: extractSellAuthAmount(payload),
+        currency: extractSellAuthCurrency(payload),
+        productId: extractSellAuthProductId(payload),
+        variantId: extractSellAuthVariantId(payload),
+      })
+      .catch((error) => {
+        console.error("[sellauth-webhook] Affiliate conversion recording failed", error);
+      }),
+  );
 
   console.log(`[sellauth-webhook] Created license for order ${orderId} | plan=${plan.id} | expires=${expiresAt.toISOString()}`);
   if (buyerEmail) {
@@ -1123,6 +1223,68 @@ function extractSellAuthEmail(payload: Record<string, any>) {
   );
 }
 
+function extractSellAuthAffiliateCode(payload: Record<string, any>) {
+  return normalizePayloadString(
+    payload.affiliate ??
+      payload.affiliate_code ??
+      payload.affiliateCode ??
+      payload.affiliate_referrer_id ??
+      payload.prefill_affiliate_referrer_id ??
+      payload.data?.affiliate ??
+      payload.data?.affiliate_code ??
+      payload.data?.affiliateCode ??
+      payload.data?.affiliate_referrer_id ??
+      payload.data?.prefill_affiliate_referrer_id ??
+      payload.invoice?.affiliate ??
+      payload.invoice?.affiliate_code,
+  )?.toLowerCase();
+}
+
+function extractSellAuthProductId(payload: Record<string, any>) {
+  return normalizePayloadString(
+    payload.product_id ??
+      payload.productId ??
+      payload.item?.product_id ??
+      payload.item?.productId ??
+      payload.data?.product_id ??
+      payload.data?.productId ??
+      payload.items?.[0]?.product_id ??
+      payload.items?.[0]?.productId,
+  );
+}
+
+function extractSellAuthVariantId(payload: Record<string, any>) {
+  return normalizePayloadString(
+    payload.variant_id ??
+      payload.variantId ??
+      payload.item?.variant_id ??
+      payload.item?.variantId ??
+      payload.data?.variant_id ??
+      payload.data?.variantId ??
+      payload.items?.[0]?.variant_id ??
+      payload.items?.[0]?.variantId,
+  );
+}
+
+function extractSellAuthAmount(payload: Record<string, any>) {
+  const value =
+    payload.total ??
+    payload.total_usd ??
+    payload.amount ??
+    payload.price ??
+    payload.data?.total ??
+    payload.data?.total_usd ??
+    payload.data?.amount ??
+    payload.data?.price;
+  if (value === undefined || value === null) return undefined;
+  const normalized = Number(String(value).replace(/[^0-9.]/g, ""));
+  return Number.isFinite(normalized) ? normalized.toFixed(2) : undefined;
+}
+
+function extractSellAuthCurrency(payload: Record<string, any>) {
+  return normalizePayloadString(payload.currency ?? payload.data?.currency)?.toUpperCase() || "USD";
+}
+
 async function sendPurchaseEmail(
   env: ApiEnv,
   params: {
@@ -1242,6 +1404,23 @@ function normalizePayloadString(value: unknown) {
   if (value === undefined || value === null) return undefined;
   const normalized = String(value).trim();
   return normalized ? normalized : undefined;
+}
+
+function isAffiliateAdminRequest(c: Context<HonoEnv>) {
+  const expected = c.env.AFFILIATE_ADMIN_TOKEN;
+  if (!expected) return false;
+  const header = c.req.header("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : c.req.header("x-affiliate-admin-token");
+  return token === expected;
+}
+
+function getClientIp(c: Context<HonoEnv>) {
+  return (
+    c.req.header("cf-connecting-ip") ||
+    c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
+    c.req.header("x-real-ip") ||
+    undefined
+  );
 }
 
 export default app;

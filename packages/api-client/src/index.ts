@@ -44,6 +44,21 @@ export class RpWalletApiClient {
     });
   }
 
+  async createAffiliateCheckoutIntent(body: {
+    affiliateCode: string;
+    visitorId: string;
+    clickId?: string;
+    plan: string;
+    productId?: string | number;
+    variantId?: string | number;
+    buyerEmail?: string;
+  }) {
+    return this.request<{ accepted: boolean; intent?: { id: string } }>("/affiliate/checkout-intent", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
   async createWalletLaunch(body: WalletLaunchRequest) {
     return this.request<WalletLaunchResponse>("/wallet-launch", {
       method: "POST",

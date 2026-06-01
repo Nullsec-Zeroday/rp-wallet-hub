@@ -15,6 +15,7 @@ export interface CartItem {
 export interface CheckoutOptions {
   cart: CartItem[];
   shopId: number;
+  affiliate?: string;
   modal?: boolean;
   scrollTop?: boolean;
   onPreparing?: () => void;
@@ -211,6 +212,7 @@ export function useSellAuthEmbed(): SellAuthEmbedHook {
           body: JSON.stringify({
             cart: options.cart,
             shopId: options.shopId,
+            ...(options.affiliate ? { affiliate: options.affiliate } : {}),
             altcha: resolvedToken,
           }),
         });
