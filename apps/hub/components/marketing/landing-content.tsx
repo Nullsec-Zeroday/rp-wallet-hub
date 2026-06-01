@@ -170,7 +170,8 @@ export default function LandingContent() {
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 LARP Crypto Wallet App 🥇</span>
-            <p>LarperWallet is a crypto wallet simulator made for entertainment. Create any balance, add any token, and display it on a pixel-perfect <span className="font-semibold">Phantom</span>, <span className="font-semibold">Trust</span> wallet interface — no real crypto involved.</p>
+            <p> Edit balance, add any token, and display it on a pixel-perfect <span className="font-semibold">Phantom</span>, <span className="font-semibold">Trust</span> wallet interface - no real crypto involved.</p>
+            {/* LarperWallet is a crypto wallet simulator made for entertainment. */}
           </motion.div>
         </div>
 
@@ -344,7 +345,7 @@ export default function LandingContent() {
               Peer-to-peer <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">simulated transactions.</span>
             </h2>
             <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
-              Send simulated crypto to another LarperWallet user. They get a notification, balance update, and new transaction.
+              Send simulated crypto to another LarperWallet user, their wallet updates like the real thing.
             </p>
 
             <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
