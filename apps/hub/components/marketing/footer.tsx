@@ -23,7 +23,7 @@ export default function Footer() {
               Built for the flex.<br />
             </h4>
             <p className="text-[13px] text-white/30 leading-relaxed max-w-[280px] md:max-w-none">
-              The world&apos;s most realistic phantom wallet simulator, engineered for creators and roleplay.
+              The world&apos;s most realistic crypto wallet simulator, engineered for creators and roleplay.
               <br />
               <span className="text-white/20">No personal data collected on-site.</span>
             </p>
