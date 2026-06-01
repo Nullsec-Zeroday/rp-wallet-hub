@@ -45,7 +45,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
 
         <div className="relative z-10 flex items-center gap-2.5">
           <ArrowDown size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-          <span className="truncate tracking-tight">Get Larper Wallet</span>
+          <span className="truncate tracking-tight">Get Wallet Access</span>
         </div>
       </Link>
     </motion.div>

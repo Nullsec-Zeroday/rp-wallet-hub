@@ -21,7 +21,7 @@ export default function Navigation() {
       <nav className="relative z-50 w-full animate-nav-entrance">
         <div className="mx-auto flex max-w-[1260px] items-center justify-between px-6 pb-6 pt-3 md:px-8">
           <Link href="/" className="group relative z-50 flex items-center gap-2">
-            <div className="size-7 md:size-12">
+            <div className="size-5 md:size-10">
               <Image src="/logo_white.webp" alt="LarperWallet Logo" width={32} height={32} className="h-full w-full object-contain transition-transform group-hover:scale-105" />
             </div>
             <span className="text-[18px] font-semibold tracking-tight text-white md:text-2xl">
