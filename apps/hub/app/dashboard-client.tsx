@@ -277,8 +277,7 @@ export default function DashboardClient() {
           </button>
 
           <Link
-            href={process.env.NEXT_PUBLIC_SELLAUTH_STARTER_URL || "https://larperwallet.mysellauth.com/product/7-days-access"}
-            target="_blank"
+            href="/buy"
             className="mt-8 block cursor-pointer text-center text-[13px] font-semibold tracking-wide text-[#9c8df6] transition-all duration-300 hover:underline"
           >
             Don&apos;t have a key? Purchase one here
