@@ -4,12 +4,12 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Copy, DollarSign, LogOut, MousePointerClick, ReceiptText, RefreshCcw, Send } from "lucide-react";
-import { createApiClient } from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createApiClient } from "../../lib/api";
+import { formatCurrency, formatDate } from "../../lib/utils";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 
 type Dashboard = Awaited<ReturnType<ReturnType<typeof createApiClient>["getAffiliateDashboard"]>>;
 
