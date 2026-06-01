@@ -301,8 +301,9 @@ export default function DashboardClient() {
           }}
           className="w-full rounded-2xl p-4.5 text-[13px] leading-relaxed"
         >
-          <span style={{ fontWeight: 600, color: "#ffe600" }}>⚠️ Important:</span> Activate your license key directly inside the{" "}
-          <span style={{ fontWeight: 600, color: "#ffe600" }}>installed PWA only</span> once we finalize the launch flow. For now, this Hub screen is the central place to activate access and launch wallets.
+          <span style={{ fontWeight: 600, color: "#ffe600" }}>⚠️ Important:</span> Please login and activate your license key directly in{" "}
+          <span style={{ fontWeight: 600, color: "#ffe600" }}>Safari (iOS)</span> or{" "}
+          <span style={{ fontWeight: 600, color: "#ffe600" }}>Chrome (Android)</span>. Do not activate your key inside an installed app or custom browser.
         </div>
       </main>
     </div>
