@@ -98,6 +98,55 @@ export class RpWalletApiClient {
     });
   }
 
+  async getAffiliateAdminSnapshot(adminToken: string) {
+    return this.request<{
+      affiliates: Array<{
+        id: string;
+        code: string;
+        displayName: string;
+        email?: string;
+        status: "active" | "disabled";
+        commissionRate: string;
+        createdAt: string;
+      }>;
+      clicks: Array<{ id: string; affiliateCode: string; visitorId: string; landingPath: string; source?: string; createdAt: string }>;
+      checkoutIntents: Array<{ id: string; affiliateCode: string; visitorId: string; plan: string; productId?: string; variantId?: string; createdAt: string }>;
+      conversions: Array<{ id: string; affiliateCode: string; sellauthOrderId: string; buyerEmail?: string; plan: string; amount: string; commissionAmount: string; status: string; createdAt: string }>;
+      payoutTotals: Array<{ affiliateId: string; affiliateCode: string; pendingCommission: string; approvedCommission: string; paidCommission: string }>;
+    }>("/admin/affiliates", {
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+    });
+  }
+
+  async createAffiliateAdmin(
+    adminToken: string,
+    body: {
+      code: string;
+      displayName: string;
+      email?: string;
+      commissionRate?: string;
+      payoutInfoJson?: string;
+    },
+  ) {
+    return this.request<{
+      id: string;
+      code: string;
+      displayName: string;
+      email?: string;
+      status: "active" | "disabled";
+      commissionRate: string;
+      createdAt: string;
+    }>("/admin/affiliates", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
   async createWalletLaunch(body: WalletLaunchRequest) {
     return this.request<WalletLaunchResponse>("/wallet-launch", {
       method: "POST",
