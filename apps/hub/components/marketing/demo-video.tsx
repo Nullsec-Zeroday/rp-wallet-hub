@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 
 export default function DemoVideo() {
   return (
-    <div className="w-full mt-2 md:mt-6 relative px-6 flex flex-col items-center justify-center">
+    <div className="w-full mt-2 md:mt-6 relative px-0 md:px-6 flex flex-col items-center justify-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative group h-[80vh] aspect-[9/16] mx-auto"
+        className="relative group w-[calc(80vh*9/16)] max-w-full aspect-[9/16] mx-auto"
       >
         <div className="absolute -inset-4 bg-phantom-purple/10 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition duration-1000" />
         <div className="absolute inset-0 bg-phantom-purple/5 blur-xl rounded-[2.5rem]" />

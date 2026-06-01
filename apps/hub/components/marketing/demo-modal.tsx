@@ -44,7 +44,7 @@ export default function DemoModal({
         >
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 text-white/50 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-[1000000]"
+            className="absolute top-3 right-3 md:top-6 md:right-6 text-white/50 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-[1000000]"
           >
             <X className="size-6" />
           </button>
