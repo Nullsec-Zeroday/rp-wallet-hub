@@ -345,7 +345,7 @@ export default function LandingContent() {
               Peer-to-peer <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">simulated transactions.</span>
             </h2>
             <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
-              Send simulated crypto to another LarperWallet user, their wallet updates like the real thing.
+              Send simulated crypto to another LarperWallet user, their wallet updates.
             </p>
 
             <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
@@ -359,7 +359,7 @@ export default function LandingContent() {
                   <Send size={16} className="text-white/80" />
                 </div>
                 <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Send P2P</h4>
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Send</h4>
                   <p className="text-white/50 text-[14px] leading-snug">Enter another LarperWallet user's address, select token and amount.</p>
                 </div>
               </div>
@@ -471,9 +471,9 @@ export default function LandingContent() {
             <h2 className="font-display text-2xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
               How LarperWallet <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">works.</span>
             </h2>
-            <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
+            {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
               Get set up in less than 2 minutes. No complicated installations.
-            </p>
+            </p> */}
 
             <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
               {/* Vertical line for mobile */}
