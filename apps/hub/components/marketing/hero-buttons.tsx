@@ -15,7 +15,7 @@ export default function HeroButtons({ onOpenDemo }: { onOpenDemo?: () => void })
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 w-full">
         <TryFreeButton wrapperClassName="w-full sm:w-[280px]" className="!w-full" />
         <Link
-          href="https://t.me/larperwalletchannel"
+          href="https://t.me/larperwallet"
           target="_blank"
           rel="noopener noreferrer"
           onClick={trackTelegramClick}

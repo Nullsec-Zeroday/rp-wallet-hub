@@ -518,7 +518,7 @@ export default function LandingContent() {
 
             <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
               Have any questions? We respond within a few hours, contact us on{" "}
-              <a href="https://t.me/LarperWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+              <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
                 telegram
               </a>
               {" "}or reach out to us at{" "}

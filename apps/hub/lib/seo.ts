@@ -166,12 +166,12 @@ export function buildOrganizationSchema() {
     description: siteConfig.description,
     sameAs: [
       "https://x.com/LarperWallet",
-      "https://t.me/LarperWallet_support_bot",
+      "https://t.me/LarperWallet_bot",
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer support",
-      url: "https://t.me/LarperWallet_support_bot",
+      url: "https://t.me/LarperWallet_bot",
       availableLanguage: "English",
     },
   };
