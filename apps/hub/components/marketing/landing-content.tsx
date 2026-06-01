@@ -384,12 +384,12 @@ export default function LandingContent() {
               </div>
             </div>
 
-            {/* <button
+            <button
               onClick={() => setIsDemoModalOpen(true)}
               className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full text-[15px] font-medium transition-all flex items-center justify-center gap-2"
             >
               Watch it happen <ArrowRight size={16} />
-            </button> */}
+            </button>
           </div>
         </motion.div>
       </section>
