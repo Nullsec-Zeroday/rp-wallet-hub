@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { buildDefaultMetadata } from "@/lib/seo";
 import "./styles.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 
 const satoshi = localFont({
   src: "../public/font/Satoshi-Variable.ttf",
@@ -25,7 +26,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`dark antialiased font-sans ${satoshi.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-[#0c0a18]">
         {children}
-        <SpeedInsights />
+        {/* <SpeedInsights /> */}
+        <Analytics />
       </body>
     </html>
   );
