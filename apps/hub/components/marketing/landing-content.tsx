@@ -535,7 +535,7 @@ export default function LandingContent() {
       <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
         <div className="text-center mb-10">
           <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
-          {/* <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto.</p> */}
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit or debit cards.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch relative">
