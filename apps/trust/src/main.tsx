@@ -54,6 +54,13 @@ function truncateAddress(value = "") {
   return `${value.slice(0, 6)}...${value.slice(-5)}`;
 }
 
+function formatNotificationAmount(value = "") {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  if (Number.isInteger(numeric)) return String(numeric);
+  return numeric.toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 function getTrustNotificationSettings(payload: WalletBootstrapPayload): WalletNotificationSettings {
   return payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
 }
@@ -63,7 +70,7 @@ async function showTrustReceiveNotification(event: WalletEvent, payload: WalletB
     ? payload.recentTransactions.find((entry) => entry.id === event.transactionId)
     : undefined;
 
-  const amount = transaction?.amount || "";
+  const amount = formatNotificationAmount(transaction?.amount || "");
   const symbol = transaction?.tokenSymbol || "";
   const title = amount && symbol ? `💰 Received: ${amount} ${symbol}` : `💰 ${event.title || "Received"}`;
   const body = transaction?.fromAddress
