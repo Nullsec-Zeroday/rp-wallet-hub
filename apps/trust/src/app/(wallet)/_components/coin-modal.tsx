@@ -4,6 +4,7 @@ import { useTrustCoinChart, type TrustChartTimeframe } from "@/hooks/useTrustCoi
 import { useTrustTokenDetails } from "@/hooks/useTrustTokenDetails";
 import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
 import { useTrustWallet } from "@/lib/trust-wallet-context";
+import SendModal from "./send-modal";
 
 export interface CoinModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
   const [show, setShow] = useState(false);
   const [isRendered, setIsRendered] = useState(isOpen);
   const [activeRange, setActiveRange] = useState<TrustChartTimeframe>("1D");
+  const [sendOpen, setSendOpen] = useState(false);
   const { balanceMap, baseCurrency, payload, prices } = useTrustWallet();
 
 
@@ -55,6 +57,7 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
   const balanceValue = balance * price;
   const visibleTransactions = payload.recentTransactions
     .filter((transaction) => transaction.tokenSymbol.toUpperCase() === normalizedSymbol)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
   const changeColor = isPositive ? "rgb(35, 191, 125)" : "#FE5D5D";
   const { error: chartError, isLoading: chartLoading, points: chartPoints } = useTrustCoinChart({
@@ -295,7 +298,7 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
 
         {/* Send / Receive pill buttons */}
         <div style={{ display: "flex", gap: "10px", padding: "8px 20px 16px" }}>
-          <button className="t-action-btn" id="tCoinSend">
+          <button className="t-action-btn" id="tCoinSend" onClick={() => setSendOpen(true)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <path d="M19.71 5.59C19.71 5.45 19.68 5.32 19.63 5.19C19.58 5.08 19.51 4.98 19.43 4.89C19.41 4.87 19.4 4.84 19.38 4.82C19.36 4.8 19.33 4.79 19.3 4.77C19.21 4.7 19.12 4.62 19.01 4.58C18.87 4.52 18.72 4.49 18.58 4.49H8.58C7.96 4.49 7.46 4.99 7.46 5.61C7.46 6.23 7.96 6.73 8.58 6.73H15.86L4.78 17.81C4.34 18.25 4.34 18.96 4.78 19.4C5 19.62 5.29 19.73 5.58 19.73C5.87 19.73 6.16 19.62 6.38 19.4L17.46 8.32V15.6C17.46 16.22 17.96 16.72 18.58 16.72C19.2 16.72 19.7 16.22 19.7 15.6V5.6L19.71 5.59Z" fill="currentColor"></path>
             </svg>
@@ -322,29 +325,48 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
         </div>
 
         {/* Recent history */}
-        <div style={{ padding: "12px 20px 8px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <div style={{ color: "#fff", fontSize: "15px", fontWeight: 500 }} data-i18n="trust_popup.recent_history">Recent history</div>
-            <svg width="7" height="11" viewBox="0 0 8 14" fill="none">
-              <path d="M1 1l6 6-6 6" stroke="#666" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-            </svg>
-          </div>
-          {visibleTransactions.length ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-              {visibleTransactions.map((transaction) => (
-                <div key={transaction.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ color: "#fff", fontSize: "14px", fontWeight: 600, textTransform: "capitalize" }}>{transaction.type}</div>
-                    <div style={{ color: "#888", fontSize: "12px", marginTop: "2px" }}>{new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(transaction.createdAt))}</div>
-                  </div>
-                  <div style={{ color: transaction.type === "receive" ? "#23BF7D" : "#fff", fontSize: "14px", fontWeight: 600 }}>
-                    {transaction.type === "receive" ? "+" : "-"}{formatTrustBalance(Number(transaction.amount))} {normalizedSymbol}
-                  </div>
-                </div>
-              ))}
+        {visibleTransactions.length > 0 && (
+          <div style={{ padding: "12px 20px 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+              <div style={{ color: "#fff", fontSize: "15px", fontWeight: 500 }} data-i18n="trust_popup.recent_history">Recent history</div>
+              <svg width="7" height="11" viewBox="0 0 8 14" fill="none">
+                <path d="M1 1l6 6-6 6" stroke="#666" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
             </div>
-          ) : null}
-        </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
+              {visibleTransactions.map((transaction) => {
+                const isReceive = transaction.type === "receive";
+                const displayType = isReceive ? "Received" : "Sent";
+                
+                const dateObj = new Date(transaction.createdAt);
+                const datePart = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(dateObj);
+                const timePart = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(dateObj);
+                const formattedDate = `${datePart} at ${timePart}`;
+
+                return (
+                  <div key={transaction.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#2A2A2D", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isReceive ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <div style={{ color: "#e5e5e5", fontSize: "15px", fontWeight: 500 }}>{displayType}</div>
+                        <div style={{ color: "#888", fontSize: "13px" }}>{formattedDate}</div>
+                      </div>
+                    </div>
+                    <div style={{ color: isReceive ? "#48FF91" : "#aaa", fontSize: "15px", fontWeight: 500 }}>
+                      {isReceive ? "+" : "-"}{formatTrustBalance(Number(transaction.amount))} {normalizedSymbol}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div style={{ padding: "16px 20px 8px" }}>
@@ -463,5 +485,11 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return createPortal(
+    <>
+      {modalContent}
+      <SendModal isOpen={sendOpen} onClose={() => setSendOpen(false)} />
+    </>,
+    document.body
+  );
 }

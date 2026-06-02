@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
-import type { UpdateWalletStateRequest, WalletAccount, WalletBootstrapPayload } from "@rp-wallet/types";
+import type { CreateWalletTransactionRequest, UpdateWalletStateRequest, WalletAccount, WalletBootstrapPayload, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
 import { writeCachedBootstrap } from "@rp-wallet/wallet-core";
 import { useTrustLivePrices } from "@/hooks/useTrustLivePrices";
 import { formatTrustCurrency, getStaticTrustPrices, getTrustToken, TRUST_TOKENS, type TrustLivePrices } from "@/lib/trust-token-data";
@@ -8,11 +8,39 @@ import { formatTrustCurrency, getStaticTrustPrices, getTrustToken, TRUST_TOKENS,
 const BASE_CURRENCY_KEY = "trust_base_currency";
 const CG_API_KEY = "trust_coingecko_api_key";
 
+export const DEFAULT_TRUST_NOTIFICATION_SETTINGS: WalletNotificationSettings = {
+  pushEnabled: false,
+  coins: [
+    { symbol: "BTC", enabled: true, min: 0.001, max: 0.1 },
+    { symbol: "ETH", enabled: true, min: 0.01, max: 1 },
+    { symbol: "USDT", enabled: true, min: 1, max: 100 },
+    { symbol: "LTC", enabled: true, min: 0.01, max: 1 },
+  ],
+  mode: "Random",
+  frequency: 30,
+  unit: "sec",
+  initialDelay: 0,
+  isActive: false,
+  totalTimes: 0,
+  remainingTimes: 0,
+  senderAddress: "",
+};
+
 export interface TrustSettingsInput {
   balances: Record<string, string>;
   coingeckoApiKey: string;
   currency: string;
+  walletAddress: string;
   walletName: string;
+}
+
+export interface TrustTransactionInput {
+  amount: string;
+  createdAt?: string;
+  fromAddress?: string;
+  toAddress?: string;
+  tokenSymbol: string;
+  type: WalletMutationType;
 }
 
 interface TrustWalletContextValue {
@@ -21,17 +49,23 @@ interface TrustWalletContextValue {
   baseCurrency: string;
   coingeckoApiKey: string;
   payload: WalletBootstrapPayload;
+  notificationSettings: WalletNotificationSettings;
   priceError: string | null;
   prices: TrustLivePrices;
   priceLoading: boolean;
+  createTransaction: (input: TrustTransactionInput) => Promise<WalletTransaction | null>;
   refetchPrices: () => Promise<void>;
   saveError: string;
+  saveNotificationSettings: (settings: WalletNotificationSettings) => Promise<boolean>;
   savingSettings: boolean;
   saveSettings: (input: TrustSettingsInput) => Promise<boolean>;
   settingsInitialValues: TrustSettingsInput;
   tokenSymbols: string[];
   totalChange: { dollar: number; percent: number };
   totalValue: number;
+  transactionError: string;
+  transactionPending: boolean;
+  walletAddress: string;
   walletName: string;
 }
 
@@ -50,6 +84,10 @@ function writePreference(key: string, value: string) {
 function parseAmount(value: string | number | undefined) {
   const amount = Number(value);
   return Number.isFinite(amount) && amount >= 0 ? amount : 0;
+}
+
+function formatAmount(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(8).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function getAccount(payload: WalletBootstrapPayload) {
@@ -77,13 +115,76 @@ function buildLocalPayload(payload: WalletBootstrapPayload, input: TrustSettings
 
   return {
     ...payload,
-    accounts: payload.accounts.map((entry, index) => index === 0 ? { ...entry, name: input.walletName.trim() || entry.name } : entry),
+    accounts: payload.accounts.map((entry, index) => index === 0 ? {
+      ...entry,
+      address: input.walletAddress.trim() || entry.address,
+      name: input.walletName.trim() || entry.name,
+    } : entry),
     balances: nextBalances,
     profile: {
       ...payload.profile,
       displayName: input.walletName.trim() || payload.profile.displayName,
       updatedAt: now,
     },
+  };
+}
+
+function buildLocalTransactionPayload(payload: WalletBootstrapPayload, input: TrustTransactionInput) {
+  const account = getAccount(payload);
+  if (!account) throw new Error("No Trust account is available.");
+
+  const amount = parseAmount(input.amount);
+  if (amount <= 0) throw new Error("Enter a valid amount greater than zero.");
+
+  const tokenSymbol = input.tokenSymbol.trim().toUpperCase();
+  const createdAt = input.createdAt ? new Date(input.createdAt).toISOString() : new Date().toISOString();
+  const balanceMap = getPayloadBalanceMap(payload);
+  const currentBalance = balanceMap[tokenSymbol] || 0;
+  const shouldDebit = input.type === "send" || input.type === "same_wallet_transfer" || input.type === "cross_wallet_transfer";
+  const shouldCredit = input.type === "receive";
+  const nextAmount = shouldDebit ? currentBalance - amount : shouldCredit ? currentBalance + amount : currentBalance;
+
+  if (shouldDebit && nextAmount < -0.00000001) {
+    throw new Error("Insufficient balance for this transfer.");
+  }
+
+  const existingBalance = payload.balances.find((balance) => balance.accountId === account.id && balance.tokenSymbol.toUpperCase() === tokenSymbol);
+  const otherBalances = payload.balances.filter((balance) => !(balance.accountId === account.id && balance.tokenSymbol.toUpperCase() === tokenSymbol));
+  const transaction: WalletTransaction = {
+    id: `local-trust-tx-${Date.now()}`,
+    walletAppId: "trust",
+    accountId: account.id,
+    type: input.type,
+    status: "confirmed",
+    tokenSymbol,
+    amount: formatAmount(amount),
+    fromAddress: input.fromAddress || (input.type === "receive" ? input.fromAddress : account.address),
+    toAddress: input.toAddress || (input.type === "receive" ? account.address : input.toAddress),
+    createdAt,
+  };
+
+  return {
+    nextPayload: {
+      ...payload,
+      balances: [
+        ...otherBalances,
+        {
+          accountId: account.id,
+          tokenSymbol,
+          amount: formatAmount(Math.max(0, nextAmount)),
+          updatedAt: existingBalance?.updatedAt || createdAt,
+        },
+      ],
+      recentTransactions: [transaction, ...payload.recentTransactions].slice(0, 50),
+    },
+    transaction,
+  };
+}
+
+function withNotificationSettings(payload: WalletBootstrapPayload, settings: WalletNotificationSettings): WalletBootstrapPayload {
+  return {
+    ...payload,
+    notificationSettings: settings,
   };
 }
 
@@ -126,6 +227,8 @@ export function TrustWalletProvider({
   const [coingeckoApiKey, setCoingeckoApiKey] = useState(() => readPreference(CG_API_KEY, ""));
   const [savingSettings, setSavingSettings] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [transactionPending, setTransactionPending] = useState(false);
+  const [transactionError, setTransactionError] = useState("");
 
   useEffect(() => {
     setPayload(initialPayload);
@@ -139,7 +242,9 @@ export function TrustWalletProvider({
   );
   const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
+  const notificationSettings = payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
   const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
+  const walletAddress = account?.address || "";
 
   const settingsInitialValues = useMemo<TrustSettingsInput>(() => {
     const balances = Object.fromEntries(tokenSymbols.map((symbol) => [symbol, balanceMap[symbol] ? String(balanceMap[symbol]) : ""]));
@@ -147,9 +252,10 @@ export function TrustWalletProvider({
       balances,
       coingeckoApiKey,
       currency: baseCurrency,
+      walletAddress,
       walletName,
     };
-  }, [balanceMap, baseCurrency, coingeckoApiKey, tokenSymbols, walletName]);
+  }, [balanceMap, baseCurrency, coingeckoApiKey, tokenSymbols, walletAddress, walletName]);
 
   const applyPayload = useCallback((nextPayload: WalletBootstrapPayload) => {
     setPayload(nextPayload);
@@ -173,6 +279,7 @@ export function TrustWalletProvider({
 
       const body: UpdateWalletStateRequest = {
         accountId: account.id,
+        accountAddress: input.walletAddress.trim() || account.address,
         accountName: input.walletName.trim() || account.name,
         balances: Object.entries(input.balances)
           .filter(([, value]) => value.trim() !== "")
@@ -204,25 +311,106 @@ export function TrustWalletProvider({
     }
   }, [account, api, applyPayload, payload, walletName]);
 
+  const createTransaction = useCallback(async (input: TrustTransactionInput) => {
+    setTransactionError("");
+    setTransactionPending(true);
+
+    try {
+      if (!account) throw new Error("No Trust account is available.");
+
+      const request: CreateWalletTransactionRequest = {
+        walletAppId: "trust",
+        accountId: account.id,
+        type: input.type,
+        tokenSymbol: input.tokenSymbol.trim().toUpperCase(),
+        amount: String(parseAmount(input.amount)),
+        createdAt: input.createdAt,
+        fromAddress: input.fromAddress || (input.type === "receive" ? undefined : account.address),
+        toAddress: input.toAddress || (input.type === "receive" ? account.address : undefined),
+        source: "user",
+      };
+
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+        const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
+        applyPayload(nextPayload);
+        return transaction;
+      }
+
+      const response = await api.createWalletTransaction(request);
+      applyPayload(response.payload);
+      return response.transaction;
+    } catch (error) {
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+        try {
+          const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
+          applyPayload(nextPayload);
+          return transaction;
+        } catch (fallbackError) {
+          setTransactionError(fallbackError instanceof Error ? fallbackError.message : "Unable to create transaction.");
+          return null;
+        }
+      }
+      setTransactionError(error instanceof Error ? error.message : "Unable to create transaction.");
+      return null;
+    } finally {
+      setTransactionPending(false);
+    }
+  }, [account, api, applyPayload, payload]);
+
+  const saveNotificationSettings = useCallback(async (settings: WalletNotificationSettings) => {
+    setSaveError("");
+
+    try {
+      if (!account) throw new Error("No Trust account is available.");
+
+      const localPayload = withNotificationSettings(payload, settings);
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+        applyPayload(localPayload);
+        return true;
+      }
+
+      const nextPayload = await api.updateWalletNotificationSettings({
+        accountId: account.id,
+        settings,
+        walletAppId: "trust",
+      });
+      applyPayload(nextPayload);
+      return true;
+    } catch (error) {
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+        applyPayload(withNotificationSettings(payload, settings));
+        return true;
+      }
+      setSaveError(error instanceof Error ? error.message : "Unable to save notification settings.");
+      return false;
+    }
+  }, [account, api, applyPayload, payload]);
+
   const value = useMemo<TrustWalletContextValue>(() => ({
     account,
     balanceMap,
     baseCurrency,
     coingeckoApiKey,
+    notificationSettings,
     payload,
     priceError,
     priceLoading,
     prices,
+    createTransaction,
     refetchPrices,
     saveError,
+    saveNotificationSettings,
     saveSettings,
     savingSettings,
     settingsInitialValues,
     tokenSymbols,
     totalChange: portfolio.totalChange,
     totalValue: portfolio.totalValue,
+    transactionError,
+    transactionPending,
+    walletAddress,
     walletName,
-  }), [account, balanceMap, baseCurrency, coingeckoApiKey, payload, priceError, priceLoading, portfolio, prices, refetchPrices, saveError, saveSettings, savingSettings, settingsInitialValues, tokenSymbols, walletName]);
+  }), [account, balanceMap, baseCurrency, coingeckoApiKey, createTransaction, notificationSettings, payload, priceError, priceLoading, portfolio, prices, refetchPrices, saveError, saveNotificationSettings, saveSettings, savingSettings, settingsInitialValues, tokenSymbols, transactionError, transactionPending, walletAddress, walletName]);
 
   return <TrustWalletContext.Provider value={value}>{children}</TrustWalletContext.Provider>;
 }

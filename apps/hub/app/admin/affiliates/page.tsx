@@ -85,26 +85,7 @@ export default function AffiliateAdminPage() {
     : null;
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      {/* Top Nav */}
-      <div className="border-b border-zinc-800">
-        <div className="flex h-16 items-center px-4 md:px-8">
-          <div className="flex items-center gap-2 font-bold text-lg">
-            <ShieldCheck className="h-6 w-6" />
-            LarperWallet Admin
-          </div>
-          <nav className="flex items-center space-x-6 ml-6">
-            <Link href="/" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Hub</Link>
-            <Link href="#" className="text-sm font-medium text-white transition-colors">Affiliates</Link>
-            <Link href="#" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Settings</Link>
-          </nav>
-          <div className="ml-auto flex items-center space-x-4">
-            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700" />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 space-y-4 p-8 pt-6 mx-auto max-w-7xl">
+    <div className="space-y-4 p-8 pt-6 mx-auto max-w-7xl w-full">
         {/* Header */}
         <div className="flex items-center justify-between space-y-2 mb-8">
           <h2 className="text-3xl font-bold tracking-tight">Affiliate Dashboard</h2>
@@ -237,8 +218,7 @@ export default function AffiliateAdminPage() {
             </div>
           </div>
         )}
-      </div>
-    </main>
+    </div>
   );
 }
 

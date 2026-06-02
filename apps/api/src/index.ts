@@ -234,6 +234,79 @@ app.post("/admin/affiliates", async (c) => {
   return c.json(affiliate);
 });
 
+app.post("/admin/keys", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{
+    email?: string;
+    plan?: string;
+    expiresAt?: string;
+    durationDays?: number;
+    allowedDevices?: number;
+  }>();
+
+  const plan = normalizePayloadString(body.plan) || "Most Popular";
+  const expiresAt = resolveAdminLicenseExpiry(body);
+  if (!expiresAt) return c.json({ error: "expiresAt or durationDays is required" }, 400);
+
+  const licenseKey = generateRandomLicenseKey();
+  const license = await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+    licenseKey,
+    email: normalizePayloadString(body.email),
+    plan,
+    expiresAt,
+    allowedDevices: getAdminAllowedDevices(plan, body.allowedDevices),
+  });
+
+  return c.json({
+    license,
+    licenseKey,
+  });
+});
+
+app.post("/admin/licenses/lookup", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ licenseKey?: string }>();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+
+  const snapshot = await getPlatformStore(c.env.DATABASE_URL).getAdminLicenseSnapshot(licenseKey);
+  if (!snapshot) return c.json({ error: "License not found" }, 404);
+  return c.json(snapshot);
+});
+
+app.post("/admin/licenses/clear-devices", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ licenseKey?: string }>();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).clearAdminLicenseDevices(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+
+app.post("/admin/licenses/revoke-sessions", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ licenseKey?: string }>();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).revokeAdminLicenseSessions(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+
+app.post("/admin/licenses/reset-access", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ licenseKey?: string }>();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+
+  const result = await getPlatformStore(c.env.DATABASE_URL).resetAdminLicenseAccess(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
 app.post("/api/webhooks/sellauth", handleSellAuthWebhook);
 
@@ -1251,6 +1324,30 @@ async function generateLicenseKeyForOrder(orderId: string, secret: string) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const letters = Array.from(hexToBytes(digest)!.slice(0, 20), (byte) => alphabet[byte % alphabet.length]);
   return [0, 5, 10, 15].map((start) => letters.slice(start, start + 5).join("")).join("-");
+}
+
+function generateRandomLicenseKey() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
+  const chars = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]);
+  return [0, 5, 10, 15].map((start) => chars.slice(start, start + 5).join("")).join("-");
+}
+
+function resolveAdminLicenseExpiry(input: { expiresAt?: string; durationDays?: number }) {
+  if (input.expiresAt) {
+    const expiresAt = new Date(input.expiresAt);
+    if (Number.isFinite(expiresAt.getTime()) && expiresAt > new Date()) return expiresAt;
+    return null;
+  }
+
+  const durationDays = Number(input.durationDays);
+  if (!Number.isFinite(durationDays) || durationDays <= 0) return null;
+  return new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+}
+
+function getAdminAllowedDevices(plan: string, requested?: number) {
+  if (requested && Number.isFinite(requested) && requested > 0) return Math.floor(requested);
+  return plan.toLowerCase().includes("year") ? 2 : 1;
 }
 
 function extractSellAuthOrderId(payload: Record<string, any>) {

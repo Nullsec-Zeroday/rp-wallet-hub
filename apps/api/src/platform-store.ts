@@ -56,6 +56,7 @@ interface LicenseRecord extends LicenseSummary {
 interface SessionRecord extends SessionSummary {
   userId: string;
   licenseId: string;
+  revokedAt?: string;
 }
 
 interface LaunchTokenRecord {
@@ -207,6 +208,40 @@ export interface PurchasedLicenseInput {
   allowedDevices: number;
 }
 
+export interface AdminLicenseSnapshot {
+  license: LicenseSummary & {
+    keyPlaintext?: string;
+    userId: string;
+    email?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  devices: Array<{
+    id: string;
+    deviceId: string;
+    lastSeenAt: string;
+    createdAt: string;
+  }>;
+  sessions: Array<{
+    id: string;
+    expiresAt: string;
+    revokedAt?: string;
+    createdAt: string;
+    active: boolean;
+  }>;
+  counts: {
+    devices: number;
+    activeSessions: number;
+    revokedSessions: number;
+  };
+}
+
+export interface AdminLicenseResetResult {
+  snapshot: AdminLicenseSnapshot;
+  clearedDevices: number;
+  revokedSessions: number;
+}
+
 export interface WalletLaunchInput {
   sessionId: string;
   walletAppId: WalletAppId;
@@ -229,6 +264,10 @@ export interface WalletBootstrapResult {
 
 export interface PlatformStore {
   createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary>;
+  getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null>;
+  clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null>;
+  revokeAdminLicenseSessions(licenseKey: string): Promise<AdminLicenseResetResult | null>;
+  resetAdminLicenseAccess(licenseKey: string): Promise<AdminLicenseResetResult | null>;
   createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary>;
   recordAffiliateClick(input: AffiliateClickInput): Promise<{ accepted: boolean; click?: AffiliateClickSummary; attribution?: { affiliateCode: string; clickId: string; expiresAt: string } }>;
   createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput): Promise<{ accepted: boolean; intent?: AffiliateCheckoutIntentSummary }>;
@@ -503,6 +542,55 @@ class InMemoryPlatformStore implements PlatformStore {
     };
     this.licenses.set(license.id, license);
     return toLicenseSummary(license);
+  }
+
+  async getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+
+  async clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    let clearedDevices = 0;
+    for (const [id, device] of this.devices.entries()) {
+      if (device.userId === license.userId) {
+        this.devices.delete(id);
+        clearedDevices += 1;
+      }
+    }
+
+    return { snapshot: this.buildAdminLicenseSnapshot(license), clearedDevices, revokedSessions: 0 };
+  }
+
+  async revokeAdminLicenseSessions(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    let revokedSessions = 0;
+    for (const session of this.sessions.values()) {
+      if (session.licenseId === license.id && !session.revokedAt) {
+        session.revokedAt = new Date().toISOString();
+        revokedSessions += 1;
+      }
+    }
+
+    return { snapshot: this.buildAdminLicenseSnapshot(license), clearedDevices: 0, revokedSessions };
+  }
+
+  async resetAdminLicenseAccess(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    const devicesResult = await this.clearAdminLicenseDevices(licenseKey);
+    const sessionsResult = await this.revokeAdminLicenseSessions(licenseKey);
+
+    return {
+      snapshot: this.buildAdminLicenseSnapshot(license),
+      clearedDevices: devicesResult?.clearedDevices || 0,
+      revokedSessions: sessionsResult?.revokedSessions || 0,
+    };
   }
 
   async getHubSession(sessionId: string): Promise<HubSessionResponse | null> {
@@ -1169,6 +1257,51 @@ class InMemoryPlatformStore implements PlatformStore {
     const affiliate = this.affiliates.get(intent.affiliateId);
     return affiliate ? { affiliate, intent } : undefined;
   }
+
+  private async findLicenseByPlaintextKey(licenseKey: string) {
+    const keyHash = await hashToken(normalizeLicenseKey(licenseKey));
+    return [...this.licenses.values()].find((license) => license.keyHash === keyHash) || null;
+  }
+
+  private buildAdminLicenseSnapshot(license: LicenseRecord): AdminLicenseSnapshot {
+    const user = this.users.get(license.userId);
+    const devices = [...this.devices.values()]
+      .filter((device) => device.userId === license.userId)
+      .sort((a, b) => Date.parse(b.lastSeenAt) - Date.parse(a.lastSeenAt));
+    const sessions = [...this.sessions.values()]
+      .filter((session) => session.licenseId === license.id || session.userId === license.userId)
+      .sort((a, b) => Date.parse(b.expiresAt) - Date.parse(a.expiresAt));
+    const activeSessions = sessions.filter((session) => !session.revokedAt && new Date(session.expiresAt) > new Date()).length;
+
+    return {
+      license: {
+        ...toLicenseSummary(license),
+        keyPlaintext: license.keyPlaintext || undefined,
+        userId: license.userId,
+        email: user?.email,
+        createdAt: "memory",
+        updatedAt: "memory",
+      },
+      devices: devices.map((device) => ({
+        id: device.id,
+        deviceId: device.deviceId,
+        lastSeenAt: device.lastSeenAt,
+        createdAt: device.lastSeenAt,
+      })),
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        expiresAt: session.expiresAt,
+        revokedAt: session.revokedAt,
+        createdAt: session.expiresAt,
+        active: !session.revokedAt && new Date(session.expiresAt) > new Date(),
+      })),
+      counts: {
+        devices: devices.length,
+        activeSessions,
+        revokedSessions: sessions.length - activeSessions,
+      },
+    };
+  }
 }
 
 class NeonPlatformStore implements PlatformStore {
@@ -1468,6 +1601,70 @@ class NeonPlatformStore implements PlatformStore {
       ...createdLicense,
       expiresAt: createdLicense.expiresAt.toISOString(),
     });
+  }
+
+  async getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+
+  async clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    const cleared = await this.db.delete(schema.devices).where(eq(schema.devices.userId, license.userId)).returning({ id: schema.devices.id });
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: cleared.length,
+      revokedSessions: 0,
+    };
+  }
+
+  async revokeAdminLicenseSessions(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    const activeSessions = await this.db
+      .select({ id: schema.sessions.id })
+      .from(schema.sessions)
+      .where(and(eq(schema.sessions.licenseId, license.id), isNull(schema.sessions.revokedAt)));
+
+    if (activeSessions.length > 0) {
+      await this.db
+        .update(schema.sessions)
+        .set({ revokedAt: new Date() })
+        .where(inArray(schema.sessions.id, activeSessions.map((session) => session.id)));
+    }
+
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: 0,
+      revokedSessions: activeSessions.length,
+    };
+  }
+
+  async resetAdminLicenseAccess(licenseKey: string): Promise<AdminLicenseResetResult | null> {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+
+    const activeSessions = await this.db
+      .select({ id: schema.sessions.id })
+      .from(schema.sessions)
+      .where(and(eq(schema.sessions.licenseId, license.id), isNull(schema.sessions.revokedAt)));
+    const cleared = await this.db.delete(schema.devices).where(eq(schema.devices.userId, license.userId)).returning({ id: schema.devices.id });
+
+    if (activeSessions.length > 0) {
+      await this.db
+        .update(schema.sessions)
+        .set({ revokedAt: new Date() })
+        .where(inArray(schema.sessions.id, activeSessions.map((session) => session.id)));
+    }
+
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: cleared.length,
+      revokedSessions: activeSessions.length,
+    };
   }
 
   async getHubSession(sessionId: string): Promise<HubSessionResponse | null> {
@@ -2019,6 +2216,60 @@ class NeonPlatformStore implements PlatformStore {
     const [license] = await this.db.select().from(schema.licenses).where(eq(schema.licenses.id, licenseId)).limit(1);
     if (!license) throw new Error("License not found");
     return license;
+  }
+
+  private async findLicenseByPlaintextKey(licenseKey: string) {
+    const keyHash = await hashToken(normalizeLicenseKey(licenseKey));
+    const [license] = await this.db.select().from(schema.licenses).where(eq(schema.licenses.keyHash, keyHash)).limit(1);
+    return license ?? null;
+  }
+
+  private async buildAdminLicenseSnapshot(license: DbLicense): Promise<AdminLicenseSnapshot> {
+    const [user] = await this.db.select().from(schema.users).where(eq(schema.users.id, license.userId)).limit(1);
+    const devices = await this.db
+      .select()
+      .from(schema.devices)
+      .where(eq(schema.devices.userId, license.userId))
+      .orderBy(desc(schema.devices.lastSeenAt));
+    const sessions = await this.db
+      .select()
+      .from(schema.sessions)
+      .where(eq(schema.sessions.licenseId, license.id))
+      .orderBy(desc(schema.sessions.createdAt));
+    const now = new Date();
+    const activeSessions = sessions.filter((session) => !session.revokedAt && session.expiresAt > now).length;
+
+    return {
+      license: {
+        ...toLicenseSummary({
+          ...license,
+          expiresAt: license.expiresAt.toISOString(),
+        }),
+        keyPlaintext: license.keyPlaintext ?? undefined,
+        userId: license.userId,
+        email: user?.email ?? undefined,
+        createdAt: license.createdAt.toISOString(),
+        updatedAt: license.updatedAt.toISOString(),
+      },
+      devices: devices.map((device) => ({
+        id: device.id,
+        deviceId: device.deviceId,
+        lastSeenAt: device.lastSeenAt.toISOString(),
+        createdAt: device.createdAt.toISOString(),
+      })),
+      sessions: sessions.map((session) => ({
+        id: session.id,
+        expiresAt: session.expiresAt.toISOString(),
+        revokedAt: session.revokedAt?.toISOString(),
+        createdAt: session.createdAt.toISOString(),
+        active: !session.revokedAt && session.expiresAt > now,
+      })),
+      counts: {
+        devices: devices.length,
+        activeSessions,
+        revokedSessions: sessions.length - activeSessions,
+      },
+    };
   }
 
   private async getActiveAffiliateByCode(code: string) {

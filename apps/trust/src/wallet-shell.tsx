@@ -30,6 +30,13 @@ export default function WalletShell() {
 
   const [scrolled, setScrolled] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [isScaledDown, setIsScaledDown] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScale = (e: any) => setIsScaledDown(e.detail);
+    window.addEventListener("trust-scale-bg", handleScale);
+    return () => window.removeEventListener("trust-scale-bg", handleScale);
+  }, []);
 
   const THRESHOLD = 75;
   const SETTLED_Y = 90;
@@ -223,9 +230,19 @@ export default function WalletShell() {
   }, [setTranslateY, updateSpinner]);
 
   return (
-    <div className="absolute inset-0 flex h-screen w-full flex-col overflow-hidden bg-[#1B1B1C]">
+    <div className="absolute inset-0 flex h-screen w-full flex-col overflow-hidden bg-black">
       <div id="_rht_toaster" className="p-0" style={{ position: "fixed", zIndex: 9999, inset: "16px", pointerEvents: "none" }}></div>
-      <div className="relative flex flex-col flex-1 w-full h-full self-center md:max-w-[438px] overflow-hidden">
+      <div 
+        className="relative flex flex-col flex-1 w-full h-full self-center md:max-w-[438px] overflow-hidden bg-[#1B1B1C]"
+        style={{
+          transformOrigin: "bottom center",
+          transform: isScaledDown ? "scale(0.93) translateY(-24px)" : "scale(1) translateY(0px)",
+          borderRadius: isScaledDown ? "20px" : "0px",
+          filter: isScaledDown ? "brightness(1.15)" : "brightness(1)",
+          transition: "opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
+          willChange: "transform, border-radius, filter",
+        }}
+      >
 
         <WalletHeader scrolled={scrolled} />
 

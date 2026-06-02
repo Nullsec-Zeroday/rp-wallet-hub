@@ -24,9 +24,10 @@ import {
 } from "lucide-react";
 import { RouterProvider } from "./shims/router-context";
 import WalletShell from "./wallet-shell";
-import { TrustWalletProvider } from "@/lib/trust-wallet-context";
+import { DEFAULT_TRUST_NOTIFICATION_SETTINGS, TrustWalletProvider } from "@/lib/trust-wallet-context";
+import { requestNotificationPermission, showSystemNotification } from "@/lib/notifications";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
-import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletMutationType } from "@rp-wallet/types";
+import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
 import {
   clearPendingToken,
   getPlatformDeviceId,
@@ -40,6 +41,37 @@ import {
 import { appEnv } from "./app-env";
 import "../../phantom/src/styles.css";
 import "./styles.css";
+
+const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:trust:notification-permission-prompted";
+
+function maxIsoDate(left: string, right: string) {
+  return Date.parse(right) > Date.parse(left) ? right : left;
+}
+
+function truncateAddress(value = "") {
+  if (!value) return "Unknown";
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 6)}...${value.slice(-5)}`;
+}
+
+function getTrustNotificationSettings(payload: WalletBootstrapPayload): WalletNotificationSettings {
+  return payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
+}
+
+async function showTrustReceiveNotification(event: WalletEvent, payload: WalletBootstrapPayload) {
+  const transaction = event.transactionId
+    ? payload.recentTransactions.find((entry) => entry.id === event.transactionId)
+    : undefined;
+
+  const amount = transaction?.amount || "";
+  const symbol = transaction?.tokenSymbol || "";
+  const title = amount && symbol ? `💰 Received: ${amount} ${symbol}` : `💰 ${event.title || "Received"}`;
+  const body = transaction?.fromAddress
+    ? `From ${truncateAddress(transaction.fromAddress)}`
+    : event.body || "Received funds";
+
+  await showSystemNotification(title, body);
+}
 
 function registerTrustServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -205,11 +237,183 @@ function BootstrappedWallet({
   onErrorChange: (value: string) => void;
   payload: WalletBootstrapPayload;
 }) {
+  const [notificationPromptVisible, setNotificationPromptVisible] = useState(false);
+  const payloadRef = React.useRef(payload);
+  const notificationSettingsRef = React.useRef(getTrustNotificationSettings(payload));
+  const walletEventCursorRef = React.useRef(new Date().toISOString());
+  const seenWalletEventIdsRef = React.useRef(new Set<string>());
+
+  useEffect(() => {
+    payloadRef.current = payload;
+    notificationSettingsRef.current = getTrustNotificationSettings(payload);
+  }, [payload]);
+
+  const applyPayload = useCallback((nextPayload: WalletBootstrapPayload) => {
+    payloadRef.current = nextPayload;
+    notificationSettingsRef.current = getTrustNotificationSettings(nextPayload);
+    writeCachedBootstrap("trust", nextPayload);
+    onPayloadChange(nextPayload);
+  }, [onPayloadChange]);
+
+  const persistNotificationSettings = useCallback(async (settings: WalletNotificationSettings) => {
+    const currentPayload = payloadRef.current;
+    const account = currentPayload.accounts[0];
+    if (!account) return;
+
+    const localPayload = {
+      ...currentPayload,
+      notificationSettings: settings,
+    };
+
+    if (import.meta.env.DEV && currentPayload.license.id === "dev-license") {
+      applyPayload(localPayload);
+      return;
+    }
+
+    const nextPayload = await api.updateWalletNotificationSettings({
+      accountId: account.id,
+      settings,
+      walletAppId: "trust",
+    });
+    applyPayload(nextPayload);
+  }, [api, applyPayload]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+
+    const settings = notificationSettingsRef.current;
+    if (window.Notification.permission === "granted" && !settings.pushEnabled) {
+      persistNotificationSettings({ ...settings, pushEnabled: true }).catch((error) => {
+        console.warn("Unable to persist Trust notification permission preference", error);
+      });
+      return;
+    }
+
+    if (window.Notification.permission !== "default") return;
+    if (window.localStorage.getItem(NOTIFICATION_PERMISSION_PROMPT_KEY)) return;
+
+    setNotificationPromptVisible(true);
+  }, [persistNotificationSettings]);
+
+  const enableNotifications = async () => {
+    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
+    setNotificationPromptVisible(false);
+
+    try {
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+
+      await persistNotificationSettings({
+        ...notificationSettingsRef.current,
+        pushEnabled: true,
+      });
+    } catch (error) {
+      console.warn("Unable to request Trust notification permission", error);
+    }
+  };
+
+  const dismissNotificationPrompt = () => {
+    window.localStorage.setItem(NOTIFICATION_PERMISSION_PROMPT_KEY, "1");
+    setNotificationPromptVisible(false);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const pollWalletEvents = async () => {
+      try {
+        const events = await api.getWalletEvents("trust", walletEventCursorRef.current);
+        if (cancelled || events.length === 0) return;
+
+        const receiveEvents: WalletEvent[] = [];
+        for (const event of events) {
+          walletEventCursorRef.current = maxIsoDate(walletEventCursorRef.current, event.createdAt);
+          if (seenWalletEventIdsRef.current.has(event.id)) continue;
+          seenWalletEventIdsRef.current.add(event.id);
+          if (event.type === "wallet_received") {
+            receiveEvents.push(event);
+          }
+        }
+
+        if (receiveEvents.length === 0) return;
+
+        const nextPayload = await api.getWalletState("trust");
+        if (cancelled) return;
+
+        applyPayload(nextPayload);
+
+        if (notificationSettingsRef.current.pushEnabled) {
+          for (const event of receiveEvents) {
+            await showTrustReceiveNotification(event, nextPayload);
+          }
+        }
+      } catch (error) {
+        console.warn("Unable to poll Trust wallet events", error);
+      }
+    };
+
+    pollWalletEvents();
+    const intervalId = window.setInterval(pollWalletEvents, 2500);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [api, applyPayload]);
+
   return (
     <RouterProvider>
       <TrustWalletProvider api={api} initialPayload={payload} onPayloadChange={onPayloadChange}>
         <WalletShell />
       </TrustWalletProvider>
+      <AnimatePresence>
+        {notificationPromptVisible && (
+          <motion.div
+            key="trust-notification-permission-prompt"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100000] flex items-end justify-center bg-black/45 px-4 pb-[calc(18px+env(safe-area-inset-bottom))] backdrop-blur-[2px]"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ type: "spring", damping: 30, stiffness: 380, mass: 0.8 }}
+              className="w-full max-w-[360px] rounded-[28px] border border-white/10 bg-[#171717]/95 p-5 text-white shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
+            >
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#48FF91]/15 text-[#48FF91]">
+                <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+              </div>
+              <h2 className="text-center text-[20px] font-semibold text-white">
+                Enable notifications
+              </h2>
+              <p className="mx-auto mt-2 max-w-[280px] text-center text-[14px] leading-5 text-[#a7a7aa]">
+                Get notified when incoming Trust Wallet transfers arrive.
+              </p>
+              <div className="mt-5 flex flex-col gap-2.5">
+                <button
+                  className="h-12 w-full rounded-2xl bg-[#48FF91] text-[16px] font-semibold text-black active:opacity-80"
+                  onClick={enableNotifications}
+                  type="button"
+                >
+                  Enable Notifications
+                </button>
+                <button
+                  className="h-11 w-full rounded-2xl bg-white/[0.06] text-[15px] font-semibold text-white/75 active:bg-white/[0.1]"
+                  onClick={dismissNotificationPrompt}
+                  type="button"
+                >
+                  Not Now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </RouterProvider>
   );
 }
@@ -241,8 +445,8 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
       className="fixed inset-0 z-[100000000] flex items-center justify-center"
       style={{ backgroundColor: "#0a0a0a" }}
     >
-      <a 
-        href={hubUrl} 
+      <a
+        href={hubUrl}
         className="absolute top-6 left-6 md:top-8 md:left-8 text-white/50 hover:text-white transition-colors flex items-center gap-2 text-[13px] font-medium z-50 bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-full backdrop-blur-sm"
         style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
       >

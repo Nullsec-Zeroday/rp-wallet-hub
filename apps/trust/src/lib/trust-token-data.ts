@@ -11,6 +11,7 @@ export interface TrustPriceData {
   image?: string;
   usd: number;
   usd_24h_change?: number;
+  usd_market_cap?: number;
 }
 
 export type TrustLivePrices = Record<string, TrustPriceData>;
@@ -74,4 +75,11 @@ export function formatTrustBalance(value: number) {
   if (Math.abs(value) >= 100) return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
   if (Math.abs(value) >= 1) return value.toLocaleString("en-US", { maximumFractionDigits: 4 });
   return value.toLocaleString("en-US", { maximumFractionDigits: 6 });
+}
+
+export function formatMarketCap(value: number) {
+  if (value >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
+  if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+  if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
+  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }

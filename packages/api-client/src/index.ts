@@ -20,6 +20,45 @@ import type {
   WalletTransaction,
 } from "@rp-wallet/types";
 
+export interface AdminLicenseSnapshot {
+  license: {
+    id: string;
+    plan: string;
+    expiresAt: string;
+    status: "active" | "expired" | "revoked";
+    allowedDevices: number;
+    keyPlaintext?: string;
+    userId: string;
+    email?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  devices: Array<{
+    id: string;
+    deviceId: string;
+    lastSeenAt: string;
+    createdAt: string;
+  }>;
+  sessions: Array<{
+    id: string;
+    expiresAt: string;
+    revokedAt?: string;
+    createdAt: string;
+    active: boolean;
+  }>;
+  counts: {
+    devices: number;
+    activeSessions: number;
+    revokedSessions: number;
+  };
+}
+
+export interface AdminLicenseResetResult {
+  snapshot: AdminLicenseSnapshot;
+  clearedDevices: number;
+  revokedSessions: number;
+}
+
 export class RpWalletApiClient {
   constructor(private readonly baseUrl = apiDefaults.localBaseUrl) {}
 
@@ -139,6 +178,74 @@ export class RpWalletApiClient {
       commissionRate: string;
       createdAt: string;
     }>("/admin/affiliates", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async createAdminLicenseKey(
+    adminToken: string,
+    body: {
+      email?: string;
+      plan: string;
+      expiresAt?: string;
+      durationDays?: number;
+      allowedDevices?: number;
+    },
+  ) {
+    return this.request<{
+      licenseKey: string;
+      license: {
+        id: string;
+        plan: string;
+        expiresAt: string;
+        status: "active" | "expired" | "revoked";
+        allowedDevices: number;
+      };
+    }>("/admin/keys", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async lookupAdminLicense(adminToken: string, body: { licenseKey: string }) {
+    return this.request<AdminLicenseSnapshot>("/admin/licenses/lookup", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async clearAdminLicenseDevices(adminToken: string, body: { licenseKey: string }) {
+    return this.request<AdminLicenseResetResult>("/admin/licenses/clear-devices", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async revokeAdminLicenseSessions(adminToken: string, body: { licenseKey: string }) {
+    return this.request<AdminLicenseResetResult>("/admin/licenses/revoke-sessions", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async resetAdminLicenseAccess(adminToken: string, body: { licenseKey: string }) {
+    return this.request<AdminLicenseResetResult>("/admin/licenses/reset-access", {
       method: "POST",
       headers: {
         authorization: `Bearer ${adminToken}`,

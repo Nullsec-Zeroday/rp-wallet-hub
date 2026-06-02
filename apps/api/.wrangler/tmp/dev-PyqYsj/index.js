@@ -2397,6 +2397,8 @@ __name(listWalletApps, "listWalletApps");
 function getAllowedOrigins(env) {
   return [
     env.HUB_ORIGIN || "http://localhost:3000",
+    env.AFFILIATE_ORIGIN || "http://localhost:3001",
+    "https://affiliate.larperwallet.com",
     "https://www.larperwallet.com",
     "http://127.0.0.1:3000",
     env.PHANTOM_ORIGIN || "http://localhost:5173",
@@ -15558,6 +15560,17 @@ __name(drizzle, "drizzle");
 // ../../packages/db/src/index.ts
 var src_exports = {};
 __export(src_exports, {
+  affiliateAttributions: () => affiliateAttributions,
+  affiliateCheckoutIntents: () => affiliateCheckoutIntents,
+  affiliateClicks: () => affiliateClicks,
+  affiliateConversionStatus: () => affiliateConversionStatus,
+  affiliateConversions: () => affiliateConversions,
+  affiliateMagicLinks: () => affiliateMagicLinks,
+  affiliatePayoutStatus: () => affiliatePayoutStatus,
+  affiliatePayouts: () => affiliatePayouts,
+  affiliateSessions: () => affiliateSessions,
+  affiliateStatus: () => affiliateStatus,
+  affiliates: () => affiliates,
   devices: () => devices,
   licenseStatus: () => licenseStatus,
   licenses: () => licenses,
@@ -15594,6 +15607,9 @@ var transactionType = pgEnum("transaction_type", [
 var transactionStatus = pgEnum("transaction_status", ["pending", "confirmed", "failed"]);
 var notificationType = pgEnum("notification_type", ["transaction_received", "simulation_started", "simulation_stopped"]);
 var walletEventType = pgEnum("wallet_event_type", ["wallet_received", "transaction_created", "balance_updated"]);
+var affiliateStatus = pgEnum("affiliate_status", ["active", "disabled"]);
+var affiliateConversionStatus = pgEnum("affiliate_conversion_status", ["pending", "approved", "rejected", "paid"]);
+var affiliatePayoutStatus = pgEnum("affiliate_payout_status", ["pending", "paid", "cancelled"]);
 var users = pgTable("users", {
   id: text("id").primaryKey(),
   email: text("email"),
@@ -15737,10 +15753,123 @@ var walletLaunchTokens = pgTable(
   },
   (table) => [uniqueIndex("wallet_launch_tokens_hash_unique").on(table.tokenHash)]
 );
+var affiliates = pgTable(
+  "affiliates",
+  {
+    id: text("id").primaryKey(),
+    code: text("code").notNull(),
+    displayName: text("display_name").notNull(),
+    email: text("email"),
+    status: affiliateStatus("status").default("active").notNull(),
+    commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }).default("0.2000").notNull(),
+    payoutInfoJson: text("payout_info_json"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [uniqueIndex("affiliates_code_unique").on(table.code)]
+);
+var affiliateClicks = pgTable("affiliate_clicks", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+  affiliateCode: text("affiliate_code").notNull(),
+  visitorId: text("visitor_id").notNull(),
+  landingPath: text("landing_path").notNull(),
+  referrer: text("referrer"),
+  source: text("source"),
+  userAgentHash: text("user_agent_hash"),
+  ipHash: text("ip_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+var affiliateAttributions = pgTable(
+  "affiliate_attributions",
+  {
+    visitorId: text("visitor_id").primaryKey(),
+    affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+    affiliateCode: text("affiliate_code").notNull(),
+    clickId: text("click_id").notNull().references(() => affiliateClicks.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [uniqueIndex("affiliate_attributions_visitor_unique").on(table.visitorId)]
+);
+var affiliateCheckoutIntents = pgTable("affiliate_checkout_intents", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+  affiliateCode: text("affiliate_code").notNull(),
+  visitorId: text("visitor_id").notNull(),
+  clickId: text("click_id").references(() => affiliateClicks.id),
+  plan: text("plan").notNull(),
+  productId: text("product_id"),
+  variantId: text("variant_id"),
+  sellauthInvoiceId: text("sellauth_invoice_id"),
+  buyerEmail: text("buyer_email"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+});
+var affiliateConversions = pgTable(
+  "affiliate_conversions",
+  {
+    id: text("id").primaryKey(),
+    affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+    affiliateCode: text("affiliate_code").notNull(),
+    checkoutIntentId: text("checkout_intent_id").references(() => affiliateCheckoutIntents.id),
+    licenseId: text("license_id").references(() => licenses.id),
+    userId: text("user_id").references(() => users.id),
+    sellauthOrderId: text("sellauth_order_id").notNull(),
+    buyerEmail: text("buyer_email"),
+    plan: text("plan").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).default("0").notNull(),
+    currency: text("currency").default("USD").notNull(),
+    commissionRate: numeric("commission_rate", { precision: 5, scale: 4 }).notNull(),
+    commissionAmount: numeric("commission_amount", { precision: 12, scale: 2 }).default("0").notNull(),
+    status: affiliateConversionStatus("status").default("pending").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [uniqueIndex("affiliate_conversions_order_unique").on(table.sellauthOrderId)]
+);
+var affiliatePayouts = pgTable("affiliate_payouts", {
+  id: text("id").primaryKey(),
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+  amount: numeric("amount", { precision: 12, scale: 2 }).default("0").notNull(),
+  currency: text("currency").default("USD").notNull(),
+  status: affiliatePayoutStatus("status").default("pending").notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+});
+var affiliateMagicLinks = pgTable(
+  "affiliate_magic_links",
+  {
+    id: text("id").primaryKey(),
+    tokenHash: text("token_hash").notNull(),
+    affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+    email: text("email").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [uniqueIndex("affiliate_magic_links_hash_unique").on(table.tokenHash)]
+);
+var affiliateSessions = pgTable(
+  "affiliate_sessions",
+  {
+    id: text("id").primaryKey(),
+    affiliateId: text("affiliate_id").notNull().references(() => affiliates.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => [uniqueIndex("affiliate_sessions_id_unique").on(table.id)]
+);
 
 // src/platform-store.ts
 var THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1e3;
 var LAUNCH_TOKEN_TTL_MS = 60 * 1e3;
+var AFFILIATE_ATTRIBUTION_TTL_MS = 45 * 24 * 60 * 60 * 1e3;
+var AFFILIATE_CHECKOUT_MATCH_WINDOW_MS = 7 * 24 * 60 * 60 * 1e3;
+var AFFILIATE_MAGIC_LINK_TTL_MS = 15 * 60 * 1e3;
+var AFFILIATE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1e3;
 var DEFAULT_WALLET_USERNAME = "larperwallet";
 var DeviceLimitError = class extends Error {
   static {
@@ -15790,6 +15919,169 @@ var InMemoryPlatformStore = class {
   walletNotificationSettings = /* @__PURE__ */ new Map();
   walletNotifications = /* @__PURE__ */ new Map();
   walletEvents = /* @__PURE__ */ new Map();
+  affiliates = /* @__PURE__ */ new Map();
+  affiliateClicks = /* @__PURE__ */ new Map();
+  affiliateAttributions = /* @__PURE__ */ new Map();
+  affiliateCheckoutIntents = /* @__PURE__ */ new Map();
+  affiliateConversions = /* @__PURE__ */ new Map();
+  affiliateMagicLinks = /* @__PURE__ */ new Map();
+  affiliateSessions = /* @__PURE__ */ new Map();
+  async createAffiliate(input) {
+    const code = normalizeAffiliateCode(input.code);
+    const existing = this.getAffiliateByCode(code);
+    if (existing) return existing;
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const affiliate = {
+      id: createId("aff"),
+      code,
+      displayName: input.displayName.trim() || code,
+      email: normalizeOptionalString(input.email),
+      status: "active",
+      commissionRate: normalizeCommissionRate(input.commissionRate),
+      payoutInfoJson: normalizeOptionalString(input.payoutInfoJson),
+      createdAt: now,
+      updatedAt: now
+    };
+    this.affiliates.set(affiliate.id, affiliate);
+    return affiliate;
+  }
+  async recordAffiliateClick(input) {
+    const affiliate = this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode));
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    const click = {
+      id: createId("afc"),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      visitorId: input.visitorId.trim(),
+      landingPath: input.landingPath || "/",
+      referrer: normalizeOptionalString(input.referrer),
+      source: normalizeOptionalString(input.source),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.affiliateClicks.set(click.id, click);
+    const expiresAt = new Date(Date.now() + AFFILIATE_ATTRIBUTION_TTL_MS).toISOString();
+    this.affiliateAttributions.set(click.visitorId, {
+      visitorId: click.visitorId,
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      clickId: click.id,
+      expiresAt,
+      createdAt: this.affiliateAttributions.get(click.visitorId)?.createdAt || click.createdAt,
+      updatedAt: click.createdAt
+    });
+    return {
+      accepted: true,
+      click,
+      attribution: {
+        affiliateCode: affiliate.code,
+        clickId: click.id,
+        expiresAt
+      }
+    };
+  }
+  async createAffiliateCheckoutIntent(input) {
+    const affiliate = this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode));
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    const attribution = this.affiliateAttributions.get(input.visitorId);
+    if (attribution && new Date(attribution.expiresAt) <= /* @__PURE__ */ new Date()) return { accepted: false };
+    const intent = {
+      id: createId("afi"),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      visitorId: input.visitorId.trim(),
+      clickId: normalizeOptionalString(input.clickId) || attribution?.clickId,
+      plan: input.plan,
+      productId: normalizeOptionalString(input.productId),
+      variantId: normalizeOptionalString(input.variantId),
+      buyerEmail: normalizeOptionalString(input.buyerEmail),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.affiliateCheckoutIntents.set(intent.id, intent);
+    return { accepted: true, intent };
+  }
+  async createAffiliateConversion(input) {
+    if (this.affiliateConversions.has(input.sellauthOrderId)) {
+      return { accepted: true, conversion: this.affiliateConversions.get(input.sellauthOrderId) };
+    }
+    const affiliate = input.affiliateCode ? this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode)) : this.findAffiliateForConversion(input)?.affiliate;
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    const match2 = this.findAffiliateForConversion({ ...input, affiliateCode: affiliate.code });
+    const amount = normalizeMoney(input.amount);
+    const commissionAmount = calculateCommissionAmount(amount, affiliate.commissionRate);
+    const license = input.licenseId ? this.licenses.get(input.licenseId) : void 0;
+    const conversion = {
+      id: createId("afn"),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      checkoutIntentId: match2?.intent.id,
+      licenseId: input.licenseId,
+      userId: license?.userId,
+      sellauthOrderId: input.sellauthOrderId,
+      buyerEmail: normalizeOptionalString(input.buyerEmail),
+      plan: input.plan,
+      amount,
+      currency: normalizeOptionalString(input.currency) || "USD",
+      commissionRate: affiliate.commissionRate,
+      commissionAmount,
+      status: "pending",
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.affiliateConversions.set(conversion.sellauthOrderId, conversion);
+    return { accepted: true, conversion };
+  }
+  async getAffiliateAdminSnapshot() {
+    const conversions = [...this.affiliateConversions.values()].sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt));
+    return {
+      affiliates: [...this.affiliates.values()].sort((a2, b2) => a2.code.localeCompare(b2.code)),
+      clicks: [...this.affiliateClicks.values()].sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt)).slice(0, 250),
+      checkoutIntents: [...this.affiliateCheckoutIntents.values()].sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt)).slice(0, 250),
+      conversions: conversions.slice(0, 250),
+      payoutTotals: buildPayoutTotals([...this.affiliates.values()], conversions)
+    };
+  }
+  async createAffiliateMagicLink(email) {
+    const affiliate = this.getAffiliateByEmail(email);
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    const token = `${createId("afm")}.${crypto.randomUUID()}`;
+    const expiresAt = new Date(Date.now() + AFFILIATE_MAGIC_LINK_TTL_MS).toISOString();
+    this.affiliateMagicLinks.set(await hashToken(token), {
+      id: createId("afm"),
+      tokenHash: await hashToken(token),
+      affiliateId: affiliate.id,
+      email: affiliate.email || email,
+      expiresAt,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    return { accepted: true, token, affiliate, expiresAt };
+  }
+  async verifyAffiliateMagicLink(token) {
+    const tokenHash = await hashToken(token);
+    const magicLink = this.affiliateMagicLinks.get(tokenHash);
+    if (!magicLink || magicLink.consumedAt || new Date(magicLink.expiresAt) <= /* @__PURE__ */ new Date()) return { accepted: false };
+    const affiliate = this.affiliates.get(magicLink.affiliateId);
+    if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    magicLink.consumedAt = (/* @__PURE__ */ new Date()).toISOString();
+    const session = {
+      id: createId("afs"),
+      affiliateId: affiliate.id,
+      expiresAt: new Date(Date.now() + AFFILIATE_SESSION_TTL_MS).toISOString(),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.affiliateSessions.set(session.id, session);
+    return { accepted: true, sessionId: session.id, expiresAt: session.expiresAt, affiliate };
+  }
+  async getAffiliateDashboard(sessionId, baseUrl) {
+    const session = this.affiliateSessions.get(sessionId);
+    if (!session || session.revokedAt || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const affiliate = this.affiliates.get(session.affiliateId);
+    if (!affiliate || affiliate.status !== "active") return null;
+    return this.buildAffiliateDashboard(affiliate, baseUrl);
+  }
+  async revokeAffiliateSession(sessionId) {
+    const session = this.affiliateSessions.get(sessionId);
+    if (session) session.revokedAt = (/* @__PURE__ */ new Date()).toISOString();
+  }
   async activateLicense(input) {
     const now = /* @__PURE__ */ new Date();
     const keyHash = await hashToken(normalizeLicenseKey(input.licenseKey));
@@ -15821,6 +16113,45 @@ var InMemoryPlatformStore = class {
     };
     this.licenses.set(license.id, license);
     return toLicenseSummary(license);
+  }
+  async getAdminLicenseSnapshot(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+  async clearAdminLicenseDevices(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    let clearedDevices = 0;
+    for (const [id, device] of this.devices.entries()) {
+      if (device.userId === license.userId) {
+        this.devices.delete(id);
+        clearedDevices += 1;
+      }
+    }
+    return { snapshot: this.buildAdminLicenseSnapshot(license), clearedDevices, revokedSessions: 0 };
+  }
+  async revokeAdminLicenseSessions(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    let revokedSessions = 0;
+    for (const session of this.sessions.values()) {
+      if (session.licenseId === license.id && !session.revokedAt) {
+        session.revokedAt = (/* @__PURE__ */ new Date()).toISOString();
+        revokedSessions += 1;
+      }
+    }
+    return { snapshot: this.buildAdminLicenseSnapshot(license), clearedDevices: 0, revokedSessions };
+  }
+  async resetAdminLicenseAccess(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    const devicesResult = await this.clearAdminLicenseDevices(licenseKey);
+    const sessionsResult = await this.revokeAdminLicenseSessions(licenseKey);
+    return {
+      snapshot: this.buildAdminLicenseSnapshot(license),
+      clearedDevices: devicesResult?.clearedDevices || 0,
+      revokedSessions: sessionsResult?.revokedSessions || 0
+    };
   }
   async getHubSession(sessionId) {
     const session = this.sessions.get(sessionId);
@@ -16317,6 +16648,86 @@ var InMemoryPlatformStore = class {
       throw new DeviceLimitError(allowedDevices);
     }
   }
+  getAffiliateByCode(code) {
+    return [...this.affiliates.values()].find((affiliate) => affiliate.code === code);
+  }
+  getAffiliateByEmail(email) {
+    const normalized = email.trim().toLowerCase();
+    return [...this.affiliates.values()].find((affiliate) => affiliate.email?.toLowerCase() === normalized);
+  }
+  buildAffiliateDashboard(affiliate, baseUrl) {
+    const clicks = [...this.affiliateClicks.values()].filter((click) => click.affiliateId === affiliate.id);
+    const checkoutIntents = [...this.affiliateCheckoutIntents.values()].filter((intent) => intent.affiliateId === affiliate.id);
+    const conversions = [...this.affiliateConversions.values()].filter((conversion) => conversion.affiliateId === affiliate.id);
+    const commission = /* @__PURE__ */ __name((status) => conversions.filter((conversion) => !status || conversion.status === status).reduce((total, conversion) => total + Number(conversion.commissionAmount), 0).toFixed(2), "commission");
+    return {
+      affiliate,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      stats: {
+        clicks: clicks.length,
+        checkoutIntents: checkoutIntents.length,
+        conversions: conversions.length,
+        pendingCommission: commission("pending"),
+        approvedCommission: commission("approved"),
+        paidCommission: commission("paid"),
+        totalCommission: commission()
+      },
+      recentClicks: clicks.sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt)).slice(0, 10),
+      recentCheckoutIntents: checkoutIntents.sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt)).slice(0, 10),
+      recentConversions: conversions.sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt)).slice(0, 10)
+    };
+  }
+  findAffiliateForConversion(input) {
+    const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : void 0;
+    const candidates = [...this.affiliateCheckoutIntents.values()].filter((intent2) => {
+      if (code && intent2.affiliateCode !== code) return false;
+      if (input.productId && intent2.productId && intent2.productId !== input.productId) return false;
+      if (input.variantId && intent2.variantId && intent2.variantId !== input.variantId) return false;
+      return Date.now() - Date.parse(intent2.createdAt) <= AFFILIATE_CHECKOUT_MATCH_WINDOW_MS;
+    }).sort((a2, b2) => Date.parse(b2.createdAt) - Date.parse(a2.createdAt));
+    const intent = candidates[0];
+    if (!intent) return void 0;
+    const affiliate = this.affiliates.get(intent.affiliateId);
+    return affiliate ? { affiliate, intent } : void 0;
+  }
+  async findLicenseByPlaintextKey(licenseKey) {
+    const keyHash = await hashToken(normalizeLicenseKey(licenseKey));
+    return [...this.licenses.values()].find((license) => license.keyHash === keyHash) || null;
+  }
+  buildAdminLicenseSnapshot(license) {
+    const user = this.users.get(license.userId);
+    const devices2 = [...this.devices.values()].filter((device) => device.userId === license.userId).sort((a2, b2) => Date.parse(b2.lastSeenAt) - Date.parse(a2.lastSeenAt));
+    const sessions2 = [...this.sessions.values()].filter((session) => session.licenseId === license.id || session.userId === license.userId).sort((a2, b2) => Date.parse(b2.expiresAt) - Date.parse(a2.expiresAt));
+    const activeSessions = sessions2.filter((session) => !session.revokedAt && new Date(session.expiresAt) > /* @__PURE__ */ new Date()).length;
+    return {
+      license: {
+        ...toLicenseSummary(license),
+        keyPlaintext: license.keyPlaintext || void 0,
+        userId: license.userId,
+        email: user?.email,
+        createdAt: "memory",
+        updatedAt: "memory"
+      },
+      devices: devices2.map((device) => ({
+        id: device.id,
+        deviceId: device.deviceId,
+        lastSeenAt: device.lastSeenAt,
+        createdAt: device.lastSeenAt
+      })),
+      sessions: sessions2.map((session) => ({
+        id: session.id,
+        expiresAt: session.expiresAt,
+        revokedAt: session.revokedAt,
+        createdAt: session.expiresAt,
+        active: !session.revokedAt && new Date(session.expiresAt) > /* @__PURE__ */ new Date()
+      })),
+      counts: {
+        devices: devices2.length,
+        activeSessions,
+        revokedSessions: sessions2.length - activeSessions
+      }
+    };
+  }
 };
 var NeonPlatformStore = class {
   static {
@@ -16325,6 +16736,182 @@ var NeonPlatformStore = class {
   db;
   constructor(databaseUrl) {
     this.db = drizzle({ client: cs(databaseUrl), schema: src_exports });
+  }
+  async createAffiliate(input) {
+    const code = normalizeAffiliateCode(input.code);
+    const [affiliate] = await this.db.insert(affiliates).values({
+      id: createId("aff"),
+      code,
+      displayName: input.displayName.trim() || code,
+      email: normalizeOptionalString(input.email),
+      commissionRate: normalizeCommissionRate(input.commissionRate),
+      payoutInfoJson: normalizeOptionalString(input.payoutInfoJson)
+    }).onConflictDoUpdate({
+      target: affiliates.code,
+      set: {
+        displayName: input.displayName.trim() || code,
+        email: normalizeOptionalString(input.email),
+        commissionRate: normalizeCommissionRate(input.commissionRate),
+        payoutInfoJson: normalizeOptionalString(input.payoutInfoJson),
+        updatedAt: /* @__PURE__ */ new Date()
+      }
+    }).returning();
+    return toAffiliateSummary(affiliate);
+  }
+  async recordAffiliateClick(input) {
+    const affiliate = await this.getActiveAffiliateByCode(input.affiliateCode);
+    if (!affiliate) return { accepted: false };
+    const now = /* @__PURE__ */ new Date();
+    const clickId = createId("afc");
+    const expiresAt = new Date(now.getTime() + AFFILIATE_ATTRIBUTION_TTL_MS);
+    const [click] = await this.db.insert(affiliateClicks).values({
+      id: clickId,
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      visitorId: input.visitorId.trim(),
+      landingPath: input.landingPath || "/",
+      referrer: normalizeOptionalString(input.referrer),
+      source: normalizeOptionalString(input.source),
+      userAgentHash: input.userAgent ? await hashToken(input.userAgent) : void 0,
+      ipHash: input.ipAddress ? await hashToken(input.ipAddress) : void 0
+    }).returning();
+    await this.db.insert(affiliateAttributions).values({
+      visitorId: input.visitorId.trim(),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      clickId,
+      expiresAt
+    }).onConflictDoUpdate({
+      target: affiliateAttributions.visitorId,
+      set: {
+        affiliateId: affiliate.id,
+        affiliateCode: affiliate.code,
+        clickId,
+        expiresAt,
+        updatedAt: now
+      }
+    });
+    return {
+      accepted: true,
+      click: toAffiliateClickSummary(click),
+      attribution: {
+        affiliateCode: affiliate.code,
+        clickId,
+        expiresAt: expiresAt.toISOString()
+      }
+    };
+  }
+  async createAffiliateCheckoutIntent(input) {
+    const affiliate = await this.getActiveAffiliateByCode(input.affiliateCode);
+    if (!affiliate) return { accepted: false };
+    const [attribution] = await this.db.select().from(affiliateAttributions).where(eq(affiliateAttributions.visitorId, input.visitorId.trim())).limit(1);
+    if (attribution && attribution.expiresAt <= /* @__PURE__ */ new Date()) return { accepted: false };
+    const [intent] = await this.db.insert(affiliateCheckoutIntents).values({
+      id: createId("afi"),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      visitorId: input.visitorId.trim(),
+      clickId: normalizeOptionalString(input.clickId) || attribution?.clickId,
+      plan: input.plan,
+      productId: normalizeOptionalString(input.productId),
+      variantId: normalizeOptionalString(input.variantId),
+      buyerEmail: normalizeOptionalString(input.buyerEmail)
+    }).returning();
+    return { accepted: true, intent: toAffiliateCheckoutIntentSummary(intent) };
+  }
+  async createAffiliateConversion(input) {
+    const [existing] = await this.db.select().from(affiliateConversions).where(eq(affiliateConversions.sellauthOrderId, input.sellauthOrderId)).limit(1);
+    if (existing) return { accepted: true, conversion: toAffiliateConversionSummary(existing) };
+    const match2 = await this.findAffiliateIntentForConversion(input);
+    const affiliate = input.affiliateCode ? await this.getActiveAffiliateByCode(input.affiliateCode) : match2?.affiliate;
+    if (!affiliate) return { accepted: false };
+    const amount = normalizeMoney(input.amount);
+    const commissionRate = affiliate.commissionRate;
+    const [license] = input.licenseId ? await this.db.select().from(licenses).where(eq(licenses.id, input.licenseId)).limit(1) : [];
+    const [conversion] = await this.db.insert(affiliateConversions).values({
+      id: createId("afn"),
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      checkoutIntentId: match2?.intent.id,
+      licenseId: input.licenseId,
+      userId: license?.userId,
+      sellauthOrderId: input.sellauthOrderId,
+      buyerEmail: normalizeOptionalString(input.buyerEmail),
+      plan: input.plan,
+      amount,
+      currency: normalizeOptionalString(input.currency) || "USD",
+      commissionRate,
+      commissionAmount: calculateCommissionAmount(amount, commissionRate)
+    }).onConflictDoNothing({ target: affiliateConversions.sellauthOrderId }).returning();
+    const created = conversion ?? (await this.db.select().from(affiliateConversions).where(eq(affiliateConversions.sellauthOrderId, input.sellauthOrderId)).limit(1))[0];
+    return { accepted: true, conversion: toAffiliateConversionSummary(created) };
+  }
+  async getAffiliateAdminSnapshot() {
+    const [affiliates2, clicks, checkoutIntents, conversions] = await Promise.all([
+      this.db.select().from(affiliates).orderBy(asc(affiliates.code)),
+      this.db.select().from(affiliateClicks).orderBy(desc(affiliateClicks.createdAt)).limit(250),
+      this.db.select().from(affiliateCheckoutIntents).orderBy(desc(affiliateCheckoutIntents.createdAt)).limit(250),
+      this.db.select().from(affiliateConversions).orderBy(desc(affiliateConversions.createdAt)).limit(250)
+    ]);
+    const affiliateSummaries = affiliates2.map(toAffiliateSummary);
+    const conversionSummaries = conversions.map(toAffiliateConversionSummary);
+    return {
+      affiliates: affiliateSummaries,
+      clicks: clicks.map(toAffiliateClickSummary),
+      checkoutIntents: checkoutIntents.map(toAffiliateCheckoutIntentSummary),
+      conversions: conversionSummaries,
+      payoutTotals: buildPayoutTotals(affiliateSummaries, conversionSummaries)
+    };
+  }
+  async createAffiliateMagicLink(email) {
+    const affiliate = await this.getActiveAffiliateByEmail(email);
+    if (!affiliate) return { accepted: false };
+    const token = `${createId("afm")}.${crypto.randomUUID()}`;
+    const tokenHash = await hashToken(token);
+    const expiresAt = new Date(Date.now() + AFFILIATE_MAGIC_LINK_TTL_MS);
+    await this.db.insert(affiliateMagicLinks).values({
+      id: createId("afm"),
+      tokenHash,
+      affiliateId: affiliate.id,
+      email: affiliate.email || email,
+      expiresAt
+    });
+    return {
+      accepted: true,
+      token,
+      affiliate,
+      expiresAt: expiresAt.toISOString()
+    };
+  }
+  async verifyAffiliateMagicLink(token) {
+    const tokenHash = await hashToken(token);
+    const [magicLink] = await this.db.select().from(affiliateMagicLinks).where(eq(affiliateMagicLinks.tokenHash, tokenHash)).limit(1);
+    if (!magicLink || magicLink.consumedAt || magicLink.expiresAt <= /* @__PURE__ */ new Date()) return { accepted: false };
+    const affiliate = await this.getActiveAffiliateById(magicLink.affiliateId);
+    if (!affiliate) return { accepted: false };
+    await this.db.update(affiliateMagicLinks).set({ consumedAt: /* @__PURE__ */ new Date() }).where(eq(affiliateMagicLinks.id, magicLink.id));
+    const expiresAt = new Date(Date.now() + AFFILIATE_SESSION_TTL_MS);
+    const [session] = await this.db.insert(affiliateSessions).values({
+      id: createId("afs"),
+      affiliateId: affiliate.id,
+      expiresAt
+    }).returning();
+    return {
+      accepted: true,
+      sessionId: session.id,
+      expiresAt: session.expiresAt.toISOString(),
+      affiliate
+    };
+  }
+  async getAffiliateDashboard(sessionId, baseUrl) {
+    const session = await this.getAffiliateSession(sessionId);
+    if (!session) return null;
+    const affiliate = await this.getActiveAffiliateById(session.affiliateId);
+    if (!affiliate) return null;
+    return this.buildAffiliateDashboard(affiliate, baseUrl);
+  }
+  async revokeAffiliateSession(sessionId) {
+    await this.db.update(affiliateSessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(eq(affiliateSessions.id, sessionId));
   }
   async activateLicense(input) {
     await this.ensureWalletApps();
@@ -16365,6 +16952,47 @@ var NeonPlatformStore = class {
       ...createdLicense,
       expiresAt: createdLicense.expiresAt.toISOString()
     });
+  }
+  async getAdminLicenseSnapshot(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+  async clearAdminLicenseDevices(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    const cleared = await this.db.delete(devices).where(eq(devices.userId, license.userId)).returning({ id: devices.id });
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: cleared.length,
+      revokedSessions: 0
+    };
+  }
+  async revokeAdminLicenseSessions(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    const activeSessions = await this.db.select({ id: sessions.id }).from(sessions).where(and(eq(sessions.licenseId, license.id), isNull(sessions.revokedAt)));
+    if (activeSessions.length > 0) {
+      await this.db.update(sessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(inArray(sessions.id, activeSessions.map((session) => session.id)));
+    }
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: 0,
+      revokedSessions: activeSessions.length
+    };
+  }
+  async resetAdminLicenseAccess(licenseKey) {
+    const license = await this.findLicenseByPlaintextKey(licenseKey);
+    if (!license) return null;
+    const activeSessions = await this.db.select({ id: sessions.id }).from(sessions).where(and(eq(sessions.licenseId, license.id), isNull(sessions.revokedAt)));
+    const cleared = await this.db.delete(devices).where(eq(devices.userId, license.userId)).returning({ id: devices.id });
+    if (activeSessions.length > 0) {
+      await this.db.update(sessions).set({ revokedAt: /* @__PURE__ */ new Date() }).where(inArray(sessions.id, activeSessions.map((session) => session.id)));
+    }
+    return {
+      snapshot: await this.buildAdminLicenseSnapshot(license),
+      clearedDevices: cleared.length,
+      revokedSessions: activeSessions.length
+    };
   }
   async getHubSession(sessionId) {
     const session = await this.getSession(sessionId);
@@ -16802,6 +17430,108 @@ var NeonPlatformStore = class {
     if (!license) throw new Error("License not found");
     return license;
   }
+  async findLicenseByPlaintextKey(licenseKey) {
+    const keyHash = await hashToken(normalizeLicenseKey(licenseKey));
+    const [license] = await this.db.select().from(licenses).where(eq(licenses.keyHash, keyHash)).limit(1);
+    return license ?? null;
+  }
+  async buildAdminLicenseSnapshot(license) {
+    const [user] = await this.db.select().from(users).where(eq(users.id, license.userId)).limit(1);
+    const devices2 = await this.db.select().from(devices).where(eq(devices.userId, license.userId)).orderBy(desc(devices.lastSeenAt));
+    const sessions2 = await this.db.select().from(sessions).where(eq(sessions.licenseId, license.id)).orderBy(desc(sessions.createdAt));
+    const now = /* @__PURE__ */ new Date();
+    const activeSessions = sessions2.filter((session) => !session.revokedAt && session.expiresAt > now).length;
+    return {
+      license: {
+        ...toLicenseSummary({
+          ...license,
+          expiresAt: license.expiresAt.toISOString()
+        }),
+        keyPlaintext: license.keyPlaintext ?? void 0,
+        userId: license.userId,
+        email: user?.email ?? void 0,
+        createdAt: license.createdAt.toISOString(),
+        updatedAt: license.updatedAt.toISOString()
+      },
+      devices: devices2.map((device) => ({
+        id: device.id,
+        deviceId: device.deviceId,
+        lastSeenAt: device.lastSeenAt.toISOString(),
+        createdAt: device.createdAt.toISOString()
+      })),
+      sessions: sessions2.map((session) => ({
+        id: session.id,
+        expiresAt: session.expiresAt.toISOString(),
+        revokedAt: session.revokedAt?.toISOString(),
+        createdAt: session.createdAt.toISOString(),
+        active: !session.revokedAt && session.expiresAt > now
+      })),
+      counts: {
+        devices: devices2.length,
+        activeSessions,
+        revokedSessions: sessions2.length - activeSessions
+      }
+    };
+  }
+  async getActiveAffiliateByCode(code) {
+    const [affiliate] = await this.db.select().from(affiliates).where(and(eq(affiliates.code, normalizeAffiliateCode(code)), eq(affiliates.status, "active"))).limit(1);
+    return affiliate ? toAffiliateSummary(affiliate) : void 0;
+  }
+  async getActiveAffiliateByEmail(email) {
+    const [affiliate] = await this.db.select().from(affiliates).where(and(eq(affiliates.email, email.trim().toLowerCase()), eq(affiliates.status, "active"))).limit(1);
+    return affiliate ? toAffiliateSummary(affiliate) : void 0;
+  }
+  async getActiveAffiliateById(affiliateId) {
+    const [affiliate] = await this.db.select().from(affiliates).where(and(eq(affiliates.id, affiliateId), eq(affiliates.status, "active"))).limit(1);
+    return affiliate ? toAffiliateSummary(affiliate) : void 0;
+  }
+  async getAffiliateSession(sessionId) {
+    const [session] = await this.db.select().from(affiliateSessions).where(and(eq(affiliateSessions.id, sessionId), isNull(affiliateSessions.revokedAt))).limit(1);
+    if (!session || session.expiresAt <= /* @__PURE__ */ new Date()) return null;
+    return session;
+  }
+  async buildAffiliateDashboard(affiliate, baseUrl) {
+    const [clicks, checkoutIntents, conversions] = await Promise.all([
+      this.db.select().from(affiliateClicks).where(eq(affiliateClicks.affiliateId, affiliate.id)).orderBy(desc(affiliateClicks.createdAt)).limit(250),
+      this.db.select().from(affiliateCheckoutIntents).where(eq(affiliateCheckoutIntents.affiliateId, affiliate.id)).orderBy(desc(affiliateCheckoutIntents.createdAt)).limit(250),
+      this.db.select().from(affiliateConversions).where(eq(affiliateConversions.affiliateId, affiliate.id)).orderBy(desc(affiliateConversions.createdAt)).limit(250)
+    ]);
+    const clickSummaries = clicks.map(toAffiliateClickSummary);
+    const intentSummaries = checkoutIntents.map(toAffiliateCheckoutIntentSummary);
+    const conversionSummaries = conversions.map(toAffiliateConversionSummary);
+    const commission = /* @__PURE__ */ __name((status) => conversionSummaries.filter((conversion) => !status || conversion.status === status).reduce((total, conversion) => total + Number(conversion.commissionAmount), 0).toFixed(2), "commission");
+    return {
+      affiliate,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      stats: {
+        clicks: clickSummaries.length,
+        checkoutIntents: intentSummaries.length,
+        conversions: conversionSummaries.length,
+        pendingCommission: commission("pending"),
+        approvedCommission: commission("approved"),
+        paidCommission: commission("paid"),
+        totalCommission: commission()
+      },
+      recentClicks: clickSummaries.slice(0, 10),
+      recentCheckoutIntents: intentSummaries.slice(0, 10),
+      recentConversions: conversionSummaries.slice(0, 10)
+    };
+  }
+  async findAffiliateIntentForConversion(input) {
+    const intents = await this.db.select().from(affiliateCheckoutIntents).orderBy(desc(affiliateCheckoutIntents.createdAt)).limit(50);
+    const cutoff = Date.now() - AFFILIATE_CHECKOUT_MATCH_WINDOW_MS;
+    const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : void 0;
+    const intent = intents.find((entry) => {
+      if (Date.parse(entry.createdAt.toISOString()) < cutoff) return false;
+      if (code && entry.affiliateCode !== code) return false;
+      if (input.productId && entry.productId && entry.productId !== input.productId) return false;
+      if (input.variantId && entry.variantId && entry.variantId !== input.variantId) return false;
+      return true;
+    });
+    if (!intent) return void 0;
+    const affiliate = await this.getActiveAffiliateByCode(intent.affiliateCode);
+    return affiliate ? { affiliate, intent: toAffiliateCheckoutIntentSummary(intent) } : void 0;
+  }
   async getSession(sessionId) {
     const [session] = await this.db.select().from(sessions).where(and(eq(sessions.id, sessionId), isNull(sessions.revokedAt))).limit(1);
     if (!session || session.expiresAt <= /* @__PURE__ */ new Date()) return null;
@@ -17047,11 +17777,109 @@ function normalizeLicenseKey(key) {
   return key.trim().toUpperCase().replace(/-/g, "");
 }
 __name(normalizeLicenseKey, "normalizeLicenseKey");
+function normalizeAffiliateCode(code) {
+  return code.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 16);
+}
+__name(normalizeAffiliateCode, "normalizeAffiliateCode");
 function normalizeOptionalString(value) {
   const normalized = value?.trim();
   return normalized ? normalized : void 0;
 }
 __name(normalizeOptionalString, "normalizeOptionalString");
+function normalizeCommissionRate(value) {
+  const numeric2 = Number(value ?? "0.2");
+  if (!Number.isFinite(numeric2) || numeric2 < 0 || numeric2 > 1) return "0.2000";
+  return numeric2.toFixed(4);
+}
+__name(normalizeCommissionRate, "normalizeCommissionRate");
+function normalizeMoney(value) {
+  const numeric2 = Number(value ?? "0");
+  if (!Number.isFinite(numeric2) || numeric2 < 0) return "0.00";
+  return numeric2.toFixed(2);
+}
+__name(normalizeMoney, "normalizeMoney");
+function calculateCommissionAmount(amount, commissionRate) {
+  return (Number(amount) * Number(commissionRate)).toFixed(2);
+}
+__name(calculateCommissionAmount, "calculateCommissionAmount");
+function toAffiliateSummary(affiliate) {
+  return {
+    id: affiliate.id,
+    code: affiliate.code,
+    displayName: affiliate.displayName,
+    email: affiliate.email ?? void 0,
+    status: affiliate.status,
+    commissionRate: affiliate.commissionRate,
+    payoutInfoJson: affiliate.payoutInfoJson ?? void 0,
+    createdAt: affiliate.createdAt.toISOString(),
+    updatedAt: affiliate.updatedAt.toISOString()
+  };
+}
+__name(toAffiliateSummary, "toAffiliateSummary");
+function toAffiliateClickSummary(click) {
+  return {
+    id: click.id,
+    affiliateId: click.affiliateId,
+    affiliateCode: click.affiliateCode,
+    visitorId: click.visitorId,
+    landingPath: click.landingPath,
+    referrer: click.referrer ?? void 0,
+    source: click.source ?? void 0,
+    createdAt: click.createdAt.toISOString()
+  };
+}
+__name(toAffiliateClickSummary, "toAffiliateClickSummary");
+function toAffiliateCheckoutIntentSummary(intent) {
+  return {
+    id: intent.id,
+    affiliateId: intent.affiliateId,
+    affiliateCode: intent.affiliateCode,
+    visitorId: intent.visitorId,
+    clickId: intent.clickId ?? void 0,
+    plan: intent.plan,
+    productId: intent.productId ?? void 0,
+    variantId: intent.variantId ?? void 0,
+    sellauthInvoiceId: intent.sellauthInvoiceId ?? void 0,
+    buyerEmail: intent.buyerEmail ?? void 0,
+    createdAt: intent.createdAt.toISOString()
+  };
+}
+__name(toAffiliateCheckoutIntentSummary, "toAffiliateCheckoutIntentSummary");
+function toAffiliateConversionSummary(conversion) {
+  return {
+    id: conversion.id,
+    affiliateId: conversion.affiliateId,
+    affiliateCode: conversion.affiliateCode,
+    checkoutIntentId: conversion.checkoutIntentId ?? void 0,
+    licenseId: conversion.licenseId ?? void 0,
+    userId: conversion.userId ?? void 0,
+    sellauthOrderId: conversion.sellauthOrderId,
+    buyerEmail: conversion.buyerEmail ?? void 0,
+    plan: conversion.plan,
+    amount: conversion.amount,
+    currency: conversion.currency,
+    commissionRate: conversion.commissionRate,
+    commissionAmount: conversion.commissionAmount,
+    status: conversion.status,
+    createdAt: conversion.createdAt.toISOString(),
+    updatedAt: conversion.updatedAt.toISOString()
+  };
+}
+__name(toAffiliateConversionSummary, "toAffiliateConversionSummary");
+function buildPayoutTotals(affiliates2, conversions) {
+  return affiliates2.map((affiliate) => {
+    const affiliateConversions2 = conversions.filter((conversion) => conversion.affiliateId === affiliate.id);
+    const totalFor = /* @__PURE__ */ __name((status) => affiliateConversions2.filter((conversion) => conversion.status === status).reduce((total, conversion) => total + Number(conversion.commissionAmount), 0).toFixed(2), "totalFor");
+    return {
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      pendingCommission: totalFor("pending"),
+      approvedCommission: totalFor("approved"),
+      paidCommission: totalFor("paid")
+    };
+  });
+}
+__name(buildPayoutTotals, "buildPayoutTotals");
 async function hashToken(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -17267,6 +18095,7 @@ __name(toWalletEvent, "toWalletEvent");
 
 // src/index.ts
 var DEFAULT_SESSION_COOKIE = "rp_session";
+var AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
 var CG_BASE_URL = "https://api.coingecko.com/api/v3";
 var TOKENS = [
   { symbol: "SOL", price: 130, coingeckoId: "solana" },
@@ -17321,7 +18150,161 @@ app.get(
     storage: c.env.DATABASE_URL ? "neon" : "memory"
   })
 );
-app.post("/webhooks/sellauth", async (c) => {
+app.post("/affiliate/click", async (c) => {
+  const body = await c.req.json();
+  if (!body.affiliateCode?.trim() || !body.visitorId?.trim()) {
+    return c.json({ accepted: false });
+  }
+  const result = await getPlatformStore(c.env.DATABASE_URL).recordAffiliateClick({
+    affiliateCode: body.affiliateCode,
+    visitorId: body.visitorId,
+    landingPath: body.landingPath || "/",
+    referrer: body.referrer,
+    source: body.source,
+    userAgent: c.req.header("user-agent") || void 0,
+    ipAddress: getClientIp(c)
+  });
+  return c.json(result);
+});
+app.post("/affiliate/checkout-intent", async (c) => {
+  const body = await c.req.json();
+  if (!body.affiliateCode?.trim() || !body.visitorId?.trim() || !body.plan?.trim()) {
+    return c.json({ accepted: false });
+  }
+  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateCheckoutIntent({
+    affiliateCode: body.affiliateCode,
+    visitorId: body.visitorId,
+    clickId: body.clickId,
+    plan: body.plan,
+    productId: body.productId?.toString(),
+    variantId: body.variantId?.toString(),
+    buyerEmail: body.buyerEmail
+  });
+  return c.json(result);
+});
+app.post("/affiliate/auth/request", async (c) => {
+  const body = await c.req.json();
+  const email = body.email?.trim().toLowerCase();
+  if (!email) return c.json({ ok: true });
+  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateMagicLink(email);
+  if (result.accepted && result.token && result.affiliate) {
+    c.executionCtx.waitUntil(
+      sendAffiliateMagicLinkEmail(c.env, {
+        affiliateName: result.affiliate.displayName,
+        loginUrl: buildAffiliateLoginUrl(c.env, result.token),
+        to: email
+      }).catch((error) => {
+        console.error("[affiliate-auth] Magic link email failed", error);
+      })
+    );
+  }
+  return c.json({ ok: true });
+});
+app.post("/affiliate/auth/verify", async (c) => {
+  const body = await c.req.json();
+  if (!body.token?.trim()) return c.json({ error: "token is required" }, 400);
+  const result = await getPlatformStore(c.env.DATABASE_URL).verifyAffiliateMagicLink(body.token);
+  if (!result.accepted || !result.sessionId || !result.expiresAt || !result.affiliate) {
+    return c.json({ error: "Invalid or expired login link" }, 401);
+  }
+  setSessionCookie(c, result.sessionId, result.expiresAt, AFFILIATE_SESSION_COOKIE);
+  return c.json({ affiliate: result.affiliate });
+});
+app.get("/affiliate/me", async (c) => {
+  const sessionId = getCookie(c, AFFILIATE_SESSION_COOKIE);
+  if (!sessionId) return c.json({ error: "Unauthorized" }, 401);
+  const dashboard = await getPlatformStore(c.env.DATABASE_URL).getAffiliateDashboard(sessionId, getPublicHubOrigin(c.env));
+  if (!dashboard) return c.json({ error: "Unauthorized" }, 401);
+  return c.json(dashboard);
+});
+app.post("/affiliate/auth/logout", async (c) => {
+  const sessionId = getCookie(c, AFFILIATE_SESSION_COOKIE);
+  if (sessionId) await getPlatformStore(c.env.DATABASE_URL).revokeAffiliateSession(sessionId);
+  setCookie(c, AFFILIATE_SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: false,
+    sameSite: "Lax",
+    path: "/",
+    expires: /* @__PURE__ */ new Date(0),
+    maxAge: 0
+  });
+  return c.json({ ok: true });
+});
+app.get("/admin/affiliates", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  return c.json(await getPlatformStore(c.env.DATABASE_URL).getAffiliateAdminSnapshot());
+});
+app.post("/admin/affiliates", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  if (!body.code?.trim()) return c.json({ error: "code is required" }, 400);
+  const affiliate = await getPlatformStore(c.env.DATABASE_URL).createAffiliate({
+    code: body.code,
+    displayName: body.displayName || body.code,
+    email: body.email,
+    commissionRate: body.commissionRate,
+    payoutInfoJson: body.payoutInfoJson
+  });
+  return c.json(affiliate);
+});
+app.post("/admin/keys", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  const plan = normalizePayloadString(body.plan) || "Most Popular";
+  const expiresAt = resolveAdminLicenseExpiry(body);
+  if (!expiresAt) return c.json({ error: "expiresAt or durationDays is required" }, 400);
+  const licenseKey = generateRandomLicenseKey();
+  const license = await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+    licenseKey,
+    email: normalizePayloadString(body.email),
+    plan,
+    expiresAt,
+    allowedDevices: getAdminAllowedDevices(plan, body.allowedDevices)
+  });
+  return c.json({
+    license,
+    licenseKey
+  });
+});
+app.post("/admin/licenses/lookup", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+  const snapshot = await getPlatformStore(c.env.DATABASE_URL).getAdminLicenseSnapshot(licenseKey);
+  if (!snapshot) return c.json({ error: "License not found" }, 404);
+  return c.json(snapshot);
+});
+app.post("/admin/licenses/clear-devices", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+  const result = await getPlatformStore(c.env.DATABASE_URL).clearAdminLicenseDevices(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+app.post("/admin/licenses/revoke-sessions", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+  const result = await getPlatformStore(c.env.DATABASE_URL).revokeAdminLicenseSessions(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+app.post("/admin/licenses/reset-access", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+  const result = await getPlatformStore(c.env.DATABASE_URL).resetAdminLicenseAccess(licenseKey);
+  if (!result) return c.json({ error: "License not found" }, 404);
+  return c.json(result);
+});
+app.post("/webhooks/sellauth", handleSellAuthWebhook);
+app.post("/api/webhooks/sellauth", handleSellAuthWebhook);
+async function handleSellAuthWebhook(c) {
   const secret = c.env.SELLAUTH_WEBHOOK_SECRET;
   if (!secret) {
     console.error("[sellauth-webhook] SELLAUTH_WEBHOOK_SECRET is not set");
@@ -17333,6 +18316,14 @@ app.post("/webhooks/sellauth", async (c) => {
     return c.text("Missing signature", 401);
   }
   if (!await verifySellAuthSignature(rawBody, signature, secret)) {
+    console.warn("[sellauth-webhook] Signature verification failed", {
+      bodyLength: rawBody.length,
+      contentType: c.req.header("content-type") || null,
+      hasIdempotencyKey: Boolean(c.req.header("idempotency-key")),
+      hasTimestamp: Boolean(c.req.header("x-timestamp")),
+      path: new URL(c.req.url).pathname,
+      ...await buildSellAuthSignatureDiagnostics(rawBody, signature, secret)
+    });
     return c.text("Invalid signature", 403);
   }
   let payload;
@@ -17357,13 +18348,29 @@ app.post("/webhooks/sellauth", async (c) => {
   const now = Date.now();
   const expiresAt = new Date(now + plan.durationDays * 24 * 60 * 60 * 1e3);
   const buyerEmail = extractSellAuthEmail(payload);
-  await getPlatformStore(c.env.DATABASE_URL).createPurchasedLicense({
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const license = await store.createPurchasedLicense({
     licenseKey,
     email: buyerEmail,
     plan: plan.label,
     expiresAt,
     allowedDevices: plan.allowedDevices
   });
+  c.executionCtx.waitUntil(
+    store.createAffiliateConversion({
+      affiliateCode: extractSellAuthAffiliateCode(payload),
+      sellauthOrderId: orderId,
+      licenseId: license.id,
+      buyerEmail,
+      plan: plan.label,
+      amount: extractSellAuthAmount(payload),
+      currency: extractSellAuthCurrency(payload),
+      productId: extractSellAuthProductId(payload),
+      variantId: extractSellAuthVariantId(payload)
+    }).catch((error) => {
+      console.error("[sellauth-webhook] Affiliate conversion recording failed", error);
+    })
+  );
   console.log(`[sellauth-webhook] Created license for order ${orderId} | plan=${plan.id} | expires=${expiresAt.toISOString()}`);
   if (buyerEmail) {
     c.executionCtx.waitUntil(
@@ -17384,7 +18391,8 @@ app.post("/webhooks/sellauth", async (c) => {
     console.warn("[sellauth-webhook] No buyer email found in payload; skipping email notification");
   }
   return c.text(licenseKey, 200, { "Content-Type": "text/plain" });
-});
+}
+__name(handleSellAuthWebhook, "handleSellAuthWebhook");
 app.get("/prices", async (c) => {
   try {
     const symbolsParam = c.req.query("symbols");
@@ -17574,6 +18582,7 @@ app.get("/chart", async (c) => {
     else if (timeframe === "1D") queryDays = "1";
     else if (timeframe === "1W") queryDays = "7";
     else if (timeframe === "1M") queryDays = "30";
+    else if (timeframe === "1Y") queryDays = "365";
     else if (timeframe === "YTD") {
       const startOfYear = new Date((/* @__PURE__ */ new Date()).getFullYear(), 0, 1).getTime();
       queryDays = String(Math.ceil((Date.now() - startOfYear) / (1e3 * 60 * 60 * 24)));
@@ -17662,11 +18671,23 @@ app.get("/token-details", async (c) => {
     const data = await response.json();
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=3600");
     return c.json({
+      categories: data.categories || [],
+      coingeckoRank: data.coingecko_rank || null,
       marketCap: data.market_data?.market_cap?.[currency] || data.market_data?.market_cap?.usd || 0,
       totalSupply: data.market_data?.total_supply || 0,
       circulatingSupply: data.market_data?.circulating_supply || 0,
       totalVolume: data.market_data?.total_volume?.[currency] || data.market_data?.total_volume?.usd || 0,
-      description: data.description?.en || ""
+      description: data.description?.en || "",
+      genesisDate: data.genesis_date || null,
+      links: {
+        github: data.links?.repos_url?.github?.find(Boolean) || "",
+        reddit: data.links?.subreddit_url || "",
+        twitter: data.links?.twitter_screen_name ? `https://x.com/${data.links.twitter_screen_name}` : "",
+        website: data.links?.homepage?.find(Boolean) || "",
+        whitepaper: data.links?.whitepaper || ""
+      },
+      sentimentVotesDownPercentage: data.sentiment_votes_down_percentage || 0,
+      sentimentVotesUpPercentage: data.sentiment_votes_up_percentage || 0
     });
   } catch (error) {
     console.error("[token-details] Error fetching token details:", error);
@@ -18028,16 +19049,38 @@ function buildLaunchUrl(env, walletAppId2, token, returnTo, deviceId) {
   const defaultOrigin = walletAppId2 === "phantom" ? env.PHANTOM_ORIGIN || "http://localhost:5173" : env.TRUST_ORIGIN || "http://localhost:5174";
   const target = returnTo?.trim() || `${defaultOrigin}/bootstrap`;
   const url = new URL(target);
+  url.pathname = url.pathname.replace(/\/{2,}/g, "/") || "/";
   url.searchParams.set("token", token);
   if (deviceId?.trim()) url.searchParams.set("deviceId", deviceId.trim());
   return url.toString();
 }
 __name(buildLaunchUrl, "buildLaunchUrl");
 async function verifySellAuthSignature(rawBody, signature, secret) {
-  const computed = await hmacSha256Hex(secret, rawBody);
-  return timingSafeHexEqual(computed, signature);
+  const normalizedSignature = normalizeSignature(signature);
+  if (!normalizedSignature) return false;
+  const rawComputed = await hmacSha256Hex(secret, rawBody);
+  if (timingSafeHexEqual(rawComputed, normalizedSignature)) return true;
+  const canonicalBody = canonicalizeJsonString(rawBody);
+  if (!canonicalBody || canonicalBody === rawBody) return false;
+  const canonicalComputed = await hmacSha256Hex(secret, canonicalBody);
+  return timingSafeHexEqual(canonicalComputed, normalizedSignature);
 }
 __name(verifySellAuthSignature, "verifySellAuthSignature");
+async function buildSellAuthSignatureDiagnostics(rawBody, signature, secret) {
+  const normalizedSignature = normalizeSignature(signature);
+  const rawComputed = await hmacSha256Hex(secret, rawBody);
+  const canonicalBody = canonicalizeJsonString(rawBody);
+  const canonicalComputed = canonicalBody && canonicalBody !== rawBody ? await hmacSha256Hex(secret, canonicalBody) : null;
+  return {
+    rawComputedPreview: rawComputed.slice(0, 12),
+    canonicalComputedPreview: canonicalComputed?.slice(0, 12) || null,
+    signatureIsHex: /^[a-f0-9]+$/i.test(normalizedSignature),
+    signatureLength: normalizedSignature.length,
+    signaturePreview: normalizedSignature.slice(0, 12),
+    secretHasOuterWhitespace: secret.trim() !== secret
+  };
+}
+__name(buildSellAuthSignatureDiagnostics, "buildSellAuthSignatureDiagnostics");
 async function hmacSha256Hex(secret, message) {
   const key = await crypto.subtle.importKey(
     "raw",
@@ -18065,6 +19108,18 @@ function bytesToHex(bytes) {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 __name(bytesToHex, "bytesToHex");
+function normalizeSignature(signature) {
+  return signature.trim().toLowerCase().replace(/^sha256=/, "");
+}
+__name(normalizeSignature, "normalizeSignature");
+function canonicalizeJsonString(rawBody) {
+  try {
+    return JSON.stringify(JSON.parse(rawBody));
+  } catch {
+    return null;
+  }
+}
+__name(canonicalizeJsonString, "canonicalizeJsonString");
 function hexToBytes2(hex) {
   const normalized = hex.trim().toLowerCase();
   if (!/^[a-f0-9]+$/.test(normalized) || normalized.length % 2 !== 0) return null;
@@ -18082,6 +19137,29 @@ async function generateLicenseKeyForOrder(orderId, secret) {
   return [0, 5, 10, 15].map((start) => letters.slice(start, start + 5).join("")).join("-");
 }
 __name(generateLicenseKeyForOrder, "generateLicenseKeyForOrder");
+function generateRandomLicenseKey() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(20));
+  const chars = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]);
+  return [0, 5, 10, 15].map((start) => chars.slice(start, start + 5).join("")).join("-");
+}
+__name(generateRandomLicenseKey, "generateRandomLicenseKey");
+function resolveAdminLicenseExpiry(input) {
+  if (input.expiresAt) {
+    const expiresAt = new Date(input.expiresAt);
+    if (Number.isFinite(expiresAt.getTime()) && expiresAt > /* @__PURE__ */ new Date()) return expiresAt;
+    return null;
+  }
+  const durationDays = Number(input.durationDays);
+  if (!Number.isFinite(durationDays) || durationDays <= 0) return null;
+  return new Date(Date.now() + durationDays * 24 * 60 * 60 * 1e3);
+}
+__name(resolveAdminLicenseExpiry, "resolveAdminLicenseExpiry");
+function getAdminAllowedDevices(plan, requested) {
+  if (requested && Number.isFinite(requested) && requested > 0) return Math.floor(requested);
+  return plan.toLowerCase().includes("year") ? 2 : 1;
+}
+__name(getAdminAllowedDevices, "getAdminAllowedDevices");
 function extractSellAuthOrderId(payload) {
   return normalizePayloadString(
     payload.id ?? payload.order_id ?? payload.orderId ?? payload.invoice_id ?? payload.invoiceId ?? payload.data?.id ?? payload.data?.order_id ?? payload.data?.orderId ?? payload.data?.invoice_id ?? payload.data?.invoiceId
@@ -18094,6 +19172,35 @@ function extractSellAuthEmail(payload) {
   );
 }
 __name(extractSellAuthEmail, "extractSellAuthEmail");
+function extractSellAuthAffiliateCode(payload) {
+  return normalizePayloadString(
+    payload.affiliate ?? payload.affiliate_code ?? payload.affiliateCode ?? payload.affiliate_referrer_id ?? payload.prefill_affiliate_referrer_id ?? payload.data?.affiliate ?? payload.data?.affiliate_code ?? payload.data?.affiliateCode ?? payload.data?.affiliate_referrer_id ?? payload.data?.prefill_affiliate_referrer_id ?? payload.invoice?.affiliate ?? payload.invoice?.affiliate_code
+  )?.toLowerCase();
+}
+__name(extractSellAuthAffiliateCode, "extractSellAuthAffiliateCode");
+function extractSellAuthProductId(payload) {
+  return normalizePayloadString(
+    payload.product_id ?? payload.productId ?? payload.item?.product_id ?? payload.item?.productId ?? payload.data?.product_id ?? payload.data?.productId ?? payload.items?.[0]?.product_id ?? payload.items?.[0]?.productId
+  );
+}
+__name(extractSellAuthProductId, "extractSellAuthProductId");
+function extractSellAuthVariantId(payload) {
+  return normalizePayloadString(
+    payload.variant_id ?? payload.variantId ?? payload.item?.variant_id ?? payload.item?.variantId ?? payload.data?.variant_id ?? payload.data?.variantId ?? payload.items?.[0]?.variant_id ?? payload.items?.[0]?.variantId
+  );
+}
+__name(extractSellAuthVariantId, "extractSellAuthVariantId");
+function extractSellAuthAmount(payload) {
+  const value = payload.total ?? payload.total_usd ?? payload.amount ?? payload.price ?? payload.data?.total ?? payload.data?.total_usd ?? payload.data?.amount ?? payload.data?.price;
+  if (value === void 0 || value === null) return void 0;
+  const normalized = Number(String(value).replace(/[^0-9.]/g, ""));
+  return Number.isFinite(normalized) ? normalized.toFixed(2) : void 0;
+}
+__name(extractSellAuthAmount, "extractSellAuthAmount");
+function extractSellAuthCurrency(payload) {
+  return normalizePayloadString(payload.currency ?? payload.data?.currency)?.toUpperCase() || "USD";
+}
+__name(extractSellAuthCurrency, "extractSellAuthCurrency");
 async function sendPurchaseEmail(env, params) {
   if (!env.RESEND_API_KEY) {
     console.warn("[sendPurchaseEmail] RESEND_API_KEY is not set; skipping email");
@@ -18106,9 +19213,9 @@ async function sendPurchaseEmail(env, params) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      from: "RP Wallet <noreply@rpwallet.app>",
+      from: "LarperWallet <noreply@larperwallet.com>",
       html: buildPurchaseEmailHtml(params),
-      subject: `Your RP Wallet License Key \u2014 ${params.planLabel}`,
+      subject: `Your LarperWallet License Key \u2014 ${params.planLabel}`,
       to: params.to
     })
   });
@@ -18125,7 +19232,6 @@ function buildPurchaseEmailHtml(params) {
   <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
       <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
-        <p style="margin:0 0 14px;color:#ab9ff2;font-size:13px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;">RP Wallet</p>
         <h1 style="margin:0 0 12px;font-size:30px;line-height:1.08;letter-spacing:-0.04em;">Your license key is ready</h1>
         <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
           Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your LarperWallet access.
@@ -18148,6 +19254,54 @@ function buildPurchaseEmailHtml(params) {
 </html>`;
 }
 __name(buildPurchaseEmailHtml, "buildPurchaseEmailHtml");
+async function sendAffiliateMagicLinkEmail(env, params) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[affiliate-auth] RESEND_API_KEY is not set; skipping affiliate login email");
+    return;
+  }
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: "LarperWallet <noreply@larperwallet.com>",
+      html: buildAffiliateMagicLinkHtml(params),
+      subject: "Your LarperWallet affiliate login link",
+      to: params.to
+    })
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+}
+__name(sendAffiliateMagicLinkEmail, "sendAffiliateMagicLinkEmail");
+function buildAffiliateMagicLinkHtml(params) {
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
+      <div style="border:1px solid #e2e8f0;border-radius:24px;background:#ffffff;padding:28px;box-shadow:0 18px 60px rgba(15,23,42,0.08);">
+        <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">LarperWallet Affiliate</p>
+        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.04em;">Sign in to your dashboard</h1>
+        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.55;">
+          Hi ${escapeHtml(params.affiliateName)}, use this secure link to view your clicks, conversions, commissions, and payout status.
+        </p>
+        <a href="${escapeHtml(params.loginUrl)}" style="display:inline-block;border-radius:14px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 18px;">
+          Open affiliate dashboard
+        </a>
+        <p style="margin:24px 0 0;color:#64748b;font-size:12px;line-height:1.45;">
+          This link expires in 15 minutes. If you did not request it, you can ignore this email.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+__name(buildAffiliateMagicLinkHtml, "buildAffiliateMagicLinkHtml");
 function escapeHtml(value) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
@@ -18183,6 +19337,32 @@ function normalizePayloadString(value) {
   return normalized ? normalized : void 0;
 }
 __name(normalizePayloadString, "normalizePayloadString");
+function isAffiliateAdminRequest(c) {
+  const expected = c.env.AFFILIATE_ADMIN_TOKEN;
+  if (!expected) return false;
+  const header = c.req.header("authorization") || "";
+  const token = header.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : c.req.header("x-affiliate-admin-token");
+  return token === expected;
+}
+__name(isAffiliateAdminRequest, "isAffiliateAdminRequest");
+function getClientIp(c) {
+  return c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || void 0;
+}
+__name(getClientIp, "getClientIp");
+function getPublicHubOrigin(env) {
+  return env.HUB_ORIGIN || "https://larperwallet.com";
+}
+__name(getPublicHubOrigin, "getPublicHubOrigin");
+function getAffiliateOrigin(env) {
+  return env.AFFILIATE_ORIGIN || "http://localhost:3001";
+}
+__name(getAffiliateOrigin, "getAffiliateOrigin");
+function buildAffiliateLoginUrl(env, token) {
+  const url = new URL("/verify", getAffiliateOrigin(env));
+  url.searchParams.set("token", token);
+  return url.toString();
+}
+__name(buildAffiliateLoginUrl, "buildAffiliateLoginUrl");
 var src_default = app;
 
 // ../../node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
@@ -18226,7 +19406,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-xyXpfg/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-TPLed8/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -18258,7 +19438,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-xyXpfg/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-TPLed8/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

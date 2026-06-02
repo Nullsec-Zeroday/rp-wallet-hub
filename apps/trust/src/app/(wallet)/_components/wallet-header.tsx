@@ -1,17 +1,36 @@
 import React, { useState } from "react";
-import { Search } from "lucide-react";
-import { formatTrustCurrency } from "@/lib/trust-token-data";
+import { Bell, Check, RefreshCw, Search } from "lucide-react";
+import { formatTrustCurrency, TRUST_TOKENS } from "@/lib/trust-token-data";
 import { useTrustWallet, type TrustSettingsInput } from "@/lib/trust-wallet-context";
+import { requestNotificationPermission } from "@/lib/notifications";
+import type { WalletMutationType } from "@rp-wallet/types";
 
 interface WalletHeaderProps {
   scrolled?: boolean;
 }
+
+const generateTrustAddress = () => {
+  const chars = "0123456789abcdef";
+  let result = "0x";
+  for (let i = 0; i < 40; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
 export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExtraCoinsVisible, setIsExtraCoinsVisible] = useState(false);
   const trustWallet = useTrustWallet();
   const [settingsDraft, setSettingsDraft] = useState<TrustSettingsInput>(trustWallet.settingsInitialValues);
+  const [transactionDraft, setTransactionDraft] = useState({
+    address: "",
+    amount: "",
+    createdAt: "",
+    tokenSymbol: "USDT",
+    type: "receive" as WalletMutationType,
+  });
+  const [transactionNotice, setTransactionNotice] = useState("");
 
   React.useEffect(() => {
     if (!isSettingsOpen) {
@@ -32,6 +51,41 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
   const saveSettings = async () => {
     const saved = await trustWallet.saveSettings(settingsDraft);
     if (saved) setIsSettingsOpen(false);
+  };
+
+  const handleTogglePush = async () => {
+    if (trustWallet.notificationSettings.pushEnabled) {
+      await trustWallet.saveNotificationSettings({
+        ...trustWallet.notificationSettings,
+        pushEnabled: false,
+      });
+      return;
+    }
+
+    const granted = await requestNotificationPermission();
+    if (!granted) return;
+
+    await trustWallet.saveNotificationSettings({
+      ...trustWallet.notificationSettings,
+      pushEnabled: true,
+    });
+  };
+
+  const createCustomTransaction = async () => {
+    setTransactionNotice("");
+    const isReceive = transactionDraft.type === "receive";
+    const transaction = await trustWallet.createTransaction({
+      amount: transactionDraft.amount,
+      createdAt: transactionDraft.createdAt || undefined,
+      fromAddress: isReceive ? transactionDraft.address.trim() : trustWallet.walletAddress,
+      toAddress: isReceive ? trustWallet.walletAddress : transactionDraft.address.trim(),
+      tokenSymbol: transactionDraft.tokenSymbol,
+      type: transactionDraft.type,
+    });
+    if (transaction) {
+      setTransactionNotice("Transaction added.");
+      setTransactionDraft((current) => ({ ...current, address: "", amount: "", createdAt: "" }));
+    }
   };
 
   return (
@@ -92,6 +146,58 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                 <div style={{ marginBottom: "24px" }}>
                     <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }} data-i18n="settings.wallet_name">Wallet Name</div>
                     <input id="set-walletName" type="text" placeholder="Larper Wallet" maxLength={32} value={settingsDraft.walletName} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletName: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
+                </div>
+
+                <div style={{ marginBottom: "24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                      <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase" }}>Wallet Address</div>
+                      <button
+                        type="button"
+                        onClick={() => setSettingsDraft((current) => ({ ...current, walletAddress: generateTrustAddress() }))}
+                        style={{ alignItems: "center", background: "transparent", border: 0, color: "#3CC68A", cursor: "pointer", display: "flex", fontSize: "11px", fontWeight: 700, gap: "5px", letterSpacing: "0.04em", padding: 0, textTransform: "uppercase" }}
+                      >
+                        <RefreshCw size={11} strokeWidth={2.5} />
+                        Generate
+                      </button>
+                    </div>
+                    <input id="set-walletAddress" type="text" placeholder="Enter wallet address" value={settingsDraft.walletAddress} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletAddress: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
+                </div>
+
+                <div style={{ marginBottom: "24px" }}>
+                  <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }}>Notifications</div>
+                  <div style={{ alignItems: "center", background: "#252525", border: "1px solid #333", borderRadius: "12px", display: "flex", justifyContent: "space-between", padding: "12px" }}>
+                    <div style={{ alignItems: "center", display: "flex", gap: "10px" }}>
+                      <Bell size={18} color="#3CC68A" />
+                      <div>
+                        <div style={{ color: "#fff", fontSize: "14px", fontWeight: 600 }}>Push Notifications</div>
+                        <div style={{ color: "#888", fontSize: "12px", marginTop: "2px" }}>Incoming receive alerts</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleTogglePush}
+                      style={{
+                        alignItems: "center",
+                        background: trustWallet.notificationSettings.pushEnabled ? "#102A1E" : "#2c2c2e",
+                        border: trustWallet.notificationSettings.pushEnabled ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: "8px",
+                        color: trustWallet.notificationSettings.pushEnabled ? "#10B981" : "#8b8ca7",
+                        cursor: "pointer",
+                        display: "flex",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        gap: "5px",
+                        height: "30px",
+                        padding: "0 10px",
+                      }}
+                    >
+                      {trustWallet.notificationSettings.pushEnabled ? (
+                        <>
+                          Enabled <Check size={12} strokeWidth={3} />
+                        </>
+                      ) : "Disabled"}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: "24px" }}>
@@ -319,6 +425,37 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
                     <button id="addEthToken" type="button" style={{ width: "100%", padding: "10px", background: "transparent", border: "1px dashed #444", borderRadius: "10px", color: "#627EEA", fontSize: "14px", cursor: "pointer" }} data-i18n="btn.add_eth_token_t">+ Add Ethereum Token by Contract Address</button>
                 </div>
                 */}
+
+                <div style={{ marginBottom: "24px" }}>
+                    <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }}>Custom Transaction</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                      <select value={transactionDraft.type} onChange={(event) => setTransactionDraft((current) => ({ ...current, type: event.target.value as WalletMutationType }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px" }}>
+                        <option value="receive">Receive</option>
+                        <option value="send">Send</option>
+                      </select>
+                      <select value={transactionDraft.tokenSymbol} onChange={(event) => setTransactionDraft((current) => ({ ...current, tokenSymbol: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px" }}>
+                        {TRUST_TOKENS.map((token) => (
+                          <option key={token.symbol} value={token.symbol}>{token.symbol}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <input type="number" min="0" step="any" placeholder="Amount" value={transactionDraft.amount} onChange={(event) => setTransactionDraft((current) => ({ ...current, amount: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "10px" }} />
+                    <input type="text" placeholder={transactionDraft.type === "receive" ? "Sender address" : "Recipient address"} value={transactionDraft.address} onChange={(event) => setTransactionDraft((current) => ({ ...current, address: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "10px" }} />
+                    <input type="datetime-local" value={transactionDraft.createdAt} onChange={(event) => setTransactionDraft((current) => ({ ...current, createdAt: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "10px" }} />
+                    {transactionNotice ? (
+                      <div style={{ marginBottom: "10px", borderRadius: "10px", background: "#173226", color: "#48FF91", padding: "10px 12px", fontSize: "13px", fontWeight: 600 }}>
+                        {transactionNotice}
+                      </div>
+                    ) : null}
+                    {trustWallet.transactionError ? (
+                      <div style={{ marginBottom: "10px", borderRadius: "10px", background: "#3F2526", color: "#FE5D5D", padding: "10px 12px", fontSize: "13px", fontWeight: 600 }}>
+                        {trustWallet.transactionError}
+                      </div>
+                    ) : null}
+                    <button type="button" disabled={trustWallet.transactionPending} onClick={createCustomTransaction} style={{ width: "100%", padding: "12px", background: trustWallet.transactionPending ? "#28573d" : "transparent", border: "1px dashed #3CC68A", borderRadius: "10px", color: "#3CC68A", fontSize: "14px", fontWeight: 700, cursor: trustWallet.transactionPending ? "default" : "pointer" }}>
+                      {trustWallet.transactionPending ? "Adding..." : "Add transaction"}
+                    </button>
+                </div>
 
                 <div style={{ marginBottom: "24px" }}>
                     <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }} data-i18n="trust.coingecko">CoinGecko API</div>

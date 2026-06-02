@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
+import { createPortal } from "react-dom";
+import { formatTrustBalance, formatTrustCurrency, getTrustToken, formatMarketCap } from "@/lib/trust-token-data";
 import { useTrustWallet } from "@/lib/trust-wallet-context";
 
 interface SwapModalProps {
@@ -50,6 +51,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const insufficient = numericAmount > fromBalance;
   const pickerTokens = tokenSymbols
     .filter((symbol) => symbol !== (pickerTarget === "from" ? toSymbol : fromSymbol))
+    .filter((symbol) => pickerTarget === "to" || (balanceMap[symbol] || 0) > 0)
     .filter((symbol) => {
       const token = getTrustToken(symbol);
       const query = pickerSearch.trim().toLowerCase();
@@ -216,19 +218,23 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
 
   useEffect(() => {
     let timer: number;
+    let showTimer: number;
     if (isOpen) {
       setIsRendered(true);
-      requestAnimationFrame(() => setShow(true));
+      showTimer = window.setTimeout(() => setShow(true), 10);
     } else {
       setShow(false);
-      timer = window.setTimeout(() => setIsRendered(false), 450);
+      timer = window.setTimeout(() => setIsRendered(false), 250);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(showTimer);
+    };
   }, [isOpen]);
 
-  if (!isRendered) return null;
+  if (!isRendered || typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div
       id="trustSwapPanel"
       style={{
@@ -238,7 +244,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
         width: "100%",
         height: "100%",
         transform: show ? "translateY(0%)" : "translateY(100%)",
-        transition: "transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)",
+        transition: "transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)",
         background: "hsl(var(--twc-backgroundPrimary,240 1.8% 10.8%))",
         zIndex: 9999,
         display: "flex",
@@ -261,6 +267,20 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
           position: "relative",
         }}
       >
+        <div style={{ width: "38px" }}></div>
+        <span
+          id="swapPanelTitle"
+          style={{ 
+            color: "#fff", 
+            fontSize: "19px", 
+            fontWeight: 600,
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)"
+          }}
+        >
+          {pickerTarget === "from" ? "You pay" : pickerTarget === "to" ? "You receive" : "Swap"}
+        </span>
         <button
           id="trustSwapBack"
           onClick={() => {
@@ -286,78 +306,6 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             xmlns="http://www.w3.org/2000/svg"
             width="26"
             height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <path
-              d="M18 6L6 18M6 6l12 12"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            ></path>
-          </svg>
-        </button>
-        <span
-          id="swapPanelTitle"
-          style={{ 
-            color: "#fff", 
-            fontSize: "19px", 
-            fontWeight: 600,
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)"
-          }}
-        >
-          {pickerTarget ? "Select token" : "Swap"}
-        </span>
-        <button
-          id="trustSwapFilter"
-          style={{
-            background: "none",
-            border: "none",
-            padding: "6px",
-            cursor: "pointer",
-            color: "#888",
-            display: "flex",
-            alignItems: "center",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <svg
-            fill="none"
-            width="20"
-            height="15"
-            viewBox="0 0 21 16"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M1.12 5.11H9.3C9.79 6.77 11.3 7.99 13.12 7.99C14.94 7.99 16.45 6.77 16.94 5.11H19.12C19.74 5.11 20.24 4.61 20.24 3.99C20.24 3.37 19.74 2.87 19.12 2.87H16.94C16.45 1.21 14.94 0 13.12 0C11.3 0 9.79 1.22 9.3 2.87H1.12C0.5 2.87 0 3.37 0 3.99C0 4.61 0.5 5.11 1.12 5.11ZM13.12 2.24C14.08 2.24 14.87 3.03 14.87 3.99C14.87 4.95 14.08 5.74 13.12 5.74C12.16 5.74 11.37 4.95 11.37 3.99C11.37 3.03 12.16 2.24 13.12 2.24Z"
-              fill="currentColor"
-            ></path>
-            <path
-              d="M19.12 10.86H10.94C10.45 9.19999 8.94 7.98999 7.12 7.98999C5.3 7.98999 3.79 9.20999 3.3 10.86H1.12C0.5 10.86 0 11.36 0 11.98C0 12.6 0.5 13.1 1.12 13.1H3.3C3.79 14.76 5.3 15.98 7.12 15.98C8.94 15.98 10.45 14.76 10.94 13.1H19.12C19.74 13.1 20.24 12.6 20.24 11.98C20.24 11.36 19.74 10.86 19.12 10.86ZM7.12 13.74C6.16 13.74 5.37 12.95 5.37 11.99C5.37 11.03 6.16 10.24 7.12 10.24C8.08 10.24 8.87 11.03 8.87 11.99C8.87 12.95 8.08 13.74 7.12 13.74Z"
-              fill="currentColor"
-            ></path>
-          </svg>
-        </button>
-        <button
-          id="trustSwapPickerClose"
-          style={{
-            display: "none",
-            background: "none",
-            border: "none",
-            padding: "6px",
-            cursor: "pointer",
-            color: "#888",
-            alignItems: "center",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
             viewBox="0 0 24 24"
             fill="none"
           >
@@ -768,6 +716,12 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             const token = getTrustToken(symbol);
             const balance = balanceMap[symbol] || 0;
             const price = prices[symbol]?.usd ?? token.price;
+            const mcap = prices[symbol]?.usd_market_cap;
+            
+            const priceDisplay = price < 1 
+              ? `$${Number(price.toPrecision(5))}` 
+              : `$${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
             return (
               <button
                 key={symbol}
@@ -788,7 +742,9 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                 }}
               >
                 {token.logo ? (
-                  <img alt={token.name} src={token.logo} style={{ borderRadius: "50%", height: "34px", width: "34px" }} />
+                  <div style={{ position: "relative" }}>
+                    <img alt={token.name} src={token.logo} style={{ borderRadius: "50%", height: "34px", width: "34px" }} />
+                  </div>
                 ) : (
                   <span style={{ alignItems: "center", background: "#2f3136", borderRadius: "50%", display: "grid", height: "34px", justifyItems: "center", width: "34px" }}>{symbol.slice(0, 2)}</span>
                 )}
@@ -797,14 +753,26 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
                   <span style={{ color: "#888", display: "block", fontSize: "12px" }}>{token.name}</span>
                 </span>
                 <span style={{ textAlign: "right" }}>
-                  <strong style={{ display: "block", fontSize: "14px" }}>{formatTrustBalance(balance)}</strong>
-                  <span style={{ color: "#888", display: "block", fontSize: "12px" }}>{formatTrustCurrency(balance * price, baseCurrency)}</span>
+                  {pickerTarget === "to" ? (
+                    <>
+                      <strong style={{ display: "block", fontSize: "14px" }}>{priceDisplay}</strong>
+                      {mcap ? (
+                        <span style={{ color: "#888", display: "block", fontSize: "12px" }}>MCap: {formatMarketCap(mcap)}</span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <strong style={{ display: "block", fontSize: "14px" }}>{formatTrustBalance(balance)}</strong>
+                      <span style={{ color: "#888", display: "block", fontSize: "12px" }}>{formatTrustCurrency(balance * price, baseCurrency)}</span>
+                    </>
+                  )}
                 </span>
               </button>
             );
           })}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

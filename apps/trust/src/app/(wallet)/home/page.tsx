@@ -1,8 +1,11 @@
 import React from "react";
+import type { WalletTransaction } from "@rp-wallet/types";
 import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
 import { useTrustWallet } from "@/lib/trust-wallet-context";
 import SwapModal from "../_components/swap-modal";
 import CoinModal from "../_components/coin-modal";
+import SendModal from "../_components/send-modal";
+import HistoryModal from "../_components/history-modal";
 
 function TrustAssetRow({
   amount,
@@ -59,10 +62,64 @@ function TrustAssetRow({
   );
 }
 
+function truncateAddress(value = "") {
+  if (!value) return "Unknown";
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 6)}...${value.slice(-5)}`;
+}
+
+function getTransactionDisplay(transaction: WalletTransaction) {
+  if (transaction.type === "receive" || transaction.type === "buy") {
+    return {
+      addressLabel: "From",
+      address: transaction.fromAddress,
+      icon: "receive" as const,
+      isPositive: true,
+      title: transaction.type === "buy" ? "Bought" : "Received",
+    };
+  }
+
+  if (transaction.type === "swap") {
+    return {
+      addressLabel: "Via",
+      address: transaction.toAddress || transaction.fromAddress || "Swap",
+      icon: "swap" as const,
+      isPositive: true,
+      title: "Swapped",
+    };
+  }
+
+  return {
+    addressLabel: "To",
+    address: transaction.toAddress,
+    icon: "send" as const,
+    isPositive: false,
+    title: "Sent",
+  };
+}
+
+function TransactionIcon({ type }: { type: "receive" | "send" | "swap" }) {
+  if (type === "swap") {
+    return (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 3h5v5"></path><path d="M21 3l-7 7"></path><path d="M8 21H3v-5"></path><path d="M3 21l7-7"></path>
+      </svg>
+    );
+  }
+
+  return type === "receive" ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+  );
+}
+
 export default function HomePage() {
-  const { balanceMap, baseCurrency, prices, tokenSymbols, totalChange, totalValue, walletName } = useTrustWallet();
+  const { balanceMap, baseCurrency, payload, prices, tokenSymbols, totalChange, totalValue, walletName } = useTrustWallet();
   const [swapOpen, setSwapOpen] = React.useState(false);
   const [coinOpen, setCoinOpen] = React.useState(false);
+  const [sendOpen, setSendOpen] = React.useState(false);
+  const [historyOpen, setHistoryOpen] = React.useState(false);
   const [selectedCoinSymbol, setSelectedCoinSymbol] = React.useState("BTC");
   const portfolioTokens = tokenSymbols
     .filter((symbol) => (balanceMap[symbol] || 0) > 0)
@@ -73,6 +130,9 @@ export default function HomePage() {
     });
   const displayChange = `${totalChange.dollar >= 0 ? "" : "-"}${formatTrustCurrency(Math.abs(totalChange.dollar), baseCurrency)} (${totalChange.percent >= 0 ? "+" : ""}${totalChange.percent.toFixed(2)}%)`;
   const changeColor = totalChange.dollar >= 0 ? "#23BF7D" : "#FE5D5D";
+  const recentTransactions = [...payload.recentTransactions]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
 
   return (
     <>
@@ -113,7 +173,7 @@ export default function HomePage() {
           <div className="flex flex-col space-y-2 items-center">
             <div data-tooltip-id="circle-action-tooltip-16" data-tooltip-place="top" data-tooltip-role="tooltip">
               <div className="flex " data-tooltip-id="button-tooltip-17" data-tooltip-place="top-end" data-tooltip-role="tooltip">
-                <button data-testid="wallet-board-send-button" type="button" className="outline-none bg-button-secondary text-primary-default hover:bg-button-secondary-hovered active:bg-button-secondary-pressed disabled:bg-button-secondary-disabled p-3.5 icon-square-button">
+                <button onClick={() => setSendOpen(true)} data-testid="wallet-board-send-button" type="button" className="outline-none bg-button-secondary text-primary-default hover:bg-button-secondary-hovered active:bg-button-secondary-pressed disabled:bg-button-secondary-disabled p-3.5 icon-square-button">
                   <svg className="text-utility-1-default" fill="none" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19.71 5.59023C19.71 5.45023 19.6799 5.32023 19.6299 5.19023C19.5799 5.08023 19.51 4.98023 19.43 4.89023C19.41 4.87023 19.4 4.84024 19.3799 4.82024C19.3599 4.80024 19.33 4.79023 19.3 4.77023C19.21 4.70023 19.12 4.62023 19.01 4.58023C18.87 4.52023 18.72 4.49023 18.58 4.49023H8.57995C7.95995 4.49023 7.45995 4.99023 7.45995 5.61023C7.45995 6.23023 7.95995 6.73022 8.57995 6.73022H15.86L4.77995 17.8102C4.33995 18.2502 4.33995 18.9602 4.77995 19.4002C4.99995 19.6202 5.28995 19.7302 5.57995 19.7302C5.86995 19.7302 6.15995 19.6202 6.37995 19.4002L17.46 8.32024V15.6002C17.46 16.2202 17.96 16.7202 18.58 16.7202C19.2 16.7202 19.6999 16.2202 19.6999 15.6002V5.60023C19.6999 5.60023 19.6999 5.58024 19.6999 5.57024L19.71 5.59023Z" fill="currentColor"></path>
                   </svg>
@@ -198,7 +258,7 @@ export default function HomePage() {
         </div>
         <div className="flex" style={{ marginRight: "6px" }}>
           <div className="flex w-auto" data-tooltip-id="button-tooltip-27" data-tooltip-place="top-end" data-tooltip-role="tooltip" style={{ marginRight: "30px" }}>
-            <button data-testid="wallet-assets-history-button" type="button" className="outline-none bg-transparent text-background-1 text-subheader-16 leading-subheader-16 default-button !p-0 w-auto  ">
+            <button onClick={() => setHistoryOpen(true)} data-testid="wallet-assets-history-button" type="button" className="outline-none bg-transparent text-background-1 text-subheader-16 leading-subheader-16 default-button !p-0 w-auto  ">
               <svg className="text-utility-1-opacity-1" fill="none" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M23.109 12C23.109 17.58 18.569 22.12 12.989 22.12C10.049 22.12 7.25903 20.85 5.33903 18.63C5.13903 18.4 5.04902 18.11 5.06902 17.81C5.08902 17.51 5.22903 17.24 5.44903 17.04C5.65903 16.87 5.91903 16.77 6.18903 16.77C6.51903 16.77 6.82902 16.91 7.03902 17.16C8.53902 18.88 10.699 19.88 12.989 19.88C17.329 19.88 20.859 16.34 20.859 12C20.859 7.66 17.329 4.12 12.989 4.12C9.09903 4.12 5.82903 6.91 5.21903 10.76L5.18903 10.9H6.01903C6.46903 10.9 6.87903 11.17 7.05903 11.6C7.22903 12.02 7.12903 12.5 6.80903 12.82L4.80903 14.82C4.59903 15.04 4.31903 15.15 4.01903 15.15C3.71903 15.15 3.42903 15.04 3.21903 14.82L1.21903 12.82C0.89903 12.5 0.799024 12.02 0.979024 11.6C1.14902 11.17 1.55903 10.9 2.01903 10.9H2.92902V10.79C3.54902 5.71 7.86903 1.88 12.989 1.88C18.569 1.88 23.109 6.42 23.109 12Z" fill="currentColor"></path>
                 <path d="M16.9189 14.62C16.7089 14.94 16.3589 15.12 15.9789 15.12C15.7589 15.12 15.5489 15.06 15.3589 14.94L11.8589 12.6V7C11.8589 6.38 12.3589 5.88 12.9889 5.88C13.6189 5.88 14.1089 6.38 14.1089 7V11.4L14.1689 11.44L16.6089 13.06C16.8589 13.23 17.0289 13.48 17.0889 13.78C17.1489 14.07 17.0889 14.37 16.9189 14.62Z" fill="currentColor"></path>
@@ -348,9 +408,9 @@ export default function HomePage() {
       </div>
       <div className="flex flex-col gap-2 pb-10">
         <div role="button" className="outline-0 px-4 cursor-pointer" tabIndex={0}>
-          <div className="flex w-full justify-between">
+          <div className="flex w-full items-center gap-1">
             <p className="typography-subheader-16  text-utility-1-default font-medium   text-unset    " data-i18n="nav.earn">Earn</p>
-            <svg className="text-utility-1-opacity-1" fill="none" width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <svg className="text-utility-1-opacity-1" fill="none" width="16" height="16" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
               <path fillRule="evenodd" clipRule="evenodd" d="M7.69445 16.2503C7.44445 16.2503 7.18612 16.1586 6.98612 15.9753C6.56112 15.5836 6.53612 14.9253 6.92778 14.5003L10.8861 10.2086L6.92778 5.91694C6.53612 5.49194 6.56112 4.83361 6.98612 4.44194C7.41112 4.05028 8.06945 4.07528 8.46112 4.50028L13.0778 9.50028C13.4444 9.90028 13.4444 10.5169 13.0778 10.9169L8.46112 15.9169C8.25278 16.1419 7.97778 16.2503 7.69445 16.2503Z" fill="currentColor"></path>
             </svg>
           </div>
@@ -433,8 +493,62 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+      <div className="flex flex-col gap-2 pb-36 px-4 mt-2">
+        <div role="button" className="outline-0 cursor-pointer" tabIndex={0} onClick={() => setHistoryOpen(true)}>
+          <div className="flex w-full items-center gap-1">
+            <p className="typography-subheader-16 text-utility-1-default font-medium text-unset">History</p>
+            <svg className="text-utility-1-opacity-1" fill="none" width="16" height="16" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              <path fillRule="evenodd" clipRule="evenodd" d="M7.69445 16.2503C7.44445 16.2503 7.18612 16.1586 6.98612 15.9753C6.56112 15.5836 6.53612 14.9253 6.92778 14.5003L10.8861 10.2086L6.92778 5.91694C6.53612 5.49194 6.56112 4.83361 6.98612 4.44194C7.41112 4.05028 8.06945 4.07528 8.46112 4.50028L13.0778 9.50028C13.4444 9.90028 13.4444 10.5169 13.0778 10.9169L8.46112 15.9169C8.25278 16.1419 7.97778 16.2503 7.69445 16.2503Z" fill="currentColor"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <div className="flex flex-col gap-5 mt-4">
+          {recentTransactions.length === 0 ? (
+            <div className="py-4 text-center text-[14px] text-[#888]">No transactions yet</div>
+          ) : recentTransactions.map((transaction) => {
+            const display = getTransactionDisplay(transaction);
+            const symbol = transaction.tokenSymbol.toUpperCase();
+            const amount = Number(transaction.amount) || 0;
+            const price = prices[symbol]?.usd ?? getTrustToken(symbol).price;
+            const sign = display.isPositive ? "+" : "-";
+
+            return (
+              <div key={transaction.id} className="flex items-center justify-between cursor-pointer" onClick={() => setHistoryOpen(true)}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center justify-center w-[42px] h-[42px] rounded-full bg-[#2A2A2D] shrink-0">
+                    <TransactionIcon type={display.icon} />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[16px] font-semibold text-white">{display.title}</span>
+                    <span className="text-[14px] text-[#888] truncate">{display.addressLabel}: {truncateAddress(display.address)}</span>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end shrink-0 pl-3">
+                  <span className="text-[16px] font-semibold" style={{ color: display.isPositive ? "#48FF91" : "#fff" }}>{sign}{formatTrustBalance(amount)} {symbol}</span>
+                  <span className="text-[14px] text-[#888]">≈ {formatTrustCurrency(amount * price, baseCurrency)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-center mt-6">
+          <button 
+            onClick={() => setHistoryOpen(true)}
+            className="flex items-center gap-2 bg-[#2A2A2D] hover:bg-[#3A3A3D] transition-colors rounded-full px-5 py-2 text-[15px] font-medium text-white border-none"
+          >
+            View all
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
       <SwapModal isOpen={swapOpen} onClose={() => setSwapOpen(false)} />
+      <HistoryModal isOpen={historyOpen} onClose={() => setHistoryOpen(false)} />
       <CoinModal isOpen={coinOpen} onClose={() => setCoinOpen(false)} symbol={selectedCoinSymbol} />
+      <SendModal isOpen={sendOpen} onClose={() => setSendOpen(false)} />
     </>
   );
 }
