@@ -4,9 +4,15 @@ import React from "react";
 import { ArrowDown } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { trackEvent } from "@/lib/track";
 
 export default function TryFreeButton({ className, wrapperClassName }: { className?: string, wrapperClassName?: string }) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    trackEvent("clicked_get_larperwallet", {
+      path: window.location.pathname,
+      target: "/#pricing",
+    });
+
     if (window.location.pathname === "/") {
       e.preventDefault();
       const pricingSection = document.getElementById("pricing");

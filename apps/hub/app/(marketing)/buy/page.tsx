@@ -10,6 +10,7 @@ import { RpWalletApiClient } from "@rp-wallet/api-client";
 import Link from "next/link";
 import { useRef } from "react";
 import { useInView, motion, AnimatePresence } from "framer-motion";
+import { trackEvent } from "@/lib/track";
 
 const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
@@ -44,6 +45,14 @@ function BuyContent() {
   const checkoutLocked = isLoading || checkoutPhase !== "idle";
 
   React.useEffect(() => {
+    trackEvent("buy_page_viewed", {
+      initial_plan: initialPlan,
+      selected_plan: validPlanId,
+      expired_license: isExpired,
+    });
+  }, [initialPlan, isExpired, validPlanId]);
+
+  React.useEffect(() => {
     const resetReturnedCheckout = () => {
       setCheckoutError("");
       setCheckoutPhase("idle");
@@ -70,6 +79,16 @@ function BuyContent() {
     if (!selectedPlanId || checkoutLocked) return;
     const plan = selectedPlan;
     if (!plan) return;
+    window.dispatchEvent(new Event("rp-wallet:checkout-started"));
+    trackEvent("checkout_started", {
+      plan: plan.id,
+      price: plan.price,
+      has_embed_config:
+        Boolean(plan.sellauthProductId) &&
+        Boolean(plan.sellauthVariantId) &&
+        Number(plan.sellauthProductId) > 0 &&
+        Number(plan.sellauthVariantId) > 0,
+    });
     const slowTimer = window.setTimeout(() => setIsSlowCheckout(true), 4000);
     const clearSlowTimer = () => window.clearTimeout(slowTimer);
 
@@ -110,15 +129,25 @@ function BuyContent() {
         },
         onCheckoutUrlReady: () => {
           setCheckoutPhase("opening");
+          trackEvent("checkout_url_ready", { plan: plan.id });
         },
         onError: (error) => {
           clearSlowTimer();
           setCheckoutError(error.message || "Please try again.");
           setCheckoutPhase("error");
+          trackEvent("checkout_failed", {
+            plan: plan.id,
+            error: error.message || "Please try again.",
+          });
         },
         onSettled: ({ status, redirected }) => {
           clearSlowTimer();
           setIsSlowCheckout(false);
+          trackEvent("checkout_settled", {
+            plan: plan.id,
+            status,
+            redirected,
+          });
           if (status === "success" && !redirected) {
             setCheckoutPhase("idle");
           }
@@ -146,6 +175,7 @@ function BuyContent() {
       }
       const fallbackUrl = new URL(plan.buyUrl);
       if (sellAuthAffiliate) fallbackUrl.searchParams.set("affiliate", sellAuthAffiliate);
+      trackEvent("checkout_fallback_opened", { plan: plan.id });
       window.open(fallbackUrl.toString(), "_blank");
       window.setTimeout(() => {
         clearSlowTimer();
@@ -190,7 +220,14 @@ function BuyContent() {
                 key={plan.id}
                 id={`plan-${plan.id}`}
                 onClick={() => {
-                  if (!checkoutLocked) setSelectedPlanId(plan.id);
+                  if (!checkoutLocked) {
+                    setSelectedPlanId(plan.id);
+                    trackEvent("pricing_plan_selected", {
+                      plan: plan.id,
+                      price: plan.price,
+                      source: "buy_page",
+                    });
+                  }
                 }}
                 className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none" : "cursor-pointer"} ${isSelected
                   ? isYearly

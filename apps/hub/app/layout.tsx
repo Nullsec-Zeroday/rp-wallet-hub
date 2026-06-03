@@ -4,6 +4,7 @@ import { buildDefaultMetadata } from "@/lib/seo";
 import "./styles.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import PostHogProvider from "@/components/marketing/posthog-provider";
 
 const satoshi = localFont({
   src: "../public/font/Satoshi-Variable.ttf",
@@ -25,7 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`dark antialiased font-sans ${satoshi.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-[#0c0a18]">
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
         {/* <SpeedInsights /> */}
         <Analytics />
       </body>
