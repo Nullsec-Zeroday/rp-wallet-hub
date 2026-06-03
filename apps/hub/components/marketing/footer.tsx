@@ -27,7 +27,7 @@ export default function Footer() {
               <br />
               <span className="text-white/20">No personal data collected on-site.</span>
             </p>
-            <MadeInUsaBadge className="mt-8 mb-4 opacity-80 hover:opacity-100 transition-opacity" />
+            {/* <MadeInUsaBadge className="mt-8 mb-4 opacity-80 hover:opacity-100 transition-opacity" /> */}
             <div className="text-[12px] text-white/10 font-medium tracking-wide">
               © {new Date().getFullYear()} LarperWallet.
             </div>

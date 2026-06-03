@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useState, useRef, useEffect } from "react";
 import { getAssetUrl } from "@/lib/utils";
+import { homepageFaq } from "@/lib/seo";
 import HeroButtons from "./hero-buttons";
 import dynamic from "next/dynamic";
 const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
@@ -64,8 +65,8 @@ export default function LandingContent() {
     return () => clearInterval(timer);
   }, []);
 
-  const oldVideoRef = useRef<HTMLVideoElement>(null);
-  const [oldVideoSrc] = useState<string>(() => getAssetUrl("/video/product_loop.mp4"));
+  const VIDEOS = ["/video/phantom_send.mp4", "/video/trust_receive.mp4"];
+  const [activeVideoIdx, setActiveVideoIdx] = useState(0);
 
   type Slide = {
     text: string;
@@ -159,9 +160,9 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.4rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
-            Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">the flex.</span>
+            Fake Crypto Wallet  <br />That <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">Feels Real.</span>
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
@@ -169,8 +170,8 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-medium">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>LarperWallet is a fake crypto wallet app made for entertainment. Edit balance, add any token, and display it on a pixel-perfect <span className="font-semibold">Phantom</span>, <span className="font-semibold">Trust</span> wallet interface — no real crypto involved.</p>
+            <span className="text-white/90 font-medium">Used by 300+ creators and crypto LARPers 🤑</span>
+            Edit balances, add tokens, simulate sends, and use a realistic Phantom or Trust wallet clone on your phone. Built for entertainment, demos, pranks, and crypto LARP with no real crypto involved.
             {/* LarperWallet is a crypto wallet simulator made for entertainment. */}
           </motion.div>
         </div>
@@ -184,109 +185,98 @@ export default function LandingContent() {
           <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} />
         </motion.div>
 
-        {/*
+
         <motion.div
           initial={isMobile ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="md:hidden relative z-0 w-full flex flex-col items-center justify-center px-2 pointer-events-none mt-4"
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] max-w-[400px] h-64 bg-phantom-purple/20 blur-3xl rounded-full pointer-events-none" />
-          <motion.div className="relative z-10 w-full max-w-[280px]">
-            <div className="relative mx-auto w-full max-w-[280px] aspect-[715/1496] bg-[#e5e5ea] rounded-[44px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
-              <div className="absolute top-[100px] -left-[2px] w-[2px] h-[22px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-              <div className="absolute top-[140px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-              <div className="absolute top-[195px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-              <div className="absolute top-[150px] -right-[2px] w-[2px] h-[65px] bg-[#c7c7cc] rounded-r-[1px]"></div>
+          <div className="relative w-full overflow-hidden flex flex-col items-center justify-center px-2">
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={activeVideoIdx}
+                initial={{ opacity: 0, x: 150 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -150 }}
+                transition={{ duration: 0.5, ease: "easeInOut" }}
+                className="relative z-10 w-full max-w-[240px]"
+              >
+                <div className="relative mx-auto w-full max-w-[240px] aspect-[715/1496] bg-[#e5e5ea] rounded-[44px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+                  <div className="absolute top-[100px] -left-[2px] w-[2px] h-[22px] bg-[#c7c7cc] rounded-l-[1px]"></div>
+                  <div className="absolute top-[140px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
+                  <div className="absolute top-[195px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
+                  <div className="absolute top-[150px] -right-[2px] w-[2px] h-[65px] bg-[#c7c7cc] rounded-r-[1px]"></div>
 
-              <div className="absolute inset-[2px] bg-black rounded-[42px]">
-                <div className={`absolute inset-[5px] ${USE_NEW_MOBILE_LOOP ? "bg-[#111111] flex items-center justify-center" : "bg-[#0a0a0c]"} rounded-[38px] overflow-hidden`}>
-                  <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[85px] h-[22px] bg-black rounded-full z-20 flex items-center justify-end px-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#050505] border border-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
-                      <div className="absolute top-0 right-0.5 w-1 h-1 bg-blue-500/20 rounded-full blur-[0.5px]"></div>
+                  <div className="absolute inset-[2px] bg-black rounded-[42px]">
+                    <div className={`absolute inset-[5px] ${USE_NEW_MOBILE_LOOP ? "bg-[#111111] flex items-center justify-center" : "bg-[#0a0a0c]"} rounded-[38px] overflow-hidden`}>
+                      <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[85px] h-[22px] bg-black rounded-full z-20 flex items-center justify-end px-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#050505] border border-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
+                          <div className="absolute top-0 right-0.5 w-1 h-1 bg-blue-500/20 rounded-full blur-[0.5px]"></div>
+                        </div>
+                      </div>
+
+                      {USE_NEW_MOBILE_LOOP ? (
+                        <>
+                          <AnimatePresence mode="wait">
+                            {phase === "text" && (
+                              <motion.div
+                                key={`text-${activeSlide}`}
+                                initial={isMobile ? false : { opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 1.05 }}
+                                transition={{ duration: 0.4 }}
+                                className="absolute inset-0 flex items-center justify-center z-10 px-6 text-center"
+                              >
+                                <h3 className="text-white font-semibold text-xl tracking-tight leading-snug">{MOCKUP_SLIDES[activeSlide].text}</h3>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
+                          {MOCKUP_SLIDES.map((slide, index) =>
+                            slide.video ? (
+                              <video
+                                key={slide.video}
+                                ref={(el) => {
+                                  if (el) videoRefs.current[index] = el;
+                                }}
+                                src={getAssetUrl(slide.video)}
+                                muted
+                                playsInline
+                                onEnded={() => handleVideoEnded(index)}
+                                className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
+                              />
+                            ) : slide.image ? (
+                              <div
+                                key={slide.image}
+                                className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
+                              >
+                                <Image src={getAssetUrl(slide.image)} alt="Logo" width={140} height={140} className="opacity-90 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
+                              </div>
+                            ) : null,
+                          )}
+                        </>
+                      ) : (
+                        <video
+                          src={getAssetUrl(VIDEOS[activeVideoIdx])}
+                          autoPlay
+                          muted
+                          playsInline
+                          onEnded={() => {
+                            setActiveVideoIdx((prev) => (prev + 1) % VIDEOS.length);
+                          }}
+                          className="absolute inset-0 w-full h-full object-cover object-top"
+                        />
+                      )}
                     </div>
                   </div>
-
-                  {USE_NEW_MOBILE_LOOP ? (
-                    <>
-                      <AnimatePresence mode="wait">
-                        {phase === "text" && (
-                          <motion.div
-                            key={`text-${activeSlide}`}
-                            initial={isMobile ? false : { opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.05 }}
-                            transition={{ duration: 0.4 }}
-                            className="absolute inset-0 flex items-center justify-center z-10 px-6 text-center"
-                          >
-                            <h3 className="text-white font-semibold text-xl tracking-tight leading-snug">{MOCKUP_SLIDES[activeSlide].text}</h3>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {MOCKUP_SLIDES.map((slide, index) =>
-                        slide.video ? (
-                          <video
-                            key={slide.video}
-                            ref={(el) => {
-                              if (el) videoRefs.current[index] = el;
-                            }}
-                            src={getAssetUrl(slide.video)}
-                            muted
-                            playsInline
-                            onEnded={() => handleVideoEnded(index)}
-                            className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
-                          />
-                        ) : slide.image ? (
-                          <div
-                            key={slide.image}
-                            className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
-                          >
-                            <Image src={getAssetUrl(slide.image)} alt="Logo" width={140} height={140} className="opacity-90 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
-                          </div>
-                        ) : null,
-                      )}
-                    </>
-                  ) : (
-                    <video
-                      ref={oldVideoRef}
-                      src={oldVideoSrc}
-                      autoPlay
-                      muted
-                      playsInline
-                      onEnded={() => {
-                        setTimeout(() => {
-                          if (oldVideoRef.current) {
-                            oldVideoRef.current.play().catch((e) => console.log("Play interrupted:", e));
-                          }
-                        }, 500);
-                      }}
-                      className="absolute inset-0 w-full h-full object-cover object-top"
-                    />
-                  )}
                 </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={isMobile ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="mt-6 text-center max-w-[280px] z-10 relative pointer-events-auto"
-          >
-            <div className="text-white/50 text-[13px] md:text-sm italic font-medium leading-relaxed">
-              <span className="translate-y-4">*</span> This video demonstrates the swap action in Phantom interface. If you wish to see the full fake Phantom Wallet demo then{" "}
-              <button onClick={() => setIsDemoModalOpen(true)} className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors inline-block">
-                click here
-              </button>
-              .
-            </div>
-          </motion.div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </motion.div>
-        */}
 
-        <motion.div
+        {/* <motion.div
           initial={isMobile ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -310,7 +300,7 @@ export default function LandingContent() {
               />
             </motion.div>
           </AnimatePresence>
-        </motion.div>
+        </motion.div> */}
 
         <Suspense fallback={null}>
           <motion.div
@@ -385,15 +375,62 @@ export default function LandingContent() {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsDemoModalOpen(true)}
+            <a
+              href="https://t.me/LarperWallet_bot"
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full text-[15px] font-medium transition-all flex items-center justify-center gap-2"
             >
-              Watch it happen <ArrowRight size={16} />
-            </button>
+              Join Telegram <ArrowRight size={16} />
+            </a>
           </div>
         </motion.div>
       </section>
+
+      {/* <section id="features" className="py-12 px-6 max-w-[1040px] mx-auto relative">
+        <motion.div
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true }}
+          className="text-center mb-10 md:mb-12"
+        >
+          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-3">
+            A full fake crypto wallet app,
+            <br />
+            <span className="text-[#ab9ff2]">not a screenshot editor.</span>
+          </h2>
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-2xl mx-auto leading-relaxed">
+            LarperWallet gives you a realistic wallet simulator with editable balances, custom tokens, simulated sends, activity history and much more.
+          </p>
+        </motion.div>
+
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid gap-4 md:grid-cols-3">
+          {[
+            {
+              title: "Live wallet simulation",
+              body: "Use a full fake crypto wallet app with balances, token lists, wallet names, and activity that behave like a real mobile wallet interface.",
+            },
+            {
+              title: "Phantom and Trust Wallet",
+              body: "Show realistic Phantom or Trust Wallet-style screens for content, demos, pranks, screenshots, and short videos.",
+            },
+            {
+              title: "LARP wallet app",
+              body: "Run the simulator on iPhone or Android with a PWA that never connects to real wallets, seed phrases, or funds.",
+            },
+          ].map((item) => (
+            <motion.div
+              key={item.title}
+              variants={fadeInUp}
+              className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 md:p-7 shadow-xl backdrop-blur-md"
+            >
+              <h3 className="font-medium text-white/90 text-lg mb-3">{item.title}</h3>
+              <p className="text-white/55 text-[14px] leading-relaxed font-medium">{item.body}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section> */}
 
       <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
         <div className="text-center mb-10 md:mb-14">
@@ -633,14 +670,7 @@ export default function LandingContent() {
 
         <div className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
           {[
-            {
-              q: "What is LarperWallet?",
-              a: "LarperWallet is a crypto wallet simulator for content, demos, and roleplay. It lets you create realistic wallet screens with custom balances, tokens, activity, and simulated transaction moments.",
-            },
-            {
-              q: "Is it a real crypto wallet?",
-              a: "No. LarperWallet does not hold, send, receive, withdraw, or swap real crypto. It never asks for seed phrases, private keys, or access to your real wallet.",
-            },
+            ...homepageFaq.map((item) => ({ q: item.question, a: item.answer })),
             {
               q: "How fast can I set it up?",
               a: "After purchase, install the app, enter your license key, and follow the setup steps. Most users can start building a wallet scene in seconds.",
@@ -694,6 +724,33 @@ export default function LandingContent() {
               </div>
             );
           })}
+        </div>
+      </section>
+
+      <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
+        <div className="rounded-[2rem] border border-white/5 bg-white/[0.015] p-6 md:p-8 text-center">
+          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
+            LarperWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust Wallet simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {[
+              "fake crypto wallet app",
+              "crypto wallet simulator",
+              "fake Phantom wallet",
+              "fake Phantom wallet balance",
+              "LARP wallet app",
+              "fake crypto wallet screen",
+              "Trust Wallet simulator",
+              "crypto LARP app",
+            ].map((term) => (
+              <span
+                key={term}
+                className="rounded-full border border-white/5 bg-white/[0.02] px-3 py-1.5 text-[12px] font-medium text-white/35"
+              >
+                {term}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
       <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />

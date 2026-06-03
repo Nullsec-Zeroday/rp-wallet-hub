@@ -5,10 +5,33 @@ export const siteConfig = {
   name: "LarperWallet",
   url: "https://larperwallet.com",
   description:
-    "LarperWallet is the #1 crypto wallet simulator and fake crypto wallet app. A pixel-perfect Phantom wallet simulator for content creators, product demos, and crypto roleplay. Set any balance, simulate P2P transactions, and create indistinguishable wallet screenshots instantly.",
+    "LarperWallet is a crypto wallet simulator and fake crypto wallet app for entertainment, creator content, demos, and crypto roleplay. Create realistic Phantom and Trust Wallet screenshots, edit balances, add tokens, and simulate wallet activity with no real crypto involved.",
   ogImage: "/opengraph-image.png",
   xHandle: "@LarperWallet",
 };
+
+export const homepageFaq = [
+  {
+    question: "How do I create a fake crypto wallet screenshot?",
+    answer:
+      "Use LarperWallet to open a simulated wallet interface, choose a Phantom-style or Trust Wallet-style screen, set the token balances and activity you want, then capture the screen for entertainment, demo, or content production. LarperWallet does not hold or move real crypto.",
+  },
+  {
+    question: "Can I make a fake Phantom wallet balance?",
+    answer:
+      "Yes. LarperWallet includes a realistic Phantom-style wallet simulator where you can customize token balances, prices, wallet details, and activity for screenshots or videos. It is a simulator only and cannot send, receive, swap, or store real funds.",
+  },
+  {
+    question: "What is a LARP wallet?",
+    answer:
+      "A LARP wallet is a simulated crypto wallet used for roleplay, creator content, product demos, and visual mockups. It looks like a wallet on screen, but it has no blockchain access, private keys, seed phrases, or real assets.",
+  },
+  {
+    question: "Is LarperWallet a real crypto wallet app?",
+    answer:
+      "No. LarperWallet is a wallet simulator and visual production tool. It never asks for a seed phrase, never connects to your real wallet, and cannot process real blockchain transactions.",
+  },
+];
 
 export function absoluteUrl(path = "/") {
   return new URL(path, siteConfig.url).toString();
@@ -24,7 +47,7 @@ export function buildDefaultMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: "LarperWallet — #1 Crypto Wallet Simulator | Fake Phantom, Trust & Ledger Wallet App",
+      default: "Fake Crypto Wallet App & Phantom Wallet Simulator | LarperWallet",
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,
@@ -32,14 +55,25 @@ export function buildDefaultMetadata(): Metadata {
     keywords: [
       "crypto wallet simulator",
       "fake crypto wallet",
+      "fake crypto wallet screen",
+      "fake crypto wallet screenshot",
+      "fake crypto wallet screenshot generator",
       "fake crypto wallet app",
       "phantom wallet simulator",
       "trust wallet simulator",
       "ledger wallet simulator",
       "larp wallet",
+      "larp wallet crypto",
+      "larp wallet app",
+      "larp wallet free",
       "larp crypto",
       "crypto larp",
       "fake phantom wallet",
+      "fake phantom wallet screenshot",
+      "fake phantom wallet balance",
+      "fake phantom wallet app",
+      "fake phantom wallet generator",
+      "fake phantom wallet ios",
       "fake phantom app",
       "crypto wallet simulator app",
       "fake wallet app",
@@ -65,7 +99,7 @@ export function buildDefaultMetadata(): Metadata {
       locale: "en_US",
       url: siteConfig.url,
       siteName: siteConfig.name,
-      title: buildTitle("Show Off Millions in Crypto Instantly"),
+      title: "Fake Crypto Wallet App & Phantom Wallet Screenshot Generator",
       description: siteConfig.description,
       images: [
         {
@@ -78,7 +112,7 @@ export function buildDefaultMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: buildTitle("Show Off Millions in Crypto Instantly"),
+      title: "Fake Crypto Wallet App & Phantom Wallet Simulator",
       description: siteConfig.description,
       creator: siteConfig.xHandle,
       images: [ogImageUrl],
@@ -124,6 +158,13 @@ export function buildWebApplicationSchema() {
     url: siteConfig.url,
     description: siteConfig.description,
     applicationCategory: ["FinanceApplication", "EntertainmentApplication"],
+    alternateName: [
+      "Fake Crypto Wallet App",
+      "Phantom Wallet Simulator",
+      "LARP Wallet",
+      "Fake Phantom Wallet Generator",
+      "Crypto Wallet Screenshot Generator",
+    ],
     operatingSystem: "iOS, Android, Windows, macOS",
     browserRequirements: "Requires a modern web browser with PWA support",
     softwareVersion: "2.0",
@@ -147,6 +188,9 @@ export function buildWebApplicationSchema() {
     },
     featureList: [
       "Pixel-perfect Phantom wallet simulation",
+      "Trust Wallet-style simulation",
+      "Fake crypto wallet screenshot creation",
+      "Fake Phantom wallet balance editing",
       "Customizable token balances",
       "Live token price feeds",
       "Peer-to-peer simulated transactions",
