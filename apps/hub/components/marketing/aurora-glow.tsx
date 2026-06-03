@@ -1,6 +1,15 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 export function AuroraGlow({ isStatic = false, className }: { isStatic?: boolean; className?: string }) {
+  const pathname = usePathname();
+  
+  if (pathname === "/buy") {
+    return null;
+  }
+  
   return (
     <div
       aria-hidden="true"

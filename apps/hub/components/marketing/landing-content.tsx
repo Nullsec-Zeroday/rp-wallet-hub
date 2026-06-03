@@ -629,7 +629,7 @@ export default function LandingContent() {
                 </ul>
 
                 <Link
-                  href="/buy"
+                  href={`/buy?plan=${plan.id}`}
                   className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${isPopular
                     ? "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02]"
                     : isYearly
