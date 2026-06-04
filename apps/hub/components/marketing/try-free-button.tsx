@@ -15,9 +15,11 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
 
     if (window.location.pathname === "/") {
       e.preventDefault();
-      const pricingSection = document.getElementById("pricing");
-      if (pricingSection) {
-        pricingSection.scrollIntoView({ behavior: "smooth" });
+      const installationSection = document.getElementById("installation");
+      if (installationSection) {
+        installationSection.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.location.href = "/#installation";
       }
     }
   };
@@ -25,7 +27,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className={wrapperClassName}>
       <Link
-        href="/#pricing"
+        href="/#installation"
         onClick={handleClick}
         className={`relative overflow-hidden w-full sm:w-[240px] h-12 md:h-14 px-4 sm:px-8 rounded-xl flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white bg-gradient-to-r from-phantom-purple to-phantom-accent border border-white/20 transition-all group whitespace-nowrap ${className || ""}`}
       >
@@ -51,7 +53,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
 
         <div className="relative z-10 flex items-center gap-2.5">
           <ArrowDown size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-          <span className="truncate tracking-tight">Get LarperWallet</span>
+          <span className="truncate tracking-tight">Install App</span>
         </div>
       </Link>
     </motion.div>

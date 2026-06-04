@@ -160,9 +160,9 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.4rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
-            Fake Crypto Wallet  <br />That <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">Feels Real.</span>
+            Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">the flex.</span>
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
@@ -170,8 +170,8 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-medium">Used by 300+ creators and crypto LARPers 🤑</span>
-            Edit balances, add tokens, simulate sends, and use a realistic Phantom or Trust wallet clone on your phone. Built for entertainment, demos, pranks, and crypto LARP with no real crypto involved.
+            <span className="text-white/90 font-medium">The Best Crypto Wallet Replica App</span>
+            LarperWallet is a fake crypto wallet app for entertainment. Edit balance, import any token, simulate swap or send in a realistic Phantom or Trust Wallet interface - No real crypto involved.
             {/* LarperWallet is a crypto wallet simulator made for entertainment. */}
           </motion.div>
         </div>
@@ -492,8 +492,9 @@ export default function LandingContent() {
         </motion.div>
       </section>
 
-      <section className="pb-12 px-6 max-w-[1000px] mx-auto relative">
+      <section id="installation" className="pb-12 scroll-mt-6 px-6 max-w-[1000px] mx-auto relative">
         <motion.div
+
           variants={fadeInUp}
           initial="initial"
           whileInView="whileInView"
@@ -505,8 +506,8 @@ export default function LandingContent() {
 
           {/* Centered Column */}
           <div className="relative z-10 w-full flex flex-col items-center">
-            <h2 className="font-display text-2xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
-              How LarperWallet <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">works.</span>
+            <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
+              How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">get access.</span>
             </h2>
             {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
               Get set up in less than 2 minutes. No complicated installations.
@@ -543,12 +544,13 @@ export default function LandingContent() {
                   <Smartphone size={16} className="text-white/80" />
                 </div>
                 <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Activate & Flex</h4>
+                  <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
                   <p className="text-white/50 text-[14px] leading-snug">
+                    Enter your license key,{" "}
                     <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
-                      Install the app
+                      install the app
                     </Link>
-                    , enter your license key, follow the steps and your wallet is ready in seconds.
+                    , follow the steps and your wallet is ready in seconds.
                   </p>
                 </div>
               </div>
@@ -567,6 +569,14 @@ export default function LandingContent() {
             </p>
           </div>
         </motion.div>
+        <div
+          className="mt-6 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
+        >
+          <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
+          <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
+            Log In
+          </Link>
+        </div>
       </section>
 
       <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
@@ -644,15 +654,6 @@ export default function LandingContent() {
               </div>
             );
           })}
-        </div>
-
-        <div
-          className="mt-16 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
-        >
-          <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
-          <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
-            Log In
-          </Link>
         </div>
       </section>
 
