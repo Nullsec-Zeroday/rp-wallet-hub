@@ -9,6 +9,8 @@ export interface ApiEnv {
   TRUST_ORIGIN?: string;
   PHANTOM_ENABLED?: string;
   TRUST_ENABLED?: string;
+  DEMO_ENABLED?: string;
+  DEMO_DURATION_MINUTES?: string;
   AFFILIATE_ADMIN_TOKEN?: string;
   SELLAUTH_API_KEY?: string;
   SELLAUTH_WEBHOOK_SECRET?: string;

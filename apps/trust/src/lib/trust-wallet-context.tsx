@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, UpdateWalletStateRequest, WalletAccount, WalletBootstrapPayload, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
-import { writeCachedBootstrap } from "@rp-wallet/wallet-core";
+import { applyDemoRestrictions, isDemoPayload, requestDemoPaywall, writeCachedBootstrap } from "@rp-wallet/wallet-core";
 import { useTrustLivePrices } from "@/hooks/useTrustLivePrices";
 import { formatTrustCurrency, getStaticTrustPrices, getTrustToken, TRUST_TOKENS, type TrustLivePrices } from "@/lib/trust-token-data";
 
@@ -67,6 +67,7 @@ interface TrustWalletContextValue {
   transactionPending: boolean;
   walletAddress: string;
   walletName: string;
+  demoMode: boolean;
 }
 
 const TrustWalletContext = createContext<TrustWalletContextValue | null>(null);
@@ -231,8 +232,9 @@ export function TrustWalletProvider({
   const [transactionError, setTransactionError] = useState("");
 
   useEffect(() => {
-    setPayload(initialPayload);
+    setPayload(applyDemoRestrictions("trust", initialPayload));
   }, [initialPayload]);
+  const demoMode = isDemoPayload(payload);
 
   const account = useMemo(() => getAccount(payload), [payload]);
   const balanceMap = useMemo(() => getPayloadBalanceMap(payload), [payload]);
@@ -240,7 +242,7 @@ export function TrustWalletProvider({
     () => Array.from(new Set([...TRUST_TOKENS.map((token) => token.symbol), ...Object.keys(balanceMap)])),
     [balanceMap],
   );
-  const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
+  const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency, demoMode);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
   const notificationSettings = payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
   const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
@@ -258,6 +260,7 @@ export function TrustWalletProvider({
   }, [balanceMap, baseCurrency, coingeckoApiKey, tokenSymbols, walletAddress, walletName]);
 
   const applyPayload = useCallback((nextPayload: WalletBootstrapPayload) => {
+    nextPayload = applyDemoRestrictions("trust", nextPayload);
     setPayload(nextPayload);
     writeCachedBootstrap("trust", nextPayload);
     onPayloadChange(nextPayload);
@@ -265,6 +268,10 @@ export function TrustWalletProvider({
 
   const saveSettings = useCallback(async (input: TrustSettingsInput) => {
     const normalizedCurrency = (input.currency || "USD").toUpperCase();
+    if (demoMode) {
+      requestDemoPaywall("settings");
+      return false;
+    }
     writePreference(BASE_CURRENCY_KEY, normalizedCurrency);
     writePreference(CG_API_KEY, input.coingeckoApiKey.trim());
     setBaseCurrency(normalizedCurrency);
@@ -309,7 +316,7 @@ export function TrustWalletProvider({
     } finally {
       setSavingSettings(false);
     }
-  }, [account, api, applyPayload, payload, walletName]);
+  }, [account, api, applyPayload, demoMode, payload, walletName]);
 
   const createTransaction = useCallback(async (input: TrustTransactionInput) => {
     setTransactionError("");
@@ -330,7 +337,7 @@ export function TrustWalletProvider({
         source: "user",
       };
 
-      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+      if (demoMode || (import.meta.env.DEV && payload.license.id === "dev-license")) {
         const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
         applyPayload(nextPayload);
         return transaction;
@@ -340,7 +347,7 @@ export function TrustWalletProvider({
       applyPayload(response.payload);
       return response.transaction;
     } catch (error) {
-      if (import.meta.env.DEV && payload.license.id === "dev-license") {
+      if (demoMode || (import.meta.env.DEV && payload.license.id === "dev-license")) {
         try {
           const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
           applyPayload(nextPayload);
@@ -355,7 +362,7 @@ export function TrustWalletProvider({
     } finally {
       setTransactionPending(false);
     }
-  }, [account, api, applyPayload, payload]);
+  }, [account, api, applyPayload, demoMode, payload]);
 
   const saveNotificationSettings = useCallback(async (settings: WalletNotificationSettings) => {
     setSaveError("");
@@ -364,6 +371,10 @@ export function TrustWalletProvider({
       if (!account) throw new Error("No Trust account is available.");
 
       const localPayload = withNotificationSettings(payload, settings);
+      if (demoMode) {
+        requestDemoPaywall("notifications");
+        return false;
+      }
       if (import.meta.env.DEV && payload.license.id === "dev-license") {
         applyPayload(localPayload);
         return true;
@@ -384,7 +395,7 @@ export function TrustWalletProvider({
       setSaveError(error instanceof Error ? error.message : "Unable to save notification settings.");
       return false;
     }
-  }, [account, api, applyPayload, payload]);
+  }, [account, api, applyPayload, demoMode, payload]);
 
   const value = useMemo<TrustWalletContextValue>(() => ({
     account,
@@ -410,7 +421,8 @@ export function TrustWalletProvider({
     transactionPending,
     walletAddress,
     walletName,
-  }), [account, balanceMap, baseCurrency, coingeckoApiKey, createTransaction, notificationSettings, payload, priceError, priceLoading, portfolio, prices, refetchPrices, saveError, saveNotificationSettings, saveSettings, savingSettings, settingsInitialValues, tokenSymbols, transactionError, transactionPending, walletAddress, walletName]);
+    demoMode,
+  }), [account, balanceMap, baseCurrency, coingeckoApiKey, createTransaction, demoMode, notificationSettings, payload, priceError, priceLoading, portfolio, prices, refetchPrices, saveError, saveNotificationSettings, saveSettings, savingSettings, settingsInitialValues, tokenSymbols, transactionError, transactionPending, walletAddress, walletName]);
 
   return <TrustWalletContext.Provider value={value}>{children}</TrustWalletContext.Provider>;
 }

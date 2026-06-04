@@ -1,17 +1,24 @@
 "use client";
 
 import React from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, Wallet2, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/lib/track";
 
 export default function TryFreeButton({ className, wrapperClassName }: { className?: string, wrapperClassName?: string }) {
+  const demoEnabled = process.env.NEXT_PUBLIC_FREE_DEMO_ENABLED === "true";
+  const href = demoEnabled ? "/dashboard" : "/#installation";
+  const label = demoEnabled ? "Try Free Now" : "Get App Access";
+
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     trackEvent("clicked_get_larperwallet", {
       path: window.location.pathname,
-      target: "/#pricing",
+      target: href,
+      demoEnabled,
     });
+
+    if (demoEnabled) return;
 
     if (window.location.pathname === "/") {
       e.preventDefault();
@@ -27,7 +34,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
   return (
     <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} className={wrapperClassName}>
       <Link
-        href="/#installation"
+        href={href}
         onClick={handleClick}
         className={`relative overflow-hidden w-full sm:w-[240px] h-12 md:h-14 px-4 sm:px-8 rounded-xl flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white bg-gradient-to-r from-phantom-purple to-phantom-accent border border-white/20 transition-all group whitespace-nowrap ${className || ""}`}
       >
@@ -52,8 +59,12 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
         <div className="relative z-10 flex items-center gap-2.5">
-          <ArrowDown size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
-          <span className="truncate tracking-tight">Get App Access</span>
+          {demoEnabled ? (
+            <ArrowRight size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+          ) : (
+            <ArrowDown size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-1" />
+          )}
+          <span className="truncate tracking-tight">{label}</span>
         </div>
       </Link>
     </motion.div>

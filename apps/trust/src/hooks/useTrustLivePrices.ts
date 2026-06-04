@@ -26,7 +26,7 @@ function writeCachedPrices(prices: TrustLivePrices) {
   }
 }
 
-export function useTrustLivePrices(symbols: string[], apiKey: string, currency: string) {
+export function useTrustLivePrices(symbols: string[], apiKey: string, currency: string, demoMode = false) {
   const [prices, setPrices] = useState<TrustLivePrices>(() => readCachedPrices() || getStaticTrustPrices());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +46,13 @@ export function useTrustLivePrices(symbols: string[], apiKey: string, currency: 
     });
 
     try {
+      if (demoMode) {
+        const staticPrices = getStaticTrustPrices();
+        setPrices(staticPrices);
+        setError(null);
+        writeCachedPrices(staticPrices);
+        return;
+      }
       const params = new URLSearchParams();
       if (querySymbols.length) params.set("symbols", querySymbols.join(","));
       if (currency) params.set("currency", currency.toLowerCase());
@@ -70,13 +77,13 @@ export function useTrustLivePrices(symbols: string[], apiKey: string, currency: 
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, currency, symbolKey]);
+  }, [apiKey, currency, demoMode, symbolKey]);
 
   useEffect(() => {
     fetchPrices();
-    const interval = window.setInterval(fetchPrices, apiKey.trim() ? 10000 : 30000);
+    const interval = window.setInterval(fetchPrices, demoMode ? 120000 : apiKey.trim() ? 10000 : 30000);
     return () => window.clearInterval(interval);
-  }, [apiKey, fetchPrices]);
+  }, [apiKey, demoMode, fetchPrices]);
 
   return {
     error,

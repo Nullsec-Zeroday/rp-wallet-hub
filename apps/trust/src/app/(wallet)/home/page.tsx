@@ -6,6 +6,7 @@ import SwapModal from "../_components/swap-modal";
 import CoinModal from "../_components/coin-modal";
 import SendModal from "../_components/send-modal";
 import HistoryModal from "../_components/history-modal";
+import { requestDemoPaywall } from "@rp-wallet/wallet-core";
 
 function TrustAssetRow({
   amount,
@@ -216,7 +217,7 @@ export default function HomePage() {
           <div className="flex flex-col space-y-2 items-center">
             <div data-tooltip-id="circle-action-tooltip-20" data-tooltip-place="top" data-tooltip-role="tooltip">
               <div className="flex " data-tooltip-id="button-tooltip-21" data-tooltip-place="top-end" data-tooltip-role="tooltip">
-                <button data-testid="wallet-board-fund-button" type="button" className="outline-none bg-button-secondary text-primary-default hover:bg-button-secondary-hovered active:bg-button-secondary-pressed disabled:bg-button-secondary-disabled p-3.5 icon-square-button">
+                <button data-testid="wallet-board-fund-button" type="button" className="outline-none bg-button-secondary text-primary-default hover:bg-button-secondary-hovered active:bg-button-secondary-pressed disabled:bg-button-secondary-disabled p-3.5 icon-square-button" onClick={() => requestDemoPaywall("buy")}>
                   <svg className="text-utility-1-default" fill="none" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21.25 11.25H13.75V3.75C13.75 3.06 13.19 2.5 12.5 2.5C11.81 2.5 11.25 3.06 11.25 3.75V11.25H3.75C3.06 11.25 2.5 11.81 2.5 12.5C2.5 13.19 3.06 13.75 3.75 13.75H11.25V21.25C11.25 21.94 11.81 22.5 12.5 22.5C13.19 22.5 13.75 21.94 13.75 21.25V13.75H21.25C21.94 13.75 22.5 13.19 22.5 12.5C22.5 11.81 21.94 11.25 21.25 11.25Z" fill="currentColor"></path>
                   </svg>

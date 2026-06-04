@@ -1,4 +1,5 @@
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
+import { applyDemoRestrictions } from "@rp-wallet/wallet-core";
 import { DEFAULT_BALANCES } from "./wallet-data";
 import { useWalletStore, type Transaction, type UserProfile } from "./wallet-store";
 
@@ -48,6 +49,7 @@ function formatLicenseExpiration(value: string) {
 }
 
 export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
+  payload = applyDemoRestrictions("phantom", payload);
   const account = payload.accounts[0];
   const accountBalances = account ? payload.balances.filter((balance) => balance.accountId === account.id) : payload.balances;
   const tokenBalances = accountBalances.map((balance) => ({

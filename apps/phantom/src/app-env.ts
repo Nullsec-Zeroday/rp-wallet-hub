@@ -12,4 +12,5 @@ export const walletFlags = {
 export const appEnv = {
   walletAppEnabled: walletFlags.phantom,
   apiBaseUrl: import.meta.env.VITE_RP_WALLET_API_URL || defaultApiBaseUrl,
+  hubUrl: import.meta.env.VITE_HUB_URL || "https://larperwallet.com",
 } as const;

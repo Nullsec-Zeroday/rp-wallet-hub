@@ -18,6 +18,15 @@ export interface LicenseActivationRequest {
   email?: string;
 }
 
+export interface DemoActivationRequest {
+  deviceId: string;
+}
+
+export interface DemoConfigResponse {
+  enabled: boolean;
+  durationMinutes: number;
+}
+
 export interface WalletBootstrapExchangeRequest {
   token: string;
   deviceId: string;

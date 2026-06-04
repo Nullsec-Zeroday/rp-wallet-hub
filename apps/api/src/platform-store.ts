@@ -32,6 +32,8 @@ const AFFILIATE_CHECKOUT_MATCH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const AFFILIATE_MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const AFFILIATE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_WALLET_USERNAME = "larperwallet";
+const DEMO_KEY_LABEL = "Free Demo";
+const DEMO_LICENSE_PLAN = "Demo Preview";
 
 export class DeviceLimitError extends Error {
   constructor(allowedDevices: number) {
@@ -44,6 +46,20 @@ export class InvalidLicenseError extends Error {
   constructor() {
     super("Invalid license key.");
     this.name = "InvalidLicenseError";
+  }
+}
+
+export class DemoUnavailableError extends Error {
+  constructor(message = "Demo mode is not available.") {
+    super(message);
+    this.name = "DemoUnavailableError";
+  }
+}
+
+export class DemoDeviceUsedError extends Error {
+  constructor() {
+    super("This device has already used demo mode.");
+    this.name = "DemoDeviceUsedError";
   }
 }
 
@@ -73,6 +89,31 @@ interface DeviceRecord {
   userId: string;
   deviceId: string;
   lastSeenAt: string;
+}
+
+interface DemoKeyRecord {
+  id: string;
+  keyHash: string;
+  label: string;
+  createdAt: string;
+}
+
+interface DemoDeviceRecord {
+  id: string;
+  deviceId: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+}
+
+interface DemoSessionRecord {
+  id: string;
+  demoKeyId: string;
+  demoDeviceId: string;
+  userId: string;
+  licenseId: string;
+  sessionId: string;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface AffiliateSummary {
@@ -200,6 +241,16 @@ export interface ActivationInput {
   email?: string;
 }
 
+export interface DemoActivationInput {
+  deviceId: string;
+  email?: string;
+}
+
+export interface DemoConfig {
+  enabled: boolean;
+  durationMinutes: number;
+}
+
 export interface PurchasedLicenseInput {
   licenseKey: string;
   email?: string;
@@ -293,6 +344,7 @@ export interface PlatformStore {
   getAffiliateDashboard(sessionId: string, baseUrl: string): Promise<AffiliateDashboardSummary | null>;
   revokeAffiliateSession(sessionId: string): Promise<void>;
   activateLicense(input: ActivationInput): Promise<HubSessionResponse>;
+  activateDemo(input: DemoActivationInput, config: DemoConfig): Promise<HubSessionResponse>;
   getHubSession(sessionId: string): Promise<HubSessionResponse | null>;
   createWalletLaunch(input: WalletLaunchInput): Promise<WalletLaunchResult | null>;
   exchangeWalletBootstrap(input: WalletBootstrapInput): Promise<WalletBootstrapResult | null>;
@@ -331,6 +383,9 @@ class InMemoryPlatformStore implements PlatformStore {
   private readonly sessions = new Map<string, SessionRecord>();
   private readonly launchTokens = new Map<string, LaunchTokenRecord>();
   private readonly devices = new Map<string, DeviceRecord>();
+  private readonly demoKeys = new Map<string, DemoKeyRecord>();
+  private readonly demoDevices = new Map<string, DemoDeviceRecord>();
+  private readonly demoSessions = new Map<string, DemoSessionRecord>();
   private readonly walletProfiles = new Map<string, WalletProfile>();
   private readonly walletAccounts = new Map<string, WalletAccount[]>();
   private readonly walletBalances = new Map<string, WalletBalance>();
@@ -536,6 +591,53 @@ class InMemoryPlatformStore implements PlatformStore {
     this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = this.createSession(user.id, license.id, license.expiresAt);
     this.recordDevice(user.id, input.deviceId);
+    return this.buildHubSession(user, license, session);
+  }
+
+  async activateDemo(input: DemoActivationInput, config: DemoConfig): Promise<HubSessionResponse> {
+    if (!config.enabled) throw new DemoUnavailableError();
+    if (!input.deviceId?.trim()) throw new DemoUnavailableError("deviceId is required");
+    if ([...this.demoDevices.values()].some((device) => device.deviceId === input.deviceId)) {
+      throw new DemoDeviceUsedError();
+    }
+
+    const demoKey = await this.getOrCreateDemoKey();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + config.durationMinutes * 60 * 1000);
+    const user = this.createUser(input.email);
+    const license: LicenseRecord = {
+      id: createId("lic"),
+      keyHash: await hashToken(`${DEMO_LICENSE_PLAN}:${user.id}:${input.deviceId}:${now.toISOString()}`),
+      keyPlaintext: undefined,
+      userId: user.id,
+      plan: DEMO_LICENSE_PLAN,
+      expiresAt: expiresAt.toISOString(),
+      status: "active",
+      allowedDevices: 1,
+    };
+    this.licenses.set(license.id, license);
+
+    const session = this.createSession(user.id, license.id, license.expiresAt);
+    this.recordDevice(user.id, input.deviceId);
+
+    const demoDevice: DemoDeviceRecord = {
+      id: createId("ddv"),
+      deviceId: input.deviceId,
+      firstSeenAt: now.toISOString(),
+      lastSeenAt: now.toISOString(),
+    };
+    this.demoDevices.set(demoDevice.id, demoDevice);
+    this.demoSessions.set(session.id, {
+      id: createId("dse"),
+      demoKeyId: demoKey.id,
+      demoDeviceId: demoDevice.id,
+      userId: user.id,
+      licenseId: license.id,
+      sessionId: session.id,
+      expiresAt: expiresAt.toISOString(),
+      createdAt: now.toISOString(),
+    });
+
     return this.buildHubSession(user, license, session);
   }
 
@@ -1016,6 +1118,7 @@ class InMemoryPlatformStore implements PlatformStore {
     return {
       user,
       license: toLicenseSummary(license),
+      access: buildAccessSummary(license, session.expiresAt),
       session: {
         id: session.id,
         expiresAt: session.expiresAt,
@@ -1036,6 +1139,7 @@ class InMemoryPlatformStore implements PlatformStore {
     return {
       user,
       license: toLicenseSummary(license),
+      access: buildAccessSummary(license, license.expiresAt),
       wallet,
       profile,
       accounts,
@@ -1082,6 +1186,21 @@ class InMemoryPlatformStore implements PlatformStore {
 
     this.sessions.set(session.id, session);
     return session;
+  }
+
+  private async getOrCreateDemoKey(): Promise<DemoKeyRecord> {
+    const keyHash = await hashToken(DEMO_KEY_LABEL);
+    const existing = [...this.demoKeys.values()].find((key) => key.keyHash === keyHash);
+    if (existing) return existing;
+
+    const demoKey: DemoKeyRecord = {
+      id: createId("dky"),
+      keyHash,
+      label: DEMO_KEY_LABEL,
+      createdAt: new Date().toISOString(),
+    };
+    this.demoKeys.set(demoKey.id, demoKey);
+    return demoKey;
   }
 
   private getActivatedWallets(userId: string): WalletAppId[] {
@@ -1605,6 +1724,60 @@ class NeonPlatformStore implements PlatformStore {
     await this.assertDeviceAllowed(user.id, license, input.deviceId);
     const session = await this.createSession(user.id, license.id, license.expiresAt);
     await this.recordDevice(user.id, input.deviceId);
+    return this.buildHubSession(user, license, session);
+  }
+
+  async activateDemo(input: DemoActivationInput, config: DemoConfig): Promise<HubSessionResponse> {
+    if (!config.enabled) throw new DemoUnavailableError();
+    if (!input.deviceId?.trim()) throw new DemoUnavailableError("deviceId is required");
+
+    await this.ensureWalletApps();
+    const existingDevice = await this.db
+      .select()
+      .from(schema.demoDevices)
+      .where(eq(schema.demoDevices.deviceId, input.deviceId))
+      .limit(1);
+    if (existingDevice.length > 0) throw new DemoDeviceUsedError();
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + config.durationMinutes * 60 * 1000);
+    const demoKey = await this.getOrCreateDemoKey();
+    const user = await this.createUser(input.email);
+    const [license] = await this.db
+      .insert(schema.licenses)
+      .values({
+        id: createId("lic"),
+        keyHash: await hashToken(`${DEMO_LICENSE_PLAN}:${user.id}:${input.deviceId}:${now.toISOString()}`),
+        userId: user.id,
+        plan: DEMO_LICENSE_PLAN,
+        expiresAt,
+        allowedDevices: 1,
+      })
+      .returning();
+    const session = await this.createSession(user.id, license.id, expiresAt);
+    await this.recordDevice(user.id, input.deviceId);
+
+    const [demoDevice] = await this.db
+      .insert(schema.demoDevices)
+      .values({
+        id: createId("ddv"),
+        deviceId: input.deviceId,
+        firstSeenAt: now,
+        lastSeenAt: now,
+      })
+      .returning();
+
+    await this.db.insert(schema.demoSessions).values({
+      id: createId("dse"),
+      demoKeyId: demoKey.id,
+      demoDeviceId: demoDevice.id,
+      userId: user.id,
+      licenseId: license.id,
+      sessionId: session.id,
+      expiresAt,
+      createdAt: now,
+    });
+
     return this.buildHubSession(user, license, session);
   }
 
@@ -2257,6 +2430,7 @@ class NeonPlatformStore implements PlatformStore {
         ...license,
         expiresAt: license.expiresAt.toISOString(),
       }),
+      access: buildAccessSummary(license, session.expiresAt.toISOString()),
       session: {
         id: session.id,
         expiresAt: session.expiresAt.toISOString(),
@@ -2280,6 +2454,7 @@ class NeonPlatformStore implements PlatformStore {
         ...license,
         expiresAt: license.expiresAt.toISOString(),
       }),
+      access: buildAccessSummary(license, license.expiresAt.toISOString()),
       wallet,
       profile,
       accounts,
@@ -2518,6 +2693,25 @@ class NeonPlatformStore implements PlatformStore {
       .returning();
 
     return session;
+  }
+
+  private async getOrCreateDemoKey() {
+    const keyHash = await hashToken(DEMO_KEY_LABEL);
+    const [existing] = await this.db.select().from(schema.demoKeys).where(eq(schema.demoKeys.keyHash, keyHash)).limit(1);
+    if (existing) return existing;
+
+    const [created] = await this.db
+      .insert(schema.demoKeys)
+      .values({
+        id: createId("dky"),
+        keyHash,
+        label: DEMO_KEY_LABEL,
+      })
+      .onConflictDoNothing({ target: schema.demoKeys.keyHash })
+      .returning();
+
+    if (created) return created;
+    return (await this.db.select().from(schema.demoKeys).where(eq(schema.demoKeys.keyHash, keyHash)).limit(1))[0];
   }
 
   private async ensureWalletApps() {
@@ -2840,6 +3034,17 @@ function toLicenseSummary(license: Omit<LicenseRecord, "keyHash" | "userId">): L
     status: license.status,
     allowedDevices: getEffectiveAllowedDevices(license),
   };
+}
+
+function buildAccessSummary(license: { plan: string }, expiresAt: string) {
+  return {
+    kind: isDemoLicense(license) ? "demo" as const : "license" as const,
+    expiresAt,
+  };
+}
+
+function isDemoLicense(license: { plan: string }) {
+  return license.plan === DEMO_LICENSE_PLAN;
 }
 
 function getEffectiveAllowedDevices(license: { plan: string; allowedDevices: number }) {

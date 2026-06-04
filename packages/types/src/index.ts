@@ -124,16 +124,24 @@ export interface SessionSummary {
   expiresAt: string;
 }
 
+export interface AccessSummary {
+  kind: "license" | "demo";
+  expiresAt: string;
+  purchaseUrl?: string;
+}
+
 export interface HubSessionResponse {
   user: UserSummary;
   license: LicenseSummary;
   wallets: WalletAppSummary[];
   session: SessionSummary;
+  access?: AccessSummary;
 }
 
 export interface WalletBootstrapPayload {
   user: UserSummary;
   license: LicenseSummary;
+  access?: AccessSummary;
   wallet: WalletAppSummary;
   profile: WalletProfile;
   accounts: WalletAccount[];

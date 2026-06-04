@@ -1,7 +1,7 @@
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { getCookie, setCookie } from "hono/cookie";
-import type { LicenseActivationRequest, WalletBootstrapExchangeRequest, WalletLaunchRequest } from "@rp-wallet/auth";
+import type { DemoActivationRequest, LicenseActivationRequest, WalletBootstrapExchangeRequest, WalletLaunchRequest } from "@rp-wallet/auth";
 import type {
   CreateWalletTransactionResponse,
   CreateWalletTransactionsBatchRequest,
@@ -16,7 +16,7 @@ import type {
 import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
-import { DeviceLimitError, InvalidLicenseError, getPlatformStore } from "./platform-store";
+import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 const AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
@@ -95,6 +95,8 @@ app.get("/health", (c) =>
     storage: c.env.DATABASE_URL ? "neon" : "memory",
   }),
 );
+
+app.get("/demo/config", (c) => c.json(getDemoConfig(c.env)));
 
 app.post("/affiliate/click", async (c) => {
   const body = await c.req.json<{
@@ -869,6 +871,31 @@ app.post("/auth/license/activate", async (c) => {
   return c.json(applyWalletAvailabilityToHubSession(c.env, response));
 });
 
+app.post("/demo/activate", async (c) => {
+  const config = getDemoConfig(c.env);
+  const body = await c.req.json<DemoActivationRequest>();
+
+  if (!body.deviceId?.trim()) {
+    return c.json({ error: "deviceId is required" }, 400);
+  }
+
+  let response;
+  try {
+    response = await getPlatformStore(c.env.DATABASE_URL).activateDemo({ deviceId: body.deviceId }, config);
+  } catch (error) {
+    if (error instanceof DemoDeviceUsedError) {
+      return c.json({ code: "DEMO_DEVICE_USED", error: error.message }, 403);
+    }
+    if (error instanceof DemoUnavailableError) {
+      return c.json({ code: "DEMO_UNAVAILABLE", error: error.message }, 403);
+    }
+    throw error;
+  }
+
+  setSessionCookie(c, response.session.id, response.session.expiresAt, getSessionCookieName(c));
+  return c.json(applyWalletAvailabilityToHubSession(c.env, response));
+});
+
 app.post("/auth/logout", (c) => {
   const cookieName = getSessionCookieName(c);
   setCookie(c, cookieName, "", {
@@ -904,6 +931,13 @@ app.post("/wallet-launch", async (c) => {
 
   const body = await c.req.json<WalletLaunchRequest>();
   const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  const hubSession = await getPlatformStore(c.env.DATABASE_URL).getHubSession(sessionId);
+  if (!hubSession) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  if (hubSession.access?.kind === "demo" && body.walletAppId !== "phantom") {
+    return c.json({ error: "Demo mode only includes Phantom." }, 403);
+  }
 
   if (!wallet?.enabled) {
     return c.json({ error: "Wallet app is disabled" }, 400);
@@ -1202,9 +1236,13 @@ function isWalletEnabled(env: ApiEnv, walletAppId: WalletAppId) {
 }
 
 function applyWalletAvailabilityToHubSession(env: ApiEnv, response: HubSessionResponse): HubSessionResponse {
+  const wallets = response.access?.kind === "demo"
+    ? response.wallets.filter((wallet) => wallet.id === "phantom")
+    : response.wallets;
+
   return {
     ...response,
-    wallets: response.wallets.map((wallet) => ({
+    wallets: wallets.map((wallet) => ({
       ...wallet,
       enabled: isWalletEnabled(env, wallet.id),
     })),
@@ -1738,6 +1776,14 @@ function getClientIp(c: Context<HonoEnv>) {
 
 function getPublicHubOrigin(env: ApiEnv) {
   return env.HUB_ORIGIN || "https://larperwallet.com";
+}
+
+function getDemoConfig(env: ApiEnv) {
+  const duration = Number.parseInt(env.DEMO_DURATION_MINUTES || "3", 10);
+  return {
+    enabled: env.DEMO_ENABLED === "true",
+    durationMinutes: Number.isFinite(duration) && duration > 0 ? duration : 3,
+  };
 }
 
 function getAffiliateOrigin(env: ApiEnv) {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Check, Copy, Loader2, LogOut } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, LogOut, Sparkles } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
 
@@ -22,6 +22,7 @@ export default function DashboardClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [demoConfig, setDemoConfig] = useState<{ enabled: boolean; durationMinutes: number } | null>(null);
   const [copiedWalletId, setCopiedWalletId] = useState<WalletAppId | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -33,6 +34,12 @@ export default function DashboardClient() {
       .catch(() => {
         setSession(null);
       });
+    if (isDemoFeatureEnabled()) {
+      api
+        .getDemoConfig()
+        .then(setDemoConfig)
+        .catch(() => setDemoConfig({ enabled: false, durationMinutes: 3 }));
+    }
   }, [api]);
 
   async function activateLicense(event: React.FormEvent<HTMLFormElement>) {
@@ -49,6 +56,24 @@ export default function DashboardClient() {
       setSession(response);
     } catch (activationError) {
       setError(getFriendlyApiError(activationError, "Unable to activate this license key."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function activateDemo() {
+    setLoading(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await api.activateDemo({
+        deviceId: getDeviceId(),
+      });
+      setSession(response);
+      setNotice(`Demo activated for ${response.access?.expiresAt ? formatRemainingMinutes(response.access.expiresAt) : "a few minutes"}.`);
+    } catch (demoError) {
+      setError(getFriendlyApiError(demoError, "Unable to start demo mode on this device."));
     } finally {
       setLoading(false);
     }
@@ -276,6 +301,18 @@ export default function DashboardClient() {
             {loading ? <Loader2 size={18} className="animate-spin text-white" /> : "Activate License"}
           </button>
 
+          {isDemoFeatureEnabled() && demoConfig?.enabled && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={activateDemo}
+              className="flex h-[54px] w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#9c8df6]/30 bg-[#9c8df6]/10 text-sm font-semibold text-[#d7d0ff] transition-all duration-300 hover:bg-[#9c8df6]/16 disabled:opacity-50 active:scale-[0.98]"
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={17} />}
+              Activate Demo
+            </button>
+          )}
+
           <Link
             href="/buy"
             className="mt-8 block cursor-pointer text-center text-[13px] font-semibold tracking-wide text-[#9c8df6] transition-all duration-300 hover:underline"
@@ -326,6 +363,15 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatRemainingMinutes(value: string) {
+  const minutes = Math.max(1, Math.ceil((Date.parse(value) - Date.now()) / 60000));
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
+function isDemoFeatureEnabled() {
+  return process.env.NEXT_PUBLIC_FREE_DEMO_ENABLED === "true";
+}
+
 function getFriendlyApiError(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
   if (error.message.includes("DEVICE_LIMIT_REACHED") || error.message.includes("already active on")) {
@@ -333,6 +379,12 @@ function getFriendlyApiError(error: unknown, fallback: string) {
   }
   if (error.message.includes("INVALID_LICENSE") || error.message.includes("Invalid license")) {
     return "This license key is invalid. Please check the key from your order page and try again.";
+  }
+  if (error.message.includes("DEMO_DEVICE_USED") || error.message.includes("already used demo")) {
+    return "Demo mode has already been used on this device.";
+  }
+  if (error.message.includes("DEMO_UNAVAILABLE")) {
+    return "Demo mode is not available right now.";
   }
   return fallback;
 }

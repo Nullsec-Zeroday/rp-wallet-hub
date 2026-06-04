@@ -30,6 +30,7 @@ import { createBackendWalletTransactionsBatch, updateBackendNotificationSettings
 import { logWalletDebug } from "./lib/wallet-debug";
 import { requestNotificationPermission, showSystemNotification } from "./lib/notifications";
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
+import { isDemoPayload, readCachedBootstrap, requestDemoPaywall } from "@rp-wallet/wallet-core";
 
 type WalletModal = "send" | "receive" | "buy" | null;
 const api = new RpWalletApiClient(appEnv.apiBaseUrl);
@@ -65,6 +66,7 @@ function WalletRouteBody() {
   const searchParams = useSearchParams();
   const isTokenPage = pathname.startsWith("/token/");
   const isSettingsPage = pathname.startsWith("/settings");
+  const isDemoMode = isDemoPayload(readCachedBootstrap("phantom"));
   const {
     addTransaction,
     baseCurrency,
@@ -125,6 +127,10 @@ function WalletRouteBody() {
     if (pathname === "/" || pathname === "/bootstrap") {
       router.replace("/home");
     }
+    if (isDemoMode && pathname.startsWith("/settings")) {
+      requestDemoPaywall("settings");
+      router.replace("/home");
+    }
   }, [pathname, router]);
 
   React.useEffect(() => {
@@ -170,6 +176,7 @@ function WalletRouteBody() {
     let cancelled = false;
 
     const pollWalletEvents = async () => {
+      if (isDemoMode) return;
       try {
         const events = await api.getWalletEvents("phantom", walletEventCursorRef.current);
         if (cancelled || events.length === 0) return;
@@ -222,7 +229,7 @@ function WalletRouteBody() {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [notificationSettings.pushEnabled]);
+  }, [isDemoMode, notificationSettings.pushEnabled]);
 
   React.useEffect(() => {
     if (!notificationSettings.isActive || notificationSettings.remainingTimes <= 0) return;
@@ -352,6 +359,18 @@ function WalletRouteBody() {
     router.replace(pathname);
     setModalClosing(false);
   }, [pathname, router]);
+
+  React.useEffect(() => {
+    if (!isDemoMode || modal !== "buy") return;
+    requestDemoPaywall("buy");
+    closeModal();
+  }, [closeModal, isDemoMode, modal]);
+
+  React.useEffect(() => {
+    if (!isDemoMode || !manageTokensVisible) return;
+    requestDemoPaywall("manage-tokens");
+    setManageTokensVisible(false);
+  }, [isDemoMode, manageTokensVisible, setManageTokensVisible]);
 
   const updateSpinner = React.useCallback((visualPx: number, animated = false) => {
     const scaleWrap = spinnerScaleWrapRef.current;
@@ -495,7 +514,7 @@ function WalletRouteBody() {
             }
           });
 
-          const freshPrices = await fetchLivePrices(undefined, coingeckoApiKey, baseCurrency, customMappings);
+          const freshPrices = isDemoMode ? {} : await fetchLivePrices(undefined, coingeckoApiKey, baseCurrency, customMappings);
           const merged = { ...getStaticPrices(), ...freshPrices };
           localStorage.setItem("phantom_live_prices", JSON.stringify(merged));
           localStorage.setItem("phantom_live_prices_ts", Date.now().toString());
@@ -551,7 +570,7 @@ function WalletRouteBody() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", endPull);
     };
-  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isTokenPage, setTranslateY, updateSpinner]);
+  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isDemoMode, isTokenPage, setTranslateY, updateSpinner]);
 
   const tokenSymbol = isTokenPage ? decodeURIComponent(pathname.split("/").pop() || "SOL") : "SOL";
 
@@ -693,8 +712,8 @@ function WalletRouteBody() {
           setAccountModalVisible(false);
           setModalClosing(false);
         }}
-        onOpenProfile={() => { setAccountModalVisible(false); setModalClosing(false); router.push("/settings/edit-profile"); }}
-        onOpenSettings={() => { setAccountModalVisible(false); setModalClosing(false); router.push("/settings"); }}
+        onOpenProfile={() => { setAccountModalVisible(false); setModalClosing(false); isDemoMode ? requestDemoPaywall("edit-profile") : router.push("/settings/edit-profile"); }}
+        onOpenSettings={() => { setAccountModalVisible(false); setModalClosing(false); isDemoMode ? requestDemoPaywall("settings") : router.push("/settings"); }}
       />
       <RecentActivityModal
         visible={activityVisible}

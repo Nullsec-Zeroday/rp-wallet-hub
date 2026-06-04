@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone } from "lucide-react";
+import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useState, useRef, useEffect } from "react";
@@ -375,14 +375,14 @@ export default function LandingContent() {
               </div>
             </div>
 
-            <a
+            {/* <a
               href="https://t.me/LarperWallet_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full text-[15px] font-medium transition-all flex items-center justify-center gap-2"
             >
               Join Telegram <ArrowRight size={16} />
-            </a>
+            </a> */}
           </div>
         </motion.div>
       </section>
@@ -492,98 +492,140 @@ export default function LandingContent() {
         </motion.div>
       </section>
 
-      <section id="installation" className="pb-12 scroll-mt-6 px-6 max-w-[1000px] mx-auto relative">
-        <motion.div
+      {!demoEnabled && (
+        <section id="installation" className="pb-12 scroll-mt-6 px-6 max-w-[1000px] mx-auto relative">
+          <motion.div
 
-          variants={fadeInUp}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
-        >
-          {/* subtle background glow inside the panel */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
+            variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true }}
+            className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
+          >
+            {/* subtle background glow inside the panel */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
 
-          {/* Centered Column */}
-          <div className="relative z-10 w-full flex flex-col items-center">
-            <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
-              How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">get access.</span>
-            </h2>
-            {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
+            {/* Centered Column */}
+            <div className="relative z-10 w-full flex flex-col items-center">
+              <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
+                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">get access.</span>
+              </h2>
+              {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
               Get set up in less than 2 minutes. No complicated installations.
             </p> */}
 
-            <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
-              {/* Vertical line for mobile */}
-              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
-              {/* Horizontal line for desktop */}
-              <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
+              <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
+                {/* Vertical line for mobile */}
+                <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
+                {/* Horizontal line for desktop */}
+                <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
 
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <ShoppingCart size={16} className="text-white/80" />
+                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
+                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                    <ShoppingCart size={16} className="text-white/80" />
+                  </div>
+                  <div className="flex flex-col pt-2 md:pt-0">
+                    <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
+                    <p className="text-white/50 text-[14px] leading-snug">Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
+                  </div>
                 </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
+
+                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
+                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                    <Key size={16} className="text-white/80" />
+                  </div>
+                  <div className="flex flex-col pt-2 md:pt-0">
+                    <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
+                    <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
+                  </div>
+                </div>
+
+                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
+                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
+                    <Smartphone size={16} className="text-white/80" />
+                  </div>
+                  <div className="flex flex-col pt-2 md:pt-0">
+                    <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
+                    <p className="text-white/50 text-[14px] leading-snug">
+                      Enter your license key,{" "}
+                      <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
+                        install the app
+                      </Link>
+                      , follow the steps and your wallet is ready in seconds.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <Key size={16} className="text-white/80" />
-                </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <Smartphone size={16} className="text-white/80" />
-                </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">
-                    Enter your license key,{" "}
-                    <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
-                      install the app
-                    </Link>
-                    , follow the steps and your wallet is ready in seconds.
-                  </p>
-                </div>
-              </div>
+              <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
+                Have any questions? We respond within a few hours, contact us on{" "}
+                <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+                  telegram
+                </a>
+                {" "}or reach out to us at{" "}
+                <a href="mailto:support@larperwallet.com" className="underline underline-offset-2 hover:text-white transition-colors">
+                  support@larperwallet.com
+                </a>
+                .
+              </p>
             </div>
-
-            <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
-              Have any questions? We respond within a few hours, contact us on{" "}
-              <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
-                telegram
-              </a>
-              {" "}or reach out to us at{" "}
-              <a href="mailto:support@larperwallet.com" className="underline underline-offset-2 hover:text-white transition-colors">
-                support@larperwallet.com
-              </a>
-              .
-            </p>
+          </motion.div>
+          <div
+            className="mt-6 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
+          >
+            <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
+            <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
+              Log In
+            </Link>
           </div>
-        </motion.div>
-        <div
-          className="mt-6 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
-        >
-          <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
-          <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
-            Log In
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
         <div className="text-center mb-10">
-          <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit or debit cards.</p>
+          {demoEnabled ? (
+            <>
+              <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.28em] text-[#ab9ff2]">Pricing</p>
+              <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3 leading-tight">
+                Try it for free.<br />Pay when you&apos;re ready.
+              </h2>
+              {/* <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
+                Open a timed demo session first. Upgrade only when you want unlimited wallet access.
+              </p> */}
+            </>
+          ) : (
+            <>
+              <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
+              <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit or debit cards.</p>
+            </>
+          )}
         </div>
+
+        {demoEnabled && (
+          <div className="mx-auto mb-12 max-w-[860px] rounded-[2rem] border border-[#ab9ff2]/30 bg-[#161618]/90 p-8 text-center shadow-[0_0_50px_rgba(171,159,242,0.12)] md:p-10">
+            <div className="mx-auto mb-6 inline-flex rounded-full bg-[#ab9ff2]/10 px-4 py-1.5 text-[12px] font-bold uppercase text-[#c9c1ff]">
+              Free Trial
+            </div>
+            <h3 className="font-display text-2xl font-semibold tracking-tight text-white md:text-4xl">
+              Try the wallet before buying.
+            </h3>
+            <p className="mx-auto mt-4 max-w-[620px] text-[15px] font-medium leading-relaxed text-white/55 md:text-[17px]">
+              Real prices, every screen, any balance upto $500 for {process.env.NEXT_PUBLIC_DEMO_DURATION_MINUTES || 3} minutes. No sign-up, no card. Just open it.
+            </p>
+            <Link
+              href="/dashboard"
+              className="mx-auto mt-8 inline-flex h-12 min-w-[210px] items-center justify-center gap-2 rounded-2xl bg-[#ab9ff2] px-7 text-[16px] font-medium text-[#0f0f10] transition-all hover:scale-[1.02] hover:bg-[#b9aff6] active:scale-[0.98]"
+            >
+              Open App <ArrowUpRight size={20} />
+            </Link>
+          </div>
+        )}
+
+        {demoEnabled && (
+          <p className="mb-6 text-center text-[16px] font-semibold text-white/35">
+            Want unlimited access?
+          </p>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch relative">
           {Object.values(PRICING_PLANS).map((plan) => {

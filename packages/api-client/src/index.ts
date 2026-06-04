@@ -1,5 +1,7 @@
 import { apiDefaults } from "@rp-wallet/config";
 import type {
+  DemoActivationRequest,
+  DemoConfigResponse,
   LicenseActivationRequest,
   WalletBootstrapExchangeRequest,
   WalletLaunchRequest,
@@ -88,6 +90,17 @@ export class RpWalletApiClient {
 
   async activateLicense(body: LicenseActivationRequest) {
     return this.request<HubSessionResponse>("/auth/license/activate", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getDemoConfig() {
+    return this.request<DemoConfigResponse>("/demo/config");
+  }
+
+  async activateDemo(body: DemoActivationRequest) {
+    return this.request<HubSessionResponse>("/demo/activate", {
       method: "POST",
       body: JSON.stringify(body),
     });

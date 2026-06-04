@@ -71,6 +71,49 @@ export const devices = pgTable(
   (table) => [uniqueIndex("devices_user_device_unique").on(table.userId, table.deviceId)],
 );
 
+export const demoKeys = pgTable(
+  "demo_keys",
+  {
+    id: text("id").primaryKey(),
+    keyHash: text("key_hash").notNull(),
+    label: text("label").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("demo_keys_key_hash_unique").on(table.keyHash)],
+);
+
+export const demoDevices = pgTable(
+  "demo_devices",
+  {
+    id: text("id").primaryKey(),
+    deviceId: text("device_id").notNull(),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).defaultNow().notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("demo_devices_device_id_unique").on(table.deviceId)],
+);
+
+export const demoSessions = pgTable("demo_sessions", {
+  id: text("id").primaryKey(),
+  demoKeyId: text("demo_key_id")
+    .notNull()
+    .references(() => demoKeys.id),
+  demoDeviceId: text("demo_device_id")
+    .notNull()
+    .references(() => demoDevices.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  licenseId: text("license_id")
+    .notNull()
+    .references(() => licenses.id),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => sessions.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const walletApps = pgTable("wallet_apps", {
   id: walletAppId("id").primaryKey(),
   name: text("name").notNull(),

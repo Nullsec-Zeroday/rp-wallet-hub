@@ -11,6 +11,8 @@ import {
   Clock3,
   Compass,
   Copy,
+  Eye,
+  Gamepad2,
   Home,
   Infinity as InfinityIcon,
   MoreHorizontal,
@@ -21,6 +23,7 @@ import {
   Send,
   Settings,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { RouterProvider } from "./shims/router-context";
 import WalletShell from "./wallet-shell";
@@ -30,7 +33,10 @@ import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
 import {
   clearPendingToken,
+  addDemoPaywallListener,
+  applyDemoRestrictions,
   getPlatformDeviceId,
+  isDemoExpired,
   isIOS,
   isStandalonePwa,
   readCachedBootstrap,
@@ -115,11 +121,24 @@ function getSafeTokenClearedPath() {
 
 function TrustApp() {
   const api = useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
-  const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => readCachedBootstrap("trust"));
+  const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => {
+    const cached = readCachedBootstrap("trust");
+    return cached ? applyDemoRestrictions("trust", cached) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState("");
   const [installReady, setInstallReady] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = useState(false);
+
+  useEffect(() => {
+    if (payload?.access?.kind !== "demo") return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [payload?.access?.kind]);
+
+  useEffect(() => addDemoPaywallListener(() => setActiveDemoPaywallOpen(true)), []);
 
   const exchangeTrustToken = useCallback(
     async (token: string, deviceId = getPlatformDeviceId()) => {
@@ -127,9 +146,10 @@ function TrustApp() {
         token,
         deviceId,
       });
-      writeCachedBootstrap("trust", response);
+      const nextPayload = applyDemoRestrictions("trust", response);
+      writeCachedBootstrap("trust", nextPayload);
       clearPendingToken("trust");
-      setPayload(response);
+      setPayload(nextPayload);
       setInstallReady(true);
       setError("");
     },
@@ -150,6 +170,16 @@ function TrustApp() {
     }
 
     const pendingToken = readPendingToken("trust");
+    const cached = readCachedBootstrap("trust");
+    if (!pendingToken && cached?.access?.kind === "demo") {
+      const nextPayload = applyDemoRestrictions("trust", cached);
+      writeCachedBootstrap("trust", nextPayload);
+      setPayload(nextPayload);
+      setInstallReady(true);
+      setError("");
+      setLoading(false);
+      return;
+    }
 
     if (import.meta.env.DEV && !pendingToken) {
       const cached = readCachedBootstrap("trust");
@@ -164,8 +194,9 @@ function TrustApp() {
     const loadWallet = pendingToken
       ? exchangeTrustToken(pendingToken, launchDeviceId || getPlatformDeviceId())
       : api.getWalletState("trust").then((response) => {
-        writeCachedBootstrap("trust", response);
-        setPayload(response);
+        const nextPayload = applyDemoRestrictions("trust", response);
+        writeCachedBootstrap("trust", nextPayload);
+        setPayload(nextPayload);
         setInstallReady(true);
         setError("");
       });
@@ -207,6 +238,8 @@ function TrustApp() {
                 : "Your launch is waiting. Add this app to your home screen, then open it from there to finish setup."
             }
           />
+        ) : payload && isDemoExpired(payload, now) ? (
+          <DemoPaywall walletName="Trust Wallet" locked />
         ) : payload ? (
           <BootstrappedWallet
             api={api}
@@ -227,8 +260,90 @@ function TrustApp() {
 
       <AnimatePresence>
         {loading && <SplashScreen />}
+        {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
+          <DemoPaywall walletName="Trust Wallet" onClose={() => setActiveDemoPaywallOpen(false)} />
+        )}
       </AnimatePresence>
     </>
+  );
+}
+
+function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean; onClose?: () => void; walletName: string }) {
+  const hubUrl = appEnv.hubUrl.replace(/\/+$/, "");
+  const purchaseUrl = `${hubUrl}/buy`;
+
+  return (
+    <main className="flex h-screen flex-col overflow-hidden bg-[#050806] text-white">
+      {/* Background glow effects */}
+      <div className="absolute top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-[#48FF91]/15 to-transparent pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[50vh] bg-[#48FF91]/10 blur-[100px] rounded-full pointer-events-none" />
+
+      <section className="relative flex flex-col items-center pt-[calc(40px+env(safe-area-inset-top))] pb-4 px-5 z-10">
+        {!locked && <button
+          aria-label="Close"
+          className="absolute right-5 top-[calc(16px+env(safe-area-inset-top))] flex size-8 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"
+          onClick={onClose}
+          type="button"
+        >
+          <X size={18} strokeWidth={2.5} />
+        </button>}
+
+        <div className="flex flex-col items-center text-center gap-1.5 relative">
+          <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#48FF91]/15 border border-[#48FF91]/30 text-[#48FF91] text-[10px] font-extrabold tracking-widest uppercase mb-1 shadow-[0_0_20px_rgba(72,255,145,0.15)]">
+            Premium Access
+          </div>
+          <h1 className="text-[20px] font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-lg">
+            Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#48FF91] to-[#12C868]">LarperWallet</span>
+          </h1>
+          <p className="text-[14px] text-white/50 font-medium max-w-[260px] mt-1.5 leading-relaxed">
+            Get unrestricted access to all features and wallet apps.
+          </p>
+        </div>
+      </section>
+
+      <section className="flex flex-1 flex-col px-5 pb-[calc(16px+env(safe-area-inset-bottom))] relative z-10">
+        <div className="mt-2 rounded-[24px] bg-[#102016]/60 border border-[#48FF91]/10 backdrop-blur-3xl p-4 shadow-2xl relative overflow-hidden">
+          {/* Subtle inner glow */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#48FF91]/10 blur-3xl" />
+          <PaywallFeature icon={<Eye size={20} />} title="Full Wallet Editing" body="Customize balances, profiles, addresses, and tokens without a timer." />
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-[#48FF91]/10 to-transparent my-1" />
+          <PaywallFeature icon={<Send size={20} />} title="Transfer Simulator" body="Keep simulated sends, receives, notifications, and activity history unlocked." />
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-[#48FF91]/10 to-transparent my-1" />
+          <PaywallFeature icon={<Gamepad2 size={20} />} title="All Wallet Apps" body="Use every supported LarperWallet app from the same active license." />
+        </div>
+
+        <div className="mt-auto pt-6">
+          <a
+            className="flex h-[52px] w-full items-center justify-center rounded-[1rem] bg-gradient-to-r from-[#48FF91] to-[#12C868] text-[16px] font-bold text-[#050806] shadow-[0_10px_30px_rgba(72,255,145,0.25)] transition-transform active:scale-[0.98]"
+            href={purchaseUrl}
+          >
+            Upgrade Now
+          </a>
+          <p className="mt-3 text-center text-[12px] font-medium text-white/40 px-2 leading-snug">
+            {locked ? "Demo ended. Choose a plan on LarperWallet to continue." : "This feature is locked in demo mode. Upgrade when you are ready."}
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-5 text-[11px] font-semibold text-white/30">
+            <a href={`${hubUrl}/privacy`} className="hover:text-white/60 transition-colors">Privacy Policy</a>
+            <div className="size-1 rounded-full bg-white/10" />
+            <a href={hubUrl} className="hover:text-white/60 transition-colors">Restore</a>
+            <div className="size-1 rounded-full bg-white/10" />
+            <a href={`${hubUrl}/terms`} className="hover:text-white/60 transition-colors">Terms of Service</a>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function PaywallFeature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  return (
+    <div className="flex gap-3 py-2.5 first:pt-1 last:pb-1 relative z-10">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-[#48FF91]/20 to-[#12C868]/10 border border-[#48FF91]/20 text-[#48FF91] shadow-[inset_0_0_20px_rgba(72,255,145,0.1)]">{icon}</div>
+      <div className="flex flex-col justify-center">
+        <h2 className="text-[15px] font-bold leading-tight text-white">{title}</h2>
+        <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-white/50 pr-2">{body}</p>
+      </div>
+    </div>
   );
 }
 

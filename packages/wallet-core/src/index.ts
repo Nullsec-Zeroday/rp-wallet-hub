@@ -1,5 +1,22 @@
 import type { WalletAppId, WalletAppSummary, WalletBootstrapPayload } from "@rp-wallet/types";
 
+const DEMO_USERNAME = "larperwallet";
+const DEMO_WALLET_NAME = "LarperWallet";
+const DEMO_PAYWALL_EVENT = "rp-wallet:demo-paywall";
+
+const DEMO_BALANCES: Record<WalletAppId, Record<string, string>> = {
+  phantom: {
+    SOL: "1.5",
+    USDT: "180",
+    SUI: "45",
+  },
+  trust: {
+    SOL: "2.2",
+    USDT: "180",
+    BNB: "0.2",
+  },
+};
+
 export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activated">> = {
   phantom: {
     id: "phantom",
@@ -109,4 +126,64 @@ export function clearPendingToken(walletAppId: WalletAppId) {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(getWalletStorageKey(walletAppId, "pending-token"));
   clearCookie(getWalletCookieName(walletAppId, "pending-token"));
+}
+
+export function isDemoPayload(payload?: Pick<WalletBootstrapPayload, "access"> | null) {
+  return payload?.access?.kind === "demo";
+}
+
+export function isDemoExpired(payload?: Pick<WalletBootstrapPayload, "access"> | null, now = Date.now()) {
+  return isDemoPayload(payload) && Date.parse(payload?.access?.expiresAt || "") <= now;
+}
+
+export function applyDemoRestrictions(walletAppId: WalletAppId, payload: WalletBootstrapPayload): WalletBootstrapPayload {
+  if (!isDemoPayload(payload)) return payload;
+
+  const account = payload.accounts[0];
+  const accountId = account?.id || `${walletAppId}-demo-account`;
+  const now = new Date().toISOString();
+  const balances = DEMO_BALANCES[walletAppId];
+
+  return {
+    ...payload,
+    profile: {
+      ...payload.profile,
+      displayName: DEMO_WALLET_NAME,
+      username: DEMO_USERNAME,
+      updatedAt: now,
+    },
+    accounts: [
+      {
+        ...(account || {
+          createdAt: now,
+          id: accountId,
+          walletProfileId: payload.profile.id,
+        }),
+        id: accountId,
+        name: DEMO_WALLET_NAME,
+        address: account?.address || "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j",
+      },
+      ...payload.accounts.slice(1),
+    ],
+    balances: Object.entries(balances).map(([tokenSymbol, amount]) => ({
+      accountId,
+      tokenSymbol,
+      amount,
+      updatedAt: now,
+    })),
+  };
+}
+
+export function requestDemoPaywall(reason = "locked-feature") {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(DEMO_PAYWALL_EVENT, { detail: { reason } }));
+}
+
+export function addDemoPaywallListener(listener: (reason?: string) => void) {
+  if (typeof window === "undefined") return () => {};
+  const handler = (event: Event) => {
+    listener((event as CustomEvent<{ reason?: string }>).detail?.reason);
+  };
+  window.addEventListener(DEMO_PAYWALL_EVENT, handler);
+  return () => window.removeEventListener(DEMO_PAYWALL_EVENT, handler);
 }
