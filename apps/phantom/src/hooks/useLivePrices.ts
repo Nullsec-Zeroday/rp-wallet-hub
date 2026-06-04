@@ -10,7 +10,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { type LivePrices } from '@/lib/wallet-data';
 import { fetchLivePrices, getStaticPrices } from '@/lib/coingecko-service';
 import { useWalletStore } from '@/lib/wallet-store';
-import { isDemoPayload, readCachedBootstrap } from "@rp-wallet/wallet-core";
 
 const STORAGE_KEY = 'phantom_live_prices';
 const STORAGE_TS_KEY = 'phantom_live_prices_ts';
@@ -55,11 +54,10 @@ function getInitialPrices(): LivePrices {
 
 export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn {
   const { isKeyVerified, coingeckoApiKey, baseCurrency, customTokens } = useWalletStore();
-  const demoMode = isDemoPayload(readCachedBootstrap("phantom"));
   
   // Logic: 10s if custom key, 30s default
   const intervalMs = overrideIntervalMs ?? (
-    demoMode ? 120000 : coingeckoApiKey ? 10000 : 30000
+    coingeckoApiKey ? 10000 : 30000
   );
 
   const [prices, setPrices] = useState<LivePrices>(() => getInitialPrices());
@@ -71,15 +69,6 @@ export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn 
 
   const doFetch = useCallback(async () => {
     try {
-      if (demoMode) {
-        const staticPrices = getStaticPrices();
-        lastPricesRef.current = staticPrices;
-        setPrices(staticPrices);
-        setLastUpdated(Date.now());
-        setError(null);
-        setCachedPrices(staticPrices);
-        return;
-      }
       const customMappings: Record<string, string> = {};
       customTokens.forEach(t => {
         if (t.coingeckoId) customMappings[t.symbol] = t.coingeckoId;
@@ -109,7 +98,7 @@ export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn 
     } finally {
       setIsLoading(false);
     }
-  }, [coingeckoApiKey, baseCurrency, customTokens, demoMode]);
+  }, [coingeckoApiKey, baseCurrency, customTokens]);
 
   useEffect(() => {
     doFetch();

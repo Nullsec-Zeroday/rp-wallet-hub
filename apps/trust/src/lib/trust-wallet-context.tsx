@@ -242,7 +242,7 @@ export function TrustWalletProvider({
     () => Array.from(new Set([...TRUST_TOKENS.map((token) => token.symbol), ...Object.keys(balanceMap)])),
     [balanceMap],
   );
-  const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency, demoMode);
+  const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
   const notificationSettings = payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
   const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
@@ -337,7 +337,7 @@ export function TrustWalletProvider({
         source: "user",
       };
 
-      if (demoMode || (import.meta.env.DEV && payload.license.id === "dev-license")) {
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
         const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
         applyPayload(nextPayload);
         return transaction;
@@ -347,7 +347,7 @@ export function TrustWalletProvider({
       applyPayload(response.payload);
       return response.transaction;
     } catch (error) {
-      if (demoMode || (import.meta.env.DEV && payload.license.id === "dev-license")) {
+      if (import.meta.env.DEV && payload.license.id === "dev-license") {
         try {
           const { nextPayload, transaction } = buildLocalTransactionPayload(payload, input);
           applyPayload(nextPayload);

@@ -17,6 +17,10 @@ const DEMO_BALANCES: Record<WalletAppId, Record<string, string>> = {
   },
 };
 
+export function getDemoBalances(walletAppId: WalletAppId) {
+  return DEMO_BALANCES[walletAppId];
+}
+
 export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activated">> = {
   phantom: {
     id: "phantom",
@@ -142,7 +146,14 @@ export function applyDemoRestrictions(walletAppId: WalletAppId, payload: WalletB
   const account = payload.accounts[0];
   const accountId = account?.id || `${walletAppId}-demo-account`;
   const now = new Date().toISOString();
-  const balances = DEMO_BALANCES[walletAppId];
+  const balances = payload.balances.some((balance) => balance.accountId === accountId)
+    ? payload.balances
+    : Object.entries(DEMO_BALANCES[walletAppId]).map(([tokenSymbol, amount]) => ({
+      accountId,
+      tokenSymbol,
+      amount,
+      updatedAt: now,
+    }));
 
   return {
     ...payload,
@@ -165,12 +176,7 @@ export function applyDemoRestrictions(walletAppId: WalletAppId, payload: WalletB
       },
       ...payload.accounts.slice(1),
     ],
-    balances: Object.entries(balances).map(([tokenSymbol, amount]) => ({
-      accountId,
-      tokenSymbol,
-      amount,
-      updatedAt: now,
-    })),
+    balances,
   };
 }
 

@@ -176,7 +176,6 @@ function WalletRouteBody() {
     let cancelled = false;
 
     const pollWalletEvents = async () => {
-      if (isDemoMode) return;
       try {
         const events = await api.getWalletEvents("phantom", walletEventCursorRef.current);
         if (cancelled || events.length === 0) return;
@@ -229,7 +228,7 @@ function WalletRouteBody() {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [isDemoMode, notificationSettings.pushEnabled]);
+  }, [notificationSettings.pushEnabled]);
 
   React.useEffect(() => {
     if (!notificationSettings.isActive || notificationSettings.remainingTimes <= 0) return;
@@ -514,7 +513,7 @@ function WalletRouteBody() {
             }
           });
 
-          const freshPrices = isDemoMode ? {} : await fetchLivePrices(undefined, coingeckoApiKey, baseCurrency, customMappings);
+          const freshPrices = await fetchLivePrices(undefined, coingeckoApiKey, baseCurrency, customMappings);
           const merged = { ...getStaticPrices(), ...freshPrices };
           localStorage.setItem("phantom_live_prices", JSON.stringify(merged));
           localStorage.setItem("phantom_live_prices_ts", Date.now().toString());
@@ -570,7 +569,7 @@ function WalletRouteBody() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", endPull);
     };
-  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isDemoMode, isTokenPage, setTranslateY, updateSpinner]);
+  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isTokenPage, setTranslateY, updateSpinner]);
 
   const tokenSymbol = isTokenPage ? decodeURIComponent(pathname.split("/").pop() || "SOL") : "SOL";
 

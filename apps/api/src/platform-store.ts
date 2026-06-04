@@ -23,7 +23,7 @@ import type {
   WalletProfile,
   WalletTransaction,
 } from "@rp-wallet/types";
-import { listWalletApps, walletRegistry } from "@rp-wallet/wallet-core";
+import { getDemoBalances, listWalletApps, walletRegistry } from "@rp-wallet/wallet-core";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
@@ -1131,6 +1131,7 @@ class InMemoryPlatformStore implements PlatformStore {
     const wallet = { ...walletRegistry[walletAppId], activated: true };
     const profile = this.getOrCreateWalletProfile(user.id, walletAppId, wallet.name);
     const accounts = this.getOrCreateWalletAccounts(profile);
+    this.seedDemoBalancesIfNeeded(license, walletAppId, accounts[0]?.id);
     const balances = this.getWalletBalances(accounts);
     const recentTransactions = this.walletTransactions.get(profile.id) || [];
     const notificationSettings = this.walletNotificationSettings.get(profile.id) || createDefaultNotificationSettings();
@@ -1148,6 +1149,16 @@ class InMemoryPlatformStore implements PlatformStore {
       notificationSettings,
       recentNotifications,
     };
+  }
+
+  private seedDemoBalancesIfNeeded(license: LicenseRecord, walletAppId: WalletAppId, accountId?: string) {
+    if (!isDemoLicense(license) || walletAppId !== "phantom" || !accountId) return;
+    const hasBalances = [...this.walletBalances.values()].some((balance) => balance.accountId === accountId);
+    if (hasBalances) return;
+
+    Object.entries(getDemoBalances(walletAppId)).forEach(([tokenSymbol, amount]) => {
+      this.walletBalances.set(getBalanceKey(accountId, tokenSymbol), createBalanceRow(accountId, tokenSymbol, amount));
+    });
   }
 
   private createUser(email?: string): UserSummary {
@@ -2443,6 +2454,7 @@ class NeonPlatformStore implements PlatformStore {
     const wallet = { ...walletRegistry[walletAppId], activated: true };
     const profile = await this.getOrCreateWalletProfile(user.id, walletAppId, wallet.name);
     const accounts = await this.getOrCreateWalletAccounts(profile);
+    await this.seedDemoBalancesIfNeeded(license, walletAppId, accounts[0]?.id);
     const balances = await this.getWalletBalances(accounts);
     const recentTransactions = await this.getRecentWalletTransactions(accounts);
     const notificationSettings = await this.getNotificationSettings(profile.id);
@@ -2463,6 +2475,27 @@ class NeonPlatformStore implements PlatformStore {
       notificationSettings,
       recentNotifications,
     };
+  }
+
+  private async seedDemoBalancesIfNeeded(license: DbLicense, walletAppId: WalletAppId, accountId?: string) {
+    if (!isDemoLicense(license) || walletAppId !== "phantom" || !accountId) return;
+
+    const existing = await this.db
+      .select({ accountId: schema.walletBalances.accountId })
+      .from(schema.walletBalances)
+      .where(eq(schema.walletBalances.accountId, accountId))
+      .limit(1);
+
+    if (existing.length > 0) return;
+
+    await this.db
+      .insert(schema.walletBalances)
+      .values(Object.entries(getDemoBalances(walletAppId)).map(([tokenSymbol, amount]) => ({
+        accountId,
+        tokenSymbol,
+        amount,
+      })))
+      .onConflictDoNothing();
   }
 
   private async getUser(userId: string): Promise<UserSummary> {

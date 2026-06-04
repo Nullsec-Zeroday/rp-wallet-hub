@@ -2371,6 +2371,22 @@ var setCookie = /* @__PURE__ */ __name((c, name, value, opt) => {
 }, "setCookie");
 
 // ../../packages/wallet-core/src/index.ts
+var DEMO_BALANCES = {
+  phantom: {
+    SOL: "1.5",
+    USDT: "180",
+    SUI: "45"
+  },
+  trust: {
+    SOL: "2.2",
+    USDT: "180",
+    BNB: "0.2"
+  }
+};
+function getDemoBalances(walletAppId2) {
+  return DEMO_BALANCES[walletAppId2];
+}
+__name(getDemoBalances, "getDemoBalances");
 var walletRegistry = {
   phantom: {
     id: "phantom",
@@ -16604,6 +16620,7 @@ var InMemoryPlatformStore = class {
     const wallet = { ...walletRegistry[walletAppId2], activated: true };
     const profile = this.getOrCreateWalletProfile(user.id, walletAppId2, wallet.name);
     const accounts = this.getOrCreateWalletAccounts(profile);
+    this.seedDemoBalancesIfNeeded(license, walletAppId2, accounts[0]?.id);
     const balances = this.getWalletBalances(accounts);
     const recentTransactions = this.walletTransactions.get(profile.id) || [];
     const notificationSettings = this.walletNotificationSettings.get(profile.id) || createDefaultNotificationSettings();
@@ -16620,6 +16637,14 @@ var InMemoryPlatformStore = class {
       notificationSettings,
       recentNotifications
     };
+  }
+  seedDemoBalancesIfNeeded(license, walletAppId2, accountId) {
+    if (!isDemoLicense(license) || walletAppId2 !== "phantom" || !accountId) return;
+    const hasBalances = [...this.walletBalances.values()].some((balance) => balance.accountId === accountId);
+    if (hasBalances) return;
+    Object.entries(getDemoBalances(walletAppId2)).forEach(([tokenSymbol, amount]) => {
+      this.walletBalances.set(getBalanceKey(accountId, tokenSymbol), createBalanceRow(accountId, tokenSymbol, amount));
+    });
   }
   createUser(email) {
     const user = {
@@ -17613,6 +17638,7 @@ var NeonPlatformStore = class {
     const wallet = { ...walletRegistry[walletAppId2], activated: true };
     const profile = await this.getOrCreateWalletProfile(user.id, walletAppId2, wallet.name);
     const accounts = await this.getOrCreateWalletAccounts(profile);
+    await this.seedDemoBalancesIfNeeded(license, walletAppId2, accounts[0]?.id);
     const balances = await this.getWalletBalances(accounts);
     const recentTransactions = await this.getRecentWalletTransactions(accounts);
     const notificationSettings = await this.getNotificationSettings(profile.id);
@@ -17632,6 +17658,16 @@ var NeonPlatformStore = class {
       notificationSettings,
       recentNotifications
     };
+  }
+  async seedDemoBalancesIfNeeded(license, walletAppId2, accountId) {
+    if (!isDemoLicense(license) || walletAppId2 !== "phantom" || !accountId) return;
+    const existing = await this.db.select({ accountId: walletBalances.accountId }).from(walletBalances).where(eq(walletBalances.accountId, accountId)).limit(1);
+    if (existing.length > 0) return;
+    await this.db.insert(walletBalances).values(Object.entries(getDemoBalances(walletAppId2)).map(([tokenSymbol, amount]) => ({
+      accountId,
+      tokenSymbol,
+      amount
+    }))).onConflictDoNothing();
   }
   async getUser(userId) {
     const [user] = await this.db.select().from(users).where(eq(users.id, userId)).limit(1);
