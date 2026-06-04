@@ -610,7 +610,7 @@ export default function LandingContent() {
               Try the wallet before buying.
             </h3>
             <p className="mx-auto mt-4 max-w-[620px] text-[15px] font-medium leading-relaxed text-white/55 md:text-[17px]">
-              Real prices, every screen, any balance upto $500 for {process.env.NEXT_PUBLIC_DEMO_DURATION_MINUTES || 3} minutes. No sign-up, no card. Just open it.
+              Real prices, every screen, any balance upto $500 for {process.env.NEXT_PUBLIC_DEMO_DURATION_MINUTES || 5} minutes. No sign-up, no card. Just open it.
             </p>
             <Link
               href="/dashboard"
