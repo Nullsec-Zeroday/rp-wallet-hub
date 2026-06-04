@@ -7,6 +7,23 @@ import { appEnv } from '@/app-env';
 import { TOKENS, type LivePrices, type PriceData } from '@/lib/wallet-data';
 import { apiDefaults } from "@rp-wallet/config";
 
+const STATIC_24H_CHANGES: Record<string, number> = {
+  SOL: 1.25,
+  USDT: 0.01,
+  ETH: 0.64,
+  BTC: 0.38,
+  SUI: -0.72,
+  MATIC: 1.14,
+  HYPE: 2.08,
+  BNB: 0.51,
+  AVAX: -0.45,
+  LINK: 0.89,
+  UNI: 1.32,
+  USDC: 0.01,
+  DOGE: 1.76,
+  MON: 2.4,
+};
+
 function buildIdMap(): Record<string, string> {
   const map: Record<string, string> = {};
   for (const token of TOKENS) {
@@ -73,7 +90,7 @@ export function getStaticPriceData(symbol: string): PriceData {
   const token = TOKENS.find((t) => t.symbol === symbol);
   return {
     usd: token?.price ?? 0,
-    usd_24h_change: 0,
+    usd_24h_change: STATIC_24H_CHANGES[token?.symbol || symbol.toUpperCase()] ?? 0,
   };
 }
 
@@ -82,7 +99,8 @@ export function getStaticPrices(): LivePrices {
   for (const token of TOKENS) {
     prices[token.symbol] = {
       usd: token.price,
-      usd_24h_change: 0,
+      usd_24h_change: STATIC_24H_CHANGES[token.symbol] ?? 0,
+      image: token.logoUrl,
     };
   }
   return prices;
