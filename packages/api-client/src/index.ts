@@ -59,6 +59,26 @@ export interface AdminLicenseResetResult {
   revokedSessions: number;
 }
 
+export interface AdminUnusedLicenseSummary {
+  id: string;
+  keyPlaintext?: string;
+  userId: string;
+  email?: string;
+  plan: string;
+  expiresAt: string;
+  status: "active" | "expired" | "revoked";
+  allowedDevices: number;
+  deviceCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminLicenseReminderResult {
+  ok: boolean;
+  emailId?: string;
+  to: string;
+}
+
 export class RpWalletApiClient {
   constructor(private readonly baseUrl = apiDefaults.localBaseUrl) {}
 
@@ -216,6 +236,24 @@ export class RpWalletApiClient {
 
   async lookupAdminLicense(adminToken: string, body: { licenseKey: string }) {
     return this.request<AdminLicenseSnapshot>("/admin/licenses/lookup", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getAdminUnusedLicenses(adminToken: string) {
+    return this.request<{ licenses: AdminUnusedLicenseSummary[] }>("/admin/licenses/unused", {
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+    });
+  }
+
+  async sendAdminLicenseReminder(adminToken: string, body: { licenseKey: string }) {
+    return this.request<AdminLicenseReminderResult>("/admin/licenses/send-reminder", {
       method: "POST",
       headers: {
         authorization: `Bearer ${adminToken}`,

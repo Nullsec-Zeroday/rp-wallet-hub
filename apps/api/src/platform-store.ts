@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@rp-wallet/db";
 import type {
@@ -242,6 +242,20 @@ export interface AdminLicenseResetResult {
   revokedSessions: number;
 }
 
+export interface AdminUnusedLicenseSummary {
+  id: string;
+  keyPlaintext?: string;
+  userId: string;
+  email?: string;
+  plan: string;
+  expiresAt: string;
+  status: "active" | "expired" | "revoked";
+  allowedDevices: number;
+  deviceCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface WalletLaunchInput {
   sessionId: string;
   walletAppId: WalletAppId;
@@ -265,6 +279,7 @@ export interface WalletBootstrapResult {
 export interface PlatformStore {
   createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary>;
   getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null>;
+  getAdminUnusedActiveLicenses(): Promise<AdminUnusedLicenseSummary[]>;
   clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null>;
   revokeAdminLicenseSessions(licenseKey: string): Promise<AdminLicenseResetResult | null>;
   resetAdminLicenseAccess(licenseKey: string): Promise<AdminLicenseResetResult | null>;
@@ -547,6 +562,30 @@ class InMemoryPlatformStore implements PlatformStore {
   async getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null> {
     const license = await this.findLicenseByPlaintextKey(licenseKey);
     return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+
+  async getAdminUnusedActiveLicenses(): Promise<AdminUnusedLicenseSummary[]> {
+    const now = new Date();
+    return [...this.licenses.values()]
+      .filter((license) => license.status === "active" && new Date(license.expiresAt) > now)
+      .filter((license) => [...this.devices.values()].every((device) => device.userId !== license.userId))
+      .sort((a, b) => new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime())
+      .map((license) => {
+        const user = this.users.get(license.userId);
+        return {
+          id: license.id,
+          keyPlaintext: license.keyPlaintext ?? undefined,
+          userId: license.userId,
+          email: user?.email,
+          plan: license.plan,
+          expiresAt: license.expiresAt,
+          status: license.status,
+          allowedDevices: getEffectiveAllowedDevices(license),
+          deviceCount: 0,
+          createdAt: "memory",
+          updatedAt: "memory",
+        };
+      });
   }
 
   async clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null> {
@@ -1606,6 +1645,56 @@ class NeonPlatformStore implements PlatformStore {
   async getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null> {
     const license = await this.findLicenseByPlaintextKey(licenseKey);
     return license ? this.buildAdminLicenseSnapshot(license) : null;
+  }
+
+  async getAdminUnusedActiveLicenses(): Promise<AdminUnusedLicenseSummary[]> {
+    const rows = await this.db
+      .select({
+        id: schema.licenses.id,
+        keyPlaintext: schema.licenses.keyPlaintext,
+        userId: schema.licenses.userId,
+        email: schema.users.email,
+        plan: schema.licenses.plan,
+        expiresAt: schema.licenses.expiresAt,
+        status: schema.licenses.status,
+        allowedDevices: schema.licenses.allowedDevices,
+        createdAt: schema.licenses.createdAt,
+        updatedAt: schema.licenses.updatedAt,
+        deviceCount: count(schema.devices.id),
+      })
+      .from(schema.licenses)
+      .innerJoin(schema.users, eq(schema.users.id, schema.licenses.userId))
+      .leftJoin(schema.devices, eq(schema.devices.userId, schema.licenses.userId))
+      .where(and(eq(schema.licenses.status, "active"), gt(schema.licenses.expiresAt, new Date())))
+      .groupBy(
+        schema.licenses.id,
+        schema.licenses.keyPlaintext,
+        schema.licenses.userId,
+        schema.users.email,
+        schema.licenses.plan,
+        schema.licenses.expiresAt,
+        schema.licenses.status,
+        schema.licenses.allowedDevices,
+        schema.licenses.createdAt,
+        schema.licenses.updatedAt,
+      )
+      .having(({ deviceCount }) => eq(deviceCount, 0))
+      .orderBy(asc(schema.licenses.createdAt))
+      .limit(250);
+
+    return rows.map((row) => ({
+      id: row.id,
+      keyPlaintext: row.keyPlaintext ?? undefined,
+      userId: row.userId,
+      email: row.email ?? undefined,
+      plan: row.plan,
+      expiresAt: row.expiresAt.toISOString(),
+      status: row.status,
+      allowedDevices: getEffectiveAllowedDevices(row),
+      deviceCount: Number(row.deviceCount),
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    }));
   }
 
   async clearAdminLicenseDevices(licenseKey: string): Promise<AdminLicenseResetResult | null> {

@@ -274,6 +274,35 @@ app.post("/admin/licenses/lookup", async (c) => {
   return c.json(snapshot);
 });
 
+app.get("/admin/licenses/unused", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const licenses = await getPlatformStore(c.env.DATABASE_URL).getAdminUnusedActiveLicenses();
+  return c.json({ licenses });
+});
+
+app.post("/admin/licenses/send-reminder", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ licenseKey?: string }>();
+  const licenseKey = normalizePayloadString(body.licenseKey);
+  if (!licenseKey) return c.json({ error: "licenseKey is required" }, 400);
+
+  const snapshot = await getPlatformStore(c.env.DATABASE_URL).getAdminLicenseSnapshot(licenseKey);
+  if (!snapshot) return c.json({ error: "License not found" }, 404);
+  if (!snapshot.license.email) return c.json({ error: "This license does not have an email address" }, 400);
+  if (snapshot.license.status !== "active" || new Date(snapshot.license.expiresAt) <= new Date()) {
+    return c.json({ error: "Only active, unexpired licenses can receive reminders" }, 400);
+  }
+
+  const result = await sendLicenseReminderEmail(c.env, {
+    to: snapshot.license.email,
+    licenseKey: snapshot.license.keyPlaintext || licenseKey,
+    planLabel: snapshot.license.plan,
+    expirationDate: new Date(snapshot.license.expiresAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
+  });
+
+  return c.json({ ok: true, emailId: result?.id, to: snapshot.license.email });
+});
+
 app.post("/admin/licenses/clear-devices", async (c) => {
   if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
   const body = await c.req.json<{ licenseKey?: string }>();
@@ -1474,6 +1503,42 @@ async function sendPurchaseEmail(
   }
 }
 
+async function sendLicenseReminderEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    licenseKey: string;
+    planLabel: string;
+    expirationDate: string;
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[sendLicenseReminderEmail] RESEND_API_KEY is not set; skipping email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "LarperWallet <noreply@larperwallet.com>",
+      html: buildLicenseReminderEmailHtml(params),
+      subject: "Reminder: your LarperWallet key is ready",
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+
+  return response.json<{ id?: string }>().catch(() => undefined);
+}
+
 function buildPurchaseEmailHtml(params: {
   licenseKey: string;
   planLabel: string;
@@ -1500,6 +1565,39 @@ function buildPurchaseEmailHtml(params: {
         </p>
         <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
           If you need help, contact support through the official LarperWallet site.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
+function buildLicenseReminderEmailHtml(params: {
+  licenseKey: string;
+  planLabel: string;
+  expirationDate: string;
+}) {
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
+        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.035em;">Your LarperWallet key is ready</h1>
+        <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
+          We noticed your key has not been activated yet. Open <a href="https://www.larperwallet.com" style="color:#ab9ff2;text-decoration:none;">www.larperwallet.com</a>, install the app, then enter this key.
+        </p>
+        <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
+          <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
+            ${escapeHtml(params.licenseKey)}
+          </div>
+        </div>
+        <p style="margin:0;color:rgba(255,255,255,0.62);font-size:14px;line-height:1.55;">
+          Plan: <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong><br />
+          Expires: <strong style="color:#fff;">${escapeHtml(params.expirationDate)}</strong>
+        </p>
+        <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
+          Tip: activate directly in Safari on iOS or Chrome on Android. Avoid Telegram or other in-app browsers.
         </p>
       </div>
     </div>

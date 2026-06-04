@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Copy, KeyRound, Loader2, RefreshCcw, RotateCcw, Search, ShieldCheck, Smartphone, UserX, Plus } from "lucide-react";
-import { RpWalletApiClient, type AdminLicenseResetResult, type AdminLicenseSnapshot } from "@rp-wallet/api-client";
+import { Copy, ListChecks, Loader2, Mail, RefreshCcw, RotateCcw, Search, ShieldCheck, Smartphone, UserX, Plus } from "lucide-react";
+import { RpWalletApiClient, type AdminLicenseResetResult, type AdminLicenseSnapshot, type AdminUnusedLicenseSummary } from "@rp-wallet/api-client";
 
 const ADMIN_TOKEN_KEY = "rp_affiliate_admin_token";
 
@@ -29,6 +28,11 @@ export default function AdminKeysPage() {
   const [supportError, setSupportError] = useState("");
   const [supportNotice, setSupportNotice] = useState("");
   const [licenseSnapshot, setLicenseSnapshot] = useState<AdminLicenseSnapshot | null>(null);
+  const [unusedLicenses, setUnusedLicenses] = useState<AdminUnusedLicenseSummary[]>([]);
+  const [unusedLoading, setUnusedLoading] = useState(false);
+  const [unusedError, setUnusedError] = useState("");
+  const [unusedNotice, setUnusedNotice] = useState("");
+  const [remindingKey, setRemindingKey] = useState<string | null>(null);
   const [created, setCreated] = useState<{
     licenseKey: string;
     license: {
@@ -123,6 +127,53 @@ export default function AdminKeysPage() {
     } finally {
       setSupportLoading(null);
     }
+  }
+
+  async function loadUnusedLicenses() {
+    setUnusedLoading(true);
+    setUnusedError("");
+    setUnusedNotice("");
+
+    try {
+      window.localStorage.setItem(ADMIN_TOKEN_KEY, adminToken.trim());
+      const response = await api.getAdminUnusedLicenses(adminToken.trim());
+      setUnusedLicenses(response.licenses);
+      setUnusedNotice(`Found ${response.licenses.length} active unused key${response.licenses.length === 1 ? "" : "s"}.`);
+    } catch {
+      setUnusedLicenses([]);
+      setUnusedError("Unable to load unused keys. Check the admin token and API deployment.");
+    } finally {
+      setUnusedLoading(false);
+    }
+  }
+
+  async function sendReminder(license: AdminUnusedLicenseSummary) {
+    if (!license.keyPlaintext) {
+      setUnusedError("This key cannot be reminded because the plaintext key is missing.");
+      return;
+    }
+
+    setRemindingKey(license.keyPlaintext);
+    setUnusedError("");
+    setUnusedNotice("");
+
+    try {
+      window.localStorage.setItem(ADMIN_TOKEN_KEY, adminToken.trim());
+      const response = await api.sendAdminLicenseReminder(adminToken.trim(), { licenseKey: license.keyPlaintext });
+      setUnusedNotice(`Reminder sent to ${response.to}.`);
+    } catch {
+      setUnusedError("Reminder failed. Make sure the key has an email and RESEND_API_KEY is set on the API.");
+    } finally {
+      setRemindingKey(null);
+    }
+  }
+
+  function inspectUnusedLicense(license: AdminUnusedLicenseSummary) {
+    if (!license.keyPlaintext) return;
+    setSupportKey(license.keyPlaintext);
+    setLicenseSnapshot(null);
+    setSupportError("");
+    setSupportNotice("Key copied into License Control Center. Tap Lookup to inspect it.");
   }
 
   return (
@@ -253,6 +304,76 @@ export default function AdminKeysPage() {
             </div>
           </section>
         )}
+
+        <section className="rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm mb-8">
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">Unused Active Keys</h2>
+              <p className="text-sm text-zinc-400 mt-1">See active, unexpired keys with no device activation yet, then send a setup reminder.</p>
+            </div>
+            <button
+              type="button"
+              disabled={unusedLoading || !adminToken.trim()}
+              onClick={loadUnusedLicenses}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-medium text-black disabled:opacity-50 hover:bg-zinc-200 transition-colors"
+            >
+              {unusedLoading ? <Loader2 className="size-4 animate-spin" /> : <ListChecks size={16} />}
+              Load unused keys
+            </button>
+          </div>
+
+          {unusedError && <div className="mb-4 rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-sm font-medium text-red-500">{unusedError}</div>}
+          {unusedNotice && <div className="mb-4 rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-4 text-sm font-medium text-emerald-500">{unusedNotice}</div>}
+
+          {unusedLicenses.length === 0 ? (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-5 text-sm text-zinc-500">
+              Load the list to find keys that were created, are still active, but have never been used on a device.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {unusedLicenses.map((license) => (
+                <div key={license.id} className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-sm font-semibold tracking-wider text-white">{license.keyPlaintext || "Key hidden"}</span>
+                        <span className="rounded-md border border-emerald-900/50 bg-emerald-950/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-500">
+                          Unused
+                        </span>
+                      </div>
+                      <div className="mt-2 grid gap-1 text-sm text-zinc-400 md:grid-cols-2 xl:grid-cols-4">
+                        <span>{license.email || "No email"}</span>
+                        <span>{license.plan}</span>
+                        <span>Expires {new Date(license.expiresAt).toLocaleDateString()}</span>
+                        <span>{license.allowedDevices} device{license.allowedDevices === 1 ? "" : "s"}</span>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:items-center">
+                      <button
+                        type="button"
+                        disabled={!license.keyPlaintext}
+                        onClick={() => inspectUnusedLicense(license)}
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-zinc-700 bg-transparent px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+                      >
+                        <Search size={15} />
+                        Inspect
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!license.email || !license.keyPlaintext || remindingKey !== null}
+                        onClick={() => sendReminder(license)}
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#ab9ff2] px-3 text-sm font-medium text-black transition-colors hover:bg-white disabled:opacity-50"
+                      >
+                        {remindingKey === license.keyPlaintext ? <Loader2 className="size-4 animate-spin" /> : <Mail size={15} />}
+                        Send reminder
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="rounded-xl border border-zinc-800 bg-zinc-950 p-6 shadow-sm mb-8">
           <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
