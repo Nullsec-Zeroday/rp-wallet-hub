@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Eye, Gamepad2, Send, X } from "lucide-react";
+import { ArrowLeft, Check, Crown, Eye, Gamepad2, Send, ShoppingCart, X } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
 import {
@@ -20,6 +20,7 @@ import {
 import { appEnv } from "./app-env";
 import { StrictWalletApp } from "./strict-wallet";
 import SplashScreen from "./splash-screen";
+import { DEFAULT_NOTIFICATION_SETTINGS } from "./lib/wallet-store";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
 import "@fontsource/inter/latin-600.css";
@@ -28,7 +29,15 @@ import "@fontsource/inter/latin-800.css";
 import "@ionic/react/css/core.css";
 import "./styles.css";
 
-const FORCE_PAYWALL_PREVIEW = false;
+const DEV_PWA_AUTH_BYPASS = import.meta.env.DEV;
+const DEV_PAYWALL_PREVIEW = import.meta.env.DEV && typeof window !== "undefined"
+  ? new URLSearchParams(window.location.search).get("paywall")
+  : null;
+const PAYWALL_PLANS = [
+  { id: "starter", label: "7 Days", price: "$14", detail: "1 active device", badge: undefined },
+  { id: "popular", label: "1 Month", price: "$39", detail: "1 active device", badge: "Most Popular" },
+  { id: "yearly", label: "1 Year", price: "$99", detail: "2 active devices", badge: "Best Value" },
+] as const;
 
 function registerPhantomServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -50,6 +59,9 @@ function PhantomApp() {
   const api = React.useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => {
     const cached = readCachedBootstrap("phantom");
+    if (DEV_PWA_AUTH_BYPASS) {
+      return cached?.license.id === "dev-license" ? cached : createDevPhantomPayload();
+    }
     return cached ? applyDemoRestrictions("phantom", cached) : null;
   });
   const [loading, setLoading] = React.useState(true);
@@ -57,6 +69,7 @@ function PhantomApp() {
   const [installReady, setInstallReady] = React.useState(false);
   const [now, setNow] = React.useState(() => Date.now());
   const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = React.useState(false);
+  const [devPaywallPreviewOpen, setDevPaywallPreviewOpen] = React.useState(Boolean(DEV_PAYWALL_PREVIEW));
 
   React.useEffect(() => {
     if (payload?.access?.kind !== "demo") return;
@@ -68,6 +81,17 @@ function PhantomApp() {
 
   React.useEffect(() => {
     if (!appEnv.walletAppEnabled) {
+      setLoading(false);
+      return;
+    }
+
+    if (DEV_PWA_AUTH_BYPASS) {
+      const cached = readCachedBootstrap("phantom");
+      const nextPayload = cached?.license.id === "dev-license" ? cached : createDevPhantomPayload();
+      writeCachedBootstrap("phantom", nextPayload);
+      setPayload(nextPayload);
+      setInstallReady(true);
+      setError("");
       setLoading(false);
       return;
     }
@@ -131,7 +155,7 @@ function PhantomApp() {
       });
   }, [api]);
 
-  const standalone = isStandalonePwa();
+  const standalone = DEV_PWA_AUTH_BYPASS || isStandalonePwa();
 
   if (!appEnv.walletAppEnabled) {
     return <UnavailablePanel walletName="Phantom" />;
@@ -152,8 +176,12 @@ function PhantomApp() {
 
   return (
     <>
-      {FORCE_PAYWALL_PREVIEW ? (
-        <DemoPaywall walletName="Phantom" locked />
+      {DEV_PAYWALL_PREVIEW && devPaywallPreviewOpen ? (
+        <DemoPaywall
+          walletName="Phantom"
+          locked={DEV_PAYWALL_PREVIEW !== "active"}
+          onClose={DEV_PAYWALL_PREVIEW === "active" ? () => setDevPaywallPreviewOpen(false) : undefined}
+        />
       ) : payload && isDemoExpired(payload, now) ? (
         <DemoPaywall walletName="Phantom" locked />
       ) : payload ? (
@@ -175,64 +203,98 @@ function PhantomApp() {
 }
 
 function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean; onClose?: () => void; walletName: string }) {
-  const purchaseUrl = `${appEnv.hubUrl.replace(/\/+$/, "")}/buy`;
+  const [selectedPlanId, setSelectedPlanId] = React.useState<(typeof PAYWALL_PLANS)[number]["id"]>("popular");
+  const selectedPlan = PAYWALL_PLANS.find((plan) => plan.id === selectedPlanId) || PAYWALL_PLANS[1];
+  const purchaseUrl = `${appEnv.hubUrl.replace(/\/+$/, "")}/buy?plan=${selectedPlan.id}&checkout=1&source=phantom-paywall`;
 
   return (
-    <main className="fixed inset-0 z-[100000000] flex min-h-screen flex-col overflow-hidden bg-[#0d0d0e] text-white">
-      {/* Background glow effects */}
-      <div className="absolute top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-[#ab9ff2]/15 to-transparent pointer-events-none" />
-      <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[50vh] bg-[#ab9ff2]/10 blur-[100px] rounded-full pointer-events-none" />
-
-      <section className="relative flex flex-col items-center pt-[calc(40px+env(safe-area-inset-top))] pb-4 px-5 z-10">
+    <main className="fixed inset-0 z-[100000000] min-h-screen overflow-y-auto bg-[#0b0b0c] text-white">
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-[38vh] bg-[radial-gradient(circle_at_top,rgba(171,159,242,0.18),transparent_68%)]" />
+      <section className="relative mx-auto flex min-h-full w-full max-w-[430px] flex-col px-5 pb-[calc(18px+env(safe-area-inset-bottom))] pt-[calc(28px+env(safe-area-inset-top))]">
         {!locked && <button
           aria-label="Close"
-          className="absolute right-5 top-[calc(16px+env(safe-area-inset-top))] flex size-8 items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"
+          className="absolute right-5 top-[calc(18px+env(safe-area-inset-top))] flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white/60 transition-colors active:bg-white/10"
           onClick={onClose}
           type="button"
         >
-          <X size={18} strokeWidth={2.5} />
+          <X size={19} strokeWidth={2.5} />
         </button>}
 
-        <div className="flex flex-col items-center text-center gap-1.5 relative">
-          <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-[#ab9ff2]/15 border border-[#ab9ff2]/30 text-[#ab9ff2] text-[10px] font-extrabold tracking-widest uppercase mb-1 shadow-[0_0_20px_rgba(171,159,242,0.2)]">
-            Premium Access
+        <div className="relative flex flex-col items-center text-center">
+          <div className="mb-3 flex size-11 items-center justify-center rounded-lg border border-[#ab9ff2]/25 bg-[#ab9ff2]/15 text-[#c9c0ff]">
+            <Crown size={23} strokeWidth={2.2} />
           </div>
-          <h1 className="text-[20px] font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-lg">
-            Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff]">LarperWallet</span>
+          <h1 className="text-[25px] font-bold leading-tight tracking-normal text-white">
+            Unlock {walletName}
           </h1>
-          <p className="text-[14px] text-white/50 font-medium max-w-[260px] mt-1.5 leading-relaxed">
-            Get unrestricted access to all features and wallet apps.
+          <p className="mt-1.5 max-w-[300px] text-[13px] font-medium leading-relaxed text-white/45">
+            Choose a plan to keep every wallet feature available without a demo timer.
           </p>
         </div>
-      </section>
 
-      <section className="flex flex-1 flex-col px-5 pb-[calc(16px+env(safe-area-inset-bottom))] relative z-10">
-        <div className="mt-2 rounded-[24px] bg-white/[0.03] border border-white/[0.08] backdrop-blur-3xl p-4 shadow-2xl relative overflow-hidden">
-          {/* Subtle inner glow */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#ab9ff2]/10 blur-3xl" />
+        <div className="relative mt-6 rounded-lg border border-white/[0.08] bg-[#151516] px-4 py-2">
           <PaywallFeature icon={<Eye size={20} />} title="Full Wallet Editing" body="Customize balances, profiles, addresses, and tokens without a timer." />
-          <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
-          <PaywallFeature icon={<Send size={20} />} title="Send and Receive Tools" body="Keep simulated transfers, notifications, and activity history unlocked." />
-          <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-1" />
-          <PaywallFeature icon={<Gamepad2 size={20} />} title="All Wallet Apps" body="Use every supported LarperWallet app from the same active license." />
+          <div className="h-px w-full bg-white/[0.07]" />
+          <PaywallFeature icon={<Send size={20} />} title="Complete Wallet Tools" body="Keep simulated transfers, notifications, swaps, and activity unlocked." />
+          <div className="h-px w-full bg-white/[0.07]" />
+          <PaywallFeature icon={<Gamepad2 size={20} />} title="Every Wallet App" body="Use all supported LarperWallet experiences with the same license." />
         </div>
 
-        <div className="mt-auto pt-6">
+        <div className="mt-5 flex flex-col gap-2.5">
+          {PAYWALL_PLANS.map((plan) => {
+            const selected = plan.id === selectedPlanId;
+            return (
+              <button
+                aria-pressed={selected}
+                className={`relative flex min-h-[68px] w-full items-center rounded-lg border px-4 text-left transition-colors ${
+                  selected
+                    ? "border-[#ab9ff2] bg-[#ab9ff2]/12"
+                    : "border-white/[0.08] bg-[#151516] active:bg-white/[0.06]"
+                }`}
+                key={plan.id}
+                onClick={() => setSelectedPlanId(plan.id)}
+                type="button"
+              >
+                <span className={`mr-3 flex size-5 shrink-0 items-center justify-center rounded-full border ${
+                  selected ? "border-[#ab9ff2] bg-[#ab9ff2]" : "border-white/25"
+                }`}>
+                  {selected && <Check size={13} strokeWidth={4} className="text-[#111]" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[16px] font-bold text-white">{plan.label}</span>
+                    {plan.badge && (
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
+                        plan.id === "yearly" ? "bg-[#d4af37]/15 text-[#e5c963]" : "bg-[#ab9ff2]/15 text-[#c9c0ff]"
+                      }`}>
+                        {plan.badge}
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] font-medium text-white/40">{plan.detail}</span>
+                </span>
+                <span className="ml-3 text-[22px] font-bold tracking-tight text-white">{plan.price}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-5">
           <a
-            className="flex h-[52px] w-full items-center justify-center rounded-[1rem] bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] text-[16px] font-bold text-white shadow-[0_10px_30px_rgba(171,159,242,0.3)] transition-transform active:scale-[0.98]"
+            className={`flex h-[54px] w-full items-center justify-center gap-2 rounded-lg text-[16px] font-bold shadow-[0_12px_30px_rgba(171,159,242,0.18)] transition-transform active:scale-[0.98] ${
+              selectedPlan.id === "yearly" ? "bg-[#d4af37] text-[#111]" : "bg-[#ab9ff2] text-[#111]"
+            }`}
             href={purchaseUrl}
           >
-            Upgrade Now
+            Buy {selectedPlan.label} <ShoppingCart size={18} strokeWidth={2.5} />
           </a>
-          <p className="mt-3 text-center text-[12px] font-medium text-white/40 px-2 leading-snug">
-            {locked ? "Demo ended. Choose a plan on LarperWallet to continue." : "This feature is locked in demo mode. Upgrade when you are ready."}
+          <p className="mt-3 px-2 text-center text-[11px] font-medium leading-snug text-white/35">
+            {locked ? "Your demo has ended. Purchase a plan to continue." : "This feature is locked during the demo. Your demo remains active after closing."}
           </p>
-          <div className="mt-5 flex items-center justify-center gap-5 text-[11px] font-semibold text-white/30">
-            <a href={`${appEnv.hubUrl.replace(/\/+$/, "")}/privacy`} className="hover:text-white/60 transition-colors">Privacy Policy</a>
-            <div className="size-1 rounded-full bg-white/10" />
-            <a href={appEnv.hubUrl} className="hover:text-white/60 transition-colors">Restore</a>
-            <div className="size-1 rounded-full bg-white/10" />
-            <a href={`${appEnv.hubUrl.replace(/\/+$/, "")}/terms`} className="hover:text-white/60 transition-colors">Terms of Service</a>
+          <div className="mt-4 flex items-center justify-center gap-4 text-[10px] font-semibold text-white/25">
+            <a href={`${appEnv.hubUrl.replace(/\/+$/, "")}/privacy`}>Privacy</a>
+            <a href={appEnv.hubUrl}>Restore</a>
+            <a href={`${appEnv.hubUrl.replace(/\/+$/, "")}/terms`}>Terms</a>
           </div>
         </div>
       </section>
@@ -242,11 +304,11 @@ function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean
 
 function PaywallFeature({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="flex gap-3 py-2.5 first:pt-1 last:pb-1 relative z-10">
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-[#ab9ff2]/20 to-[#7f66ff]/10 border border-[#ab9ff2]/20 text-[#ab9ff2] shadow-[inset_0_0_20px_rgba(171,159,242,0.1)]">{icon}</div>
+    <div className="relative z-10 flex gap-3 py-3">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#ab9ff2]/12 text-[#b9adfa]">{icon}</div>
       <div className="flex flex-col justify-center">
-        <h2 className="text-[15px] font-bold leading-tight text-white">{title}</h2>
-        <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-white/50 pr-2">{body}</p>
+        <h2 className="text-[14px] font-bold leading-tight text-white">{title}</h2>
+        <p className="mt-0.5 pr-1 text-[11px] font-medium leading-relaxed text-white/45">{body}</p>
       </div>
     </div>
   );
@@ -400,4 +462,72 @@ function getFriendlyBootstrapError(error: unknown, fallback: string) {
     return "This license has already reached its device limit.";
   }
   return fallback;
+}
+
+function createDevPhantomPayload(): WalletBootstrapPayload {
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const accountId = "dev-phantom-account-1";
+
+  return {
+    user: {
+      id: "dev-user",
+      email: "dev@larperwallet.local",
+      createdAt: now,
+    },
+    license: {
+      id: "dev-license",
+      plan: "Dev",
+      expiresAt,
+      status: "active",
+      allowedDevices: 99,
+    },
+    wallet: {
+      id: "phantom",
+      name: "Phantom",
+      host: "localhost:5173",
+      enabled: true,
+      activated: true,
+    },
+    profile: {
+      id: "dev-phantom-profile",
+      userId: "dev-user",
+      walletAppId: "phantom",
+      displayName: "LarperWallet",
+      username: "larperwallet",
+      createdAt: now,
+      updatedAt: now,
+    },
+    accounts: [
+      {
+        id: accountId,
+        walletProfileId: "dev-phantom-profile",
+        name: "LarperWallet",
+        address: "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j",
+        createdAt: now,
+      },
+    ],
+    balances: [
+      { accountId, tokenSymbol: "SOL", amount: "1.5", updatedAt: now },
+      { accountId, tokenSymbol: "USDT", amount: "180", updatedAt: now },
+      { accountId, tokenSymbol: "SUI", amount: "45", updatedAt: now },
+      { accountId, tokenSymbol: "ETH", amount: "0.04", updatedAt: now },
+    ],
+    recentTransactions: [
+      {
+        id: "dev-phantom-tx-1",
+        walletAppId: "phantom",
+        accountId,
+        type: "receive",
+        status: "confirmed",
+        tokenSymbol: "USDT",
+        amount: "120",
+        fromAddress: "Fj7Lk2M4pQ8sV1nC9xR3tY6uA5bD0eH2jK4mN7pS",
+        toAddress: "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j",
+        createdAt: now,
+      },
+    ],
+    notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
+    recentNotifications: [],
+  };
 }

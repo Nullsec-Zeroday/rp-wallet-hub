@@ -136,7 +136,7 @@ export const TOKENS: TokenInfo[] = [
     price: 22,
     decimals: 18,
     defaultBalance: 0,
-    color: '#E84142',
+    color: '#F80633',
     icon: '△',
     logoUrl: '/tokens/avax.webp',
     coingeckoId: 'avalanche-2',

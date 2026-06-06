@@ -9,10 +9,9 @@ import { RiveAssetProvider } from "./app/(wallet)/_components/rive-asset-provide
 import WalletHeader from "./app/(wallet)/_components/wallet-header";
 import WalletFooterNavigation from "./app/(wallet)/_components/wallet-footer-navigation";
 import CustomScrollbar, { type CustomScrollbarRef } from "./app/(wallet)/_components/custom-scrollbar";
+import SideDrawer from "./app/(wallet)/_components/side-drawer";
 import HomePage from "./app/(wallet)/home/page";
 import TokensPage from "./app/(wallet)/tokens/page";
-import TokenDetailPage from "./app/(wallet)/token/[symbol]/page";
-import ActivityPage from "./app/(wallet)/activity/page";
 import BrowserPage from "./app/(wallet)/browser/page";
 import SwapPage from "./app/(wallet)/swap/page";
 import { appEnv } from "./app-env";
@@ -22,6 +21,9 @@ import BuyModal from "./app/(wallet)/_components/modals/buy-modal";
 import AccountModal from "./app/(wallet)/_components/modals/account-modal";
 import RecentActivityModal from "./app/(wallet)/_components/modals/recent-activity-modal";
 import ManageTokensModal from "./app/(wallet)/_components/modals/manage-tokens-modal";
+import ChatsModal from "./app/(wallet)/_components/modals/chats-modal";
+import TokenDetailModal from "./app/(wallet)/_components/modals/token-detail-modal";
+import CashModal from "./app/(wallet)/_components/modals/cash-modal";
 import SettingsPage from "./app/(wallet)/settings/page";
 import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
@@ -32,7 +34,7 @@ import { requestNotificationPermission, showSystemNotification } from "./lib/not
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
 import { isDemoPayload, readCachedBootstrap, requestDemoPaywall } from "@rp-wallet/wallet-core";
 
-type WalletModal = "send" | "receive" | "buy" | null;
+type WalletModal = "send" | "receive" | "buy" | "cash" | null;
 const api = new RpWalletApiClient(appEnv.apiBaseUrl);
 const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:phantom:notification-permission-prompted";
 
@@ -64,10 +66,10 @@ function WalletRouteBody() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isTokenPage = pathname.startsWith("/token/");
   const isSettingsPage = pathname.startsWith("/settings");
   const isDemoMode = isDemoPayload(readCachedBootstrap("phantom"));
   const {
+    addAccount,
     addTransaction,
     baseCurrency,
     coingeckoApiKey,
@@ -98,20 +100,72 @@ function WalletRouteBody() {
   const rotatingIllusionLogged = React.useRef(false);
   const [scrolled, setScrolled] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [accountModalVisible, setAccountModalVisible] = React.useState(false);
   const [activityVisible, setActivityVisible] = React.useState(false);
+  const [chatsVisible, setChatsVisible] = React.useState(false);
   const [activityNestedModalOpen, setActivityNestedModalOpen] = React.useState(false);
   const [modalClosing, setModalClosing] = React.useState(false);
+
+  const getRouteIndex = React.useCallback((path: string) => {
+    if (path === "/home" || path === "/") return 0;
+    if (path === "/swap") return 1;
+    if (path === "/browser") return 2;
+    return -1;
+  }, []);
+
+  const prevPathnameRef = React.useRef(pathname);
+  const routeDirectionRef = React.useRef(0);
+
+  if (pathname !== prevPathnameRef.current) {
+    const oldIndex = getRouteIndex(prevPathnameRef.current);
+    const newIndex = getRouteIndex(pathname);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      routeDirectionRef.current = newIndex > oldIndex ? 1 : -1;
+    } else {
+      routeDirectionRef.current = 0;
+    }
+    prevPathnameRef.current = pathname;
+  }
+  const routeDirection = routeDirectionRef.current;
+
+  const routeVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 100 : direction < 0 ? -100 : 0,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 100 : direction > 0 ? -100 : 0,
+      opacity: 0
+    })
+  };
+
+  const activityNestedModalOpenRef = React.useRef(activityNestedModalOpen);
   const [notificationPromptVisible, setNotificationPromptVisible] = React.useState(false);
   const lastOpenedModalRef = React.useRef<string | null>(null);
 
-  const THRESHOLD = 110;
-  const SETTLED_Y = 140;
+  const THRESHOLD = 65;
+  const SETTLED_Y = 80;
   const SPINNER_PULL_SENSITIVITY = 0.00001;
 
   React.useEffect(() => {
     notificationSettingsRef.current = notificationSettings;
   }, [notificationSettings]);
+
+  React.useEffect(() => {
+    const handleOpenProfileModal = () => setIsDrawerOpen(true);
+    const handleOpenAccountModal = () => setAccountModalVisible(true);
+    window.addEventListener('open-profile-modal', handleOpenProfileModal);
+    window.addEventListener('open-account-modal', handleOpenAccountModal);
+    return () => {
+      window.removeEventListener('open-profile-modal', handleOpenProfileModal);
+      window.removeEventListener('open-account-modal', handleOpenAccountModal);
+    };
+  }, []);
 
   React.useEffect(() => {
     if (!notificationSettings.isActive || notificationSettings.remainingTimes > 0) return;
@@ -346,13 +400,16 @@ function WalletRouteBody() {
   const symbol = searchParams.get("symbol") || undefined;
 
   React.useEffect(() => {
-    if (accountModalVisible) lastOpenedModalRef.current = "account";
+    if (isDrawerOpen) lastOpenedModalRef.current = "drawer";
+    else if (accountModalVisible) lastOpenedModalRef.current = "account";
     else if (activityVisible) lastOpenedModalRef.current = "activity";
+    else if (chatsVisible) lastOpenedModalRef.current = "chats";
     else if (modal === "send") lastOpenedModalRef.current = "send";
     else if (modal === "receive") lastOpenedModalRef.current = "receive";
     else if (modal === "buy") lastOpenedModalRef.current = "buy";
+    else if (modal === "cash") lastOpenedModalRef.current = "cash";
     else if (manageTokensVisible) lastOpenedModalRef.current = "manageTokens";
-  }, [accountModalVisible, activityVisible, manageTokensVisible, modal]);
+  }, [isDrawerOpen, activityVisible, chatsVisible, manageTokensVisible, modal]);
 
   const closeModal = React.useCallback(() => {
     router.replace(pathname);
@@ -390,7 +447,7 @@ function WalletRouteBody() {
     if (!el) return;
 
     const bars = el.querySelectorAll<HTMLElement>(".bar");
-    const START = 45;
+    const START = 15;
     const END = SETTLED_Y;
     const step = (END - START) / bars.length;
 
@@ -455,7 +512,7 @@ function WalletRouteBody() {
     const rubberBand = (x: number) => x * (1 / (1 + x * 0.002));
 
     const beginPull = (clientY: number) => {
-      if (isTokenPage || pathname === "/browser" || refreshingRef.current) return;
+      if (refreshingRef.current) return;
       if (scroll.scrollTop === 0) {
         pulling.current = true;
         startY.current = clientY;
@@ -569,18 +626,12 @@ function WalletRouteBody() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", endPull);
     };
-  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, isTokenPage, setTranslateY, updateSpinner]);
+  }, [baseCurrency, coingeckoApiKey, customTokens, handleRefreshBoost, setTranslateY, updateSpinner]);
 
-  const tokenSymbol = isTokenPage ? decodeURIComponent(pathname.split("/").pop() || "SOL") : "SOL";
-
-  const content = isTokenPage ? (
-    <TokenDetailPage params={{ symbol: tokenSymbol }} />
-  ) : pathname === "/home" ? (
+  const content = pathname === "/home" ? (
     <HomePage />
   ) : pathname === "/tokens" ? (
     <TokensPage />
-  ) : pathname === "/activity" ? (
-    <ActivityPage />
   ) : pathname === "/browser" ? (
     <BrowserPage />
   ) : pathname === "/swap" ? (
@@ -597,47 +648,61 @@ function WalletRouteBody() {
     </div>
   );
 
-  const isScaledDown = !modalClosing && (
-    accountModalVisible ||
-    activityVisible ||
-    modal === "send" ||
-    modal === "receive" ||
-    modal === "buy" ||
-    manageTokensVisible
-  );
+  const drawerActive = !modalClosing && isDrawerOpen;
 
   return (
     <div
       className="absolute inset-0 h-screen flex w-full flex-col overflow-hidden"
       style={{
-        backgroundColor: "#111111",
+        backgroundColor: "#000000",
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
       }}
     >
+      <SideDrawer 
+        onNavigate={(path) => {
+          setIsDrawerOpen(false);
+          if (path === "/chats") {
+            setTimeout(() => setChatsVisible(true), 300);
+            return;
+          }
+          if (path === "/activity") {
+            setTimeout(() => setActivityVisible(true), 300);
+            return;
+          }
+          isDemoMode ? requestDemoPaywall("side-drawer-nav") : router.push(path);
+        }} 
+      />
       <div
-        className="flex h-full w-full overflow-hidden relative"
+        className="flex h-full w-full overflow-hidden relative z-[10] shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
         style={{
           opacity: activityNestedModalOpen ? 0 : 1,
-          backgroundColor: isScaledDown ? "#1c1c1e" : "#111111",
-          transformOrigin: "bottom center",
-          transform: isScaledDown ? "scale(0.93) translateY(-24px)" : "scale(1) translateY(0px)",
-          borderRadius: isScaledDown ? "20px" : "0px",
-          filter: isScaledDown ? "brightness(1.15)" : "brightness(1)",
-          transition: lastOpenedModalRef.current === "account"
-            ? "opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.6s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1)"
-            : isScaledDown
-              ? "opacity 0.4s cubic-bezier(0.32, 0.72, 0, 1), transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1)"
-              : "opacity 0.2s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
+          backgroundColor: drawerActive ? "#1c1c1e" : "#000000",
+          transformOrigin: "center left",
+          transform: drawerActive 
+            ? "translateX(75vw)" 
+            : "scale(1) translateY(0px) translateX(0px)",
+          borderRadius: drawerActive ? "28px" : "0px",
+          filter: drawerActive ? "brightness(0.65)" : "brightness(1)",
+          transition: drawerActive || lastOpenedModalRef.current === "drawer"
+            ? "opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1), transform 0.5s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.5s cubic-bezier(0.32, 0.72, 0, 1), filter 0.5s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.5s cubic-bezier(0.32, 0.72, 0, 1)"
+            : "opacity 0.2s cubic-bezier(0.25, 1, 0.5, 1), transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), border-radius 0.2s cubic-bezier(0.25, 1, 0.5, 1), filter 0.2s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.2s cubic-bezier(0.25, 1, 0.5, 1)",
           willChange: "opacity, transform, filter, border-radius, background-color",
         }}
       >
-        {!isTokenPage && !isSettingsPage && <WalletHeader scrolled={scrolled} onAvatarPress={() => setAccountModalVisible(true)} onActivityPress={() => setActivityVisible(true)} />}
-        {!isTokenPage && !isSettingsPage && pathname !== "/browser" && (
+        {/* Overlay to close drawer when tapping on main layout */}
+        {drawerActive && (
+          <div 
+            className="absolute inset-0 z-[99999]" 
+            onClick={() => setIsDrawerOpen(false)}
+          />
+        )}
+        {!isSettingsPage && <WalletHeader scrolled={scrolled} onAvatarPress={() => setIsDrawerOpen(true)} onActivityPress={() => setActivityVisible(true)} isDrawerOpen={isDrawerOpen} />}
+        {!isSettingsPage && (
           <div
             ref={spinnerWrapRef}
             style={{
               position: "absolute",
-              top: "calc(100px + env(safe-area-inset-top))",
+              top: "calc(70px + env(safe-area-inset-top))",
               left: 0,
               right: 0,
               display: "flex",
@@ -667,14 +732,10 @@ function WalletRouteBody() {
         )}
         <main
           ref={scrollRef}
-          className={`min-h-0 flex-1 wallet-scroll relative ${isTokenPage
-            ? "overflow-hidden pb-0 pt-0"
-            : pathname === "/browser"
-              ? "overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
-              : isSettingsPage
-                ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
-                : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
-            }`}
+          className={`min-h-0 flex-1 wallet-scroll relative ${isSettingsPage
+              ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
+              : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+          }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
             setScrolled((current) => (current === nextScrolled ? current : nextScrolled));
@@ -683,13 +744,29 @@ function WalletRouteBody() {
         >
           <div
             ref={contentRef}
-            className={`h-full ${isTokenPage ? "" : "will-change-transform"}`}
-            style={isTokenPage ? undefined : { transform: "translateZ(0)" }}
+            className={`h-full will-change-transform`}
+            style={{ transform: "translateZ(0)" }}
           >
-            {content}
+            <AnimatePresence initial={false} mode="popLayout" custom={routeDirection}>
+              <motion.div
+                key={pathname}
+                custom={routeDirection}
+                variants={routeVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 350, damping: 30 },
+                  opacity: { duration: 0.15 }
+                }}
+                className="h-full w-full flex-1 min-h-0"
+              >
+                {content}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
-        {!isTokenPage && (
+        { (
           <CustomScrollbar
             ref={scrollbarRef}
             scrollRef={scrollRef}
@@ -699,13 +776,22 @@ function WalletRouteBody() {
             }}
           />
         )}
-        {!isTokenPage && !isSettingsPage && <WalletFooterNavigation />}
+        {!isSettingsPage && <WalletFooterNavigation isDrawerOpen={isDrawerOpen} />}
       </div>
       <SendModal initialTokenSymbol={symbol} onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "send"} />
       <ReceiveModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "receive"} />
       <BuyModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "buy"} />
+      <CashModal onClose={closeModal} visible={modal === "cash"} />
       <AccountModal
         visible={accountModalVisible}
+        onAddAccount={() => {
+          if (isDemoMode) {
+            requestDemoPaywall("add-account");
+            return false;
+          }
+          addAccount();
+          return true;
+        }}
         onCloseStart={() => setModalClosing(true)}
         onClose={() => {
           setAccountModalVisible(false);
@@ -728,6 +814,15 @@ function WalletRouteBody() {
         onCloseStart={() => setModalClosing(true)}
         onClose={() => {
           setManageTokensVisible(false);
+          setModalClosing(false);
+        }}
+      />
+      <TokenDetailModal visible={searchParams.get("modal") === "token"} symbol={searchParams.get("symbol")} onClose={() => router.back()} />
+      <ChatsModal
+        visible={chatsVisible}
+        onCloseStart={() => setModalClosing(true)}
+        onClose={() => {
+          setChatsVisible(false);
           setModalClosing(false);
         }}
       />

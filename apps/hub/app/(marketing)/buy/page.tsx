@@ -36,6 +36,7 @@ function BuyContent() {
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
+  const autoCheckoutStartedRef = useRef(false);
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
@@ -183,6 +184,19 @@ function BuyContent() {
       }, 800);
     }
   };
+
+  React.useEffect(() => {
+    if (searchParams.get("checkout") !== "1" || autoCheckoutStartedRef.current || checkoutLocked || !selectedPlanId) {
+      return;
+    }
+
+    autoCheckoutStartedRef.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    url.searchParams.delete("source");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    void handleCheckout();
+  }, [checkoutLocked, searchParams, selectedPlanId]);
 
   return (
     <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">

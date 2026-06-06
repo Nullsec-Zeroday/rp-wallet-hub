@@ -44,7 +44,7 @@ export const TOKENS: TokenInfo[] = [
   { symbol: "MATIC", name: "Polygon", price: 0.35, decimals: 18, defaultBalance: 0, color: "#8247E5", icon: "⬡", logoUrl: "/tokens/matic.webp", coingeckoId: "matic-network" },
   { symbol: "HYPE", name: "Hyperliquid", price: 14, decimals: 8, defaultBalance: 0, color: "#00E5B4", icon: "◈", logoUrl: "/tokens/hype.webp", coingeckoId: "hyperliquid" },
   { symbol: "BNB", name: "BNB", price: 590, decimals: 18, defaultBalance: 0, color: "#F3BA2F", icon: "⬡", logoUrl: "/tokens/bnb.webp", coingeckoId: "binancecoin" },
-  { symbol: "AVAX", name: "Avalanche", price: 22, decimals: 18, defaultBalance: 0, color: "#E84142", icon: "△", logoUrl: "/tokens/avax.webp", coingeckoId: "avalanche-2" },
+  { symbol: "AVAX", name: "Avalanche", price: 22, decimals: 18, defaultBalance: 0, color: "#F80633", icon: "△", logoUrl: "/tokens/avax.webp", coingeckoId: "avalanche-2" },
   { symbol: "LINK", name: "Chainlink", price: 12, decimals: 18, defaultBalance: 0, color: "#2A5ADA", icon: "⬡", logoUrl: "/tokens/link.webp", coingeckoId: "chainlink" },
   { symbol: "UNI", name: "Uniswap", price: 7, decimals: 18, defaultBalance: 0, color: "#FF007A", icon: "🦄", logoUrl: "/tokens/uni.webp", coingeckoId: "uniswap" },
   { symbol: "USDC", name: "USDC", price: 1, decimals: 6, defaultBalance: 0, color: "#2775CA", icon: "$", logoUrl: "/tokens/usdc.webp", coingeckoId: "usd-coin", chainId: "solana" },

@@ -199,7 +199,7 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
                       {isCustom && (
                         <button
                           onClick={() => handleRemoveCustom(token.symbol)}
-                          className="text-[#E84142] active:opacity-60 p-1.5 rounded-lg bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors flex-shrink-0"
+                          className="text-[#F80633] active:opacity-60 p-1.5 rounded-lg bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors flex-shrink-0"
                           title="Remove custom token"
                         >
                           <Trash2 size={14} />
@@ -265,7 +265,7 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
                           onClick={() => handleImport(result)}
                           className={`px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all flex items-center gap-1.5 ${
                             isAlreadyImported
-                              ? "bg-[#102A1E] text-[#10B981] cursor-default"
+                              ? "bg-[#102A1E] text-[#4FE862] cursor-default"
                               : isImporting === result.id
                                 ? "bg-[#2c2c2e] text-[#8b8ca7] cursor-wait"
                                 : "bg-[#AB9FF2] text-[#111111] active:scale-[0.97]"

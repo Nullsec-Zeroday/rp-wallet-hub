@@ -1,17 +1,17 @@
 "use client";
 
 import React from "react";
-import { X, User, Settings, Pencil, Check, Copy } from "lucide-react";
+import { X, User, Settings, Pencil, Check, Copy, Plus } from "lucide-react";
 import { useWalletStore } from "@/lib/wallet-store";
 import { formatCurrency, TOKEN_MAP } from "@/lib/wallet-data";
 import Avatar from "../avatar";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 
 interface AccountModalProps {
   visible: boolean;
   onClose: () => void;
+  onAddAccount: () => boolean;
   onOpenProfile: () => void;
   onOpenSettings: () => void;
   onCloseStart?: () => void;
@@ -20,6 +20,7 @@ interface AccountModalProps {
 export default function AccountModal({
   visible,
   onClose,
+  onAddAccount,
   onOpenProfile,
   onOpenSettings,
   onCloseStart,
@@ -32,10 +33,8 @@ export default function AccountModal({
     baseCurrency,
     accounts,
     currentAccountIndex,
-    addAccount,
     switchAccount
   } = useWalletStore();
-  const router = useRouter();
   const totalBalance = getTotalBalance();
 
   const iconIndex = profile?.iconIndex ?? 1;
@@ -75,7 +74,7 @@ export default function AccountModal({
       <div
         className="w-full flex flex-col rounded-t-[28px] overflow-hidden relative"
         style={{
-          background: "rgb(17, 17, 17)",
+          background: "rgb(0, 0, 0)",
           height: "94vh",
           paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
           animation: isClosing
@@ -84,75 +83,41 @@ export default function AccountModal({
           willChange: "transform",
         }}
       >
+        {/* Drag Handle */}
+        <div className="w-full flex justify-center pt-3 pb-3">
+          <div className="w-9 h-[5px] bg-[#333333] rounded-full" />
+        </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <Avatar iconIndex={iconIndex} avatarType={avatarType} size={40} />
-            <div>
-              <div className="text-white font-bold text-base">{displayName}</div>
-              <button
-                onClick={() => {
-                  if (profile?.walletAddress) {
-                    navigator.clipboard.writeText(profile.walletAddress);
-                    toast.success("Address copied to clipboard");
-                  }
-                }}
-                className="flex items-center gap-1.5 text-[#888888] text-[12px] hover:text-[#AB9FF2] transition-colors active:scale-95"
-              >
-                {profile?.walletAddress ? `${profile.walletAddress.slice(0, 4)}...${profile.walletAddress.slice(-4)}` : "No address"}
-                <Copy size={12} />
-              </button>
-            </div>
-
-          </div>
+        <div className="flex items-center justify-between px-4 pb-4 flex-shrink-0 relative">
           <button
             onClick={handleClose}
-            className="bg-transparent border-none p-2 cursor-pointer z-10 rounded-full active:bg-white/5 transition-colors"
+            className="w-[36px] h-[36px] rounded-full bg-[#1c1c1e] flex items-center justify-center active:scale-95 transition-transform"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 6L6 18M6 6l12 12"></path>
-            </svg>
+            <X size={18} color="#fff" />
           </button>
-        </div>
-
-        {/* Grid of Profile and Settings */}
-        <div className="grid grid-cols-2 gap-3 px-4 mb-5 flex-shrink-0">
-          <button onClick={() => { handleClose(); onOpenProfile(); }} className="flex flex-col items-center justify-center gap-2 bg-[#232323] rounded-[18px] py-3 active:scale-[0.95] transition-transform duration-[50ms]">
-            <User size={20} color="#ac9cf2" strokeWidth={2} />
-            <span className="text-sm" style={{ color: "rgb(136, 136, 136)" }}>Profile</span>
-          </button>
-          <button onClick={() => { handleClose(); onOpenSettings(); }} className="flex flex-col items-center justify-center gap-2 bg-[#232323] rounded-[18px] py-3 active:scale-[0.95] transition-transform duration-[50ms]">
-            <Settings size={20} color="#ac9cf2" strokeWidth={2} />
-            <span className="text-sm" style={{ color: "rgb(136, 136, 136)" }}>Settings</span>
-          </button>
-        </div>
-
-        {/* Cash Balance */}
-        <div className="px-4 mb-5 flex-shrink-0">
-          <div className="rounded-[18px] px-4 py-2.5 flex items-center justify-between" style={{ background: "rgb(30, 30, 30)" }}>
-            <div>
-              <div className="text-[#888888] text-xs mb-1">Cash Balance</div>
-              <div className="text-white font-bold text-lg">{formatCurrency(cashBalance, baseCurrency)}</div>
-            </div>
-            <button
-              onClick={() => { handleClose(); router.push('/settings/edit-profile?highlight=cash'); }}
-              className="px-4 py-2 rounded-xl font-bold text-sm active:scale-[0.95] transition-transform duration-100"
-              style={{ background: "rgb(172, 156, 242)", color: "rgb(17, 17, 17)" }}
-            >
-              Add Cash
-            </button>
+          <div className="text-white font-semibold text-[17px] absolute left-1/2 -translate-x-1/2">
+            Your Accounts
           </div>
+          <button
+            onClick={() => {
+              if (onAddAccount()) {
+                toast.success("New account added");
+              }
+            }}
+            className="w-[36px] h-[36px] rounded-full bg-[#1c1c1e] flex items-center justify-center active:scale-95 transition-transform"
+          >
+            <Plus size={18} color="#fff" />
+          </button>
         </div>
 
-        {/* Your Accounts Area */}
-        <div className="px-4 flex-1 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>
-          <div className="text-white font-bold text-lg mb-3">Your Accounts</div>
-          <div className="flex flex-col gap-1">
+        {/* Accounts List */}
+        <div className="px-4 flex-1 overflow-y-auto mt-2" style={{ overscrollBehavior: "contain" }}>
+          <div className="flex flex-col gap-3">
             {accounts.map((account, index) => {
               const isActive = index === currentAccountIndex;
-              const accDisplayName = account.profile?.username || account.walletName || "Account";
-
+              const accDisplayName = account.profile?.username || account.walletName || `Account ${index + 1}`;
+              
               // Calculate balance for this account
               const accTotalBalance = account.tokenBalances.reduce((total, b) => {
                 const token = TOKEN_MAP[b.symbol];
@@ -168,59 +133,41 @@ export default function AccountModal({
                       toast.success(`Switched to ${accDisplayName}`);
                     }
                   }}
-                  className={`w-full flex items-center gap-3 px-2 py-3 rounded-2xl cursor-pointer transition-all active:scale-[0.98] ${isActive ? 'bg-[#232323]' : 'hover:bg-[#1a1a1a] active:opacity-70'}`}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-[24px] cursor-pointer transition-transform active:scale-[0.98] bg-[#1c1c1e]`}
                 >
                   <div className="relative flex-shrink-0">
                     <Avatar
-                      iconIndex={account.avatarIconIndex || account.profile.iconIndex}
-                      avatarType={account.profile.avatarType}
+                      iconIndex={account.avatarIconIndex || account.profile?.iconIndex || 1}
+                      avatarType={account.profile?.avatarType || 'emoji'}
                       size={44}
                     />
                     {isActive && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#ac9cf2] flex items-center justify-center">
-                        <Check size={9} color="white" strokeWidth={3} />
+                      <div className="absolute -bottom-1 -right-1 w-[20px] h-[20px] rounded-full bg-[#AB9FF2] flex items-center justify-center border-[3px] border-[#1c1c1e]">
+                        <Check size={12} color="#000" strokeWidth={3} />
                       </div>
                     )}
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <div className="text-white font-semibold text-sm">{accDisplayName}</div>
-                    <div className="text-[#888888] text-xs">{formatCurrency(accTotalBalance, baseCurrency)}</div>
+                    <div className="text-white font-medium text-[16px] mb-0.5">{accDisplayName}</div>
+                    <div className="text-[#A0A0A0] text-[14px]">{formatCurrency(accTotalBalance, baseCurrency)}</div>
                   </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       if (isActive) {
-                        handleClose();
                         onOpenProfile();
                       } else {
                         switchAccount(index);
                       }
                     }}
-                    className="w-8 h-8 rounded-lg bg-pt-bg flex items-center justify-center active:opacity-60"
+                    className="w-[36px] h-[36px] rounded-full bg-[#2A2A2C] flex items-center justify-center active:scale-95 transition-transform"
                   >
-                    {isActive ? (
-                      <Pencil size={13} strokeWidth={2} style={{ color: "rgb(136, 136, 136)" }} />
-                    ) : (
-                      <Check size={13} strokeWidth={2} className="text-[#888888] opacity-0 group-hover:opacity-100" />
-                    )}
+                    <Pencil size={16} color="#e0e0e0" />
                   </button>
                 </div>
               );
             })}
           </div>
-        </div>
-
-        {/* Add Account Button Floor */}
-        <div className="px-4 pt-4 pb-4 flex-shrink-0">
-          <button
-            onClick={() => {
-              addAccount();
-              toast.success("New account added");
-            }}
-            className="w-full bg-[#ac9cf2] rounded-[18px] py-4 flex items-center justify-center transition-transform duration-100 active:scale-[0.97]"
-          >
-            <span className="text-[#0c0c0c] font-bold text-base">Add Account</span>
-          </button>
         </div>
       </div>
 

@@ -50,8 +50,8 @@
   --color-pt-accent: #AB9FF2;
   --color-pt-accent-dark: #8B7FD4;
   --color-pt-accent-light: #C4BAFF;
-  --color-pt-green: #16C784;
-  --color-pt-red: #FF3B30;
+  --color-pt-green: #4FE862;
+  --color-pt-red: #F80633;
   --color-pt-text: #FFFFFF;
   --color-pt-text-secondary: #A0A0A0;
   --color-pt-text-tertiary: #5C5D7A;
@@ -68,8 +68,8 @@
   --color-phantom-darker: #0c0a18;
   --color-phantom-light: #d6d0f8;
   --color-phantom-accent: #7f66ff;
-  --color-phantom-green: #1DA861;
-  --color-phantom-red: #E54D34;
+  --color-phantom-green: #4FE862;
+  --color-phantom-red: #F80633;
   --color-glass-bg: rgba(255, 255, 255, 0.03);
   --color-glass-border: rgba(255, 255, 255, 0.08);
 }
@@ -89,13 +89,13 @@
   --muted-foreground: #A0A0A0;
   --accent: #2A2A4A;
   --accent-foreground: #ffffff;
-  --destructive: #FF3B30;
+  --destructive: #F80633;
   --border: #1e1e36;
   --input: #2A2A4A;
   --ring: #AB9FF2;
   --chart-1: #AB9FF2;
-  --chart-2: #16C784;
-  --chart-3: #FF3B30;
+  --chart-2: #4FE862;
+  --chart-3: #F80633;
   --chart-4: #FFD93D;
   --chart-5: #5C5D7A;
   --sidebar: #111111;
@@ -107,16 +107,16 @@
   --sidebar-border: #1E1E36;
   --sidebar-ring: #AB9FF2;
   --phantom-purple: #ab9ff2;
-  --phantom-green: #1DA861;
-  --phantom-red: #E54D34;
+  --phantom-green: #4FE862;
+  --phantom-red: #F80633;
   --phantom-dark: #120e21;
   --phantom-darker: #0c0a18;
   --phantom-light: #d6d0f8;
   --phantom-accent: #7f66ff;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --color-phantom-green: #1DA861;
-  --color-phantom-red: #E54D34;
+  --color-phantom-green: #4FE862;
+  --color-phantom-red: #F80633;
   --ion-background-color: #111112;
   --ion-text-color: #f7f5f0;
   --radius: 0.75rem;
@@ -161,7 +161,8 @@ body {
   -webkit-touch-callout: none;
 }
 
-input, textarea {
+input,
+textarea {
   -webkit-user-select: auto;
   user-select: auto;
 }
@@ -596,7 +597,7 @@ h1 {
 }
 
 .pnlValue.positive {
-  color: #16c784;
+  color: #4FE862;
 }
 
 .pnlBadge {
@@ -609,7 +610,7 @@ h1 {
 }
 
 .pnlBadge.positive {
-  background: #16c784;
+  background: #4FE862;
 }
 
 .actionGrid {
@@ -840,7 +841,7 @@ h1 {
 }
 
 .tokenDelta.positive {
-  color: #16c784;
+  color: #4FE862;
 }
 
 .listPanel {

@@ -16403,9 +16403,9 @@ var InMemoryPlatformStore = class {
     if (!account) throw new Error("Wallet account was not found.");
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
-    const counterpartAccount = this.findCounterpartAccount(user.id, input);
+    const counterpartAccount = input.type === "send" ? this.findCounterpartAccount(user.id, input) : null;
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (counterpartAccount?.id === account.id) {
+    if (input.type === "send" && counterpartAccount?.id === account.id) {
       throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
     }
     if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
@@ -17348,9 +17348,9 @@ var NeonPlatformStore = class {
     if (!account) throw new Error("Wallet account was not found.");
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
-    const counterpartAccount = await this.findCounterpartAccount(user.id, input);
+    const counterpartAccount = input.type === "send" ? await this.findCounterpartAccount(user.id, input) : null;
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (counterpartAccount?.id === account.id) {
+    if (input.type === "send" && counterpartAccount?.id === account.id) {
       throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
     }
     if (!await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
@@ -19798,7 +19798,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-HY6Wfv/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-0CI4zA/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -19830,7 +19830,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-HY6Wfv/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-0CI4zA/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

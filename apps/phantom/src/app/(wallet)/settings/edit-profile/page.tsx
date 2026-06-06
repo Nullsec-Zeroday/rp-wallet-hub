@@ -661,7 +661,7 @@ function EditProfileContent() {
                       {isCustom && (
                         <button
                           onClick={() => handleRemoveCustom(token.symbol)}
-                          className="text-[#E84142] active:opacity-60 p-1.5 rounded-lg bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors flex-shrink-0"
+                          className="text-[#F80633] active:opacity-60 p-1.5 rounded-lg bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors flex-shrink-0"
                           title="Remove custom token"
                         >
                           <Trash2 size={14} />
@@ -730,7 +730,7 @@ function EditProfileContent() {
                             onClick={() => handleImport(result)}
                             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 ${
                               isAlreadyImported
-                                ? "bg-[#102A1E] text-[#10B981] cursor-default"
+                                ? "bg-[#102A1E] text-[#4FE862] cursor-default"
                                 : "bg-[#AB9FF2] text-[#111111] active:scale-95 hover:opacity-90"
                             }`}
                           >
@@ -780,7 +780,7 @@ function EditProfileContent() {
               <span className="text-[15px] text-[#8b8ca7]">Type</span>
               <div className="flex bg-[#2c2c2e] rounded-lg p-0.5 h-[32px] border border-white/5">
                 <button
-                  className={`px-3 rounded-md text-xs font-semibold transition-all ${txType === 'receive' ? 'bg-[#1c1c1e] text-[#14F195]' : 'text-[#8b8ca7]'}`}
+                  className={`px-3 rounded-md text-xs font-semibold transition-all ${txType === 'receive' ? 'bg-[#1c1c1e] text-[#4FE862]' : 'text-[#8b8ca7]'}`}
                   onClick={() => setTxType('receive')}
                 >
                   Receive
@@ -884,7 +884,7 @@ function EditProfileContent() {
                       void handleClearTransactions();
                     }
                   }}
-                  className="text-[11px] font-bold text-[#E84142] active:opacity-60 uppercase tracking-wider flex items-center gap-1"
+                  className="text-[11px] font-bold text-[#F80633] active:opacity-60 uppercase tracking-wider flex items-center gap-1"
                 >
                   Clear All
                 </button>
@@ -898,7 +898,7 @@ function EditProfileContent() {
                   <div key={tx.id} className="flex items-center justify-between gap-3 px-4 py-3 h-[60px]">
                     <div className="flex-1 min-w-0">
                       <div className="text-white text-[15px] font-bold">
-                        <span className={tx.type === 'receive' ? 'text-[#14F195]' : tx.type === 'swap' ? 'text-[#AB9FF2]' : 'text-[#E84142]'}>
+                        <span className={tx.type === 'receive' ? 'text-[#4FE862]' : tx.type === 'swap' ? 'text-[#AB9FF2]' : 'text-[#F80633]'}>
                           {tx.type === 'receive' ? '+' : tx.type === 'swap' ? '' : '-'}{tx.amount} {tx.token}
                         </span>
                       </div>
@@ -908,7 +908,7 @@ function EditProfileContent() {
                     </div>
                     <button
                       onClick={() => void handleDeleteTransaction(tx.id)}
-                      className="text-[#E84142] active:opacity-60 p-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors"
+                      className="text-[#F80633] active:opacity-60 p-2 rounded-xl bg-[#2c2c2e] hover:bg-[#3a3a3c] transition-colors"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -1024,7 +1024,7 @@ function EditProfileContent() {
               <button
                 onClick={handleTogglePush}
                 className={`flex items-center px-3 h-[28px] rounded-lg font-bold text-xs transition-colors border ${localNotificationSettings.pushEnabled
-                  ? "bg-[#102A1E] text-[#10B981] border-[#10B981]/30"
+                  ? "bg-[#102A1E] text-[#4FE862] border-[#4FE862]/30"
                   : "bg-[#2c2c2e] text-[#8b8ca7] border-white/5"
                   }`}
               >

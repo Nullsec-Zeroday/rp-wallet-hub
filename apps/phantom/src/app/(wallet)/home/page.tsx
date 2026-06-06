@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/lib/wallet-store";
 import { TOKEN_MAP, TOKENS, formatCurrency, formatBalance } from "@/lib/wallet-data";
@@ -87,6 +87,7 @@ export default function HomePage() {
   const router = useRouter();
   const [mounted, setMounted] = React.useState(false);
   const {
+    walletName,
     tokenBalances,
     getTotalBalance,
     getTotalPnL,
@@ -143,7 +144,7 @@ export default function HomePage() {
     // Prefetch top 5 tokens immediately to make common navigation instant
     sortedTokenRows.slice(0, 5).forEach(bal => {
       if (!prefetchedRef.current.has(bal.symbol)) {
-        router.prefetch(`/token/${bal.symbol}`);
+        router.prefetch(`?modal=token&symbol=${bal.symbol}`);
         prefetchedRef.current.add(bal.symbol);
       }
     });
@@ -155,10 +156,20 @@ export default function HomePage() {
     <div className="flex flex-col pb-32">
       <div className="px-4">
         {/* ── Balance Section ── */}
-        <div className="pt-4 pb-4 walkthrough-balance">
+        <div className="pb-4 walkthrough-balance">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal'))}
+            className="flex items-center gap-1 text-[#A0A0A0] mb-1.5 active:opacity-60 transition-opacity"
+          >
+            <span className="font-medium text-[17px]">
+              {walletName || "Account 1"}
+            </span>
+
+            <ChevronDown size={16} strokeWidth={2.5} />
+          </button>
           <div
             className="text-white"
-            style={{ fontSize: 38, lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: 600 }}
+            style={{ fontSize: 48, lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: 500 }}
           >
             {formatCurrency(totalBalance, baseCurrency, 2)}
           </div>
@@ -166,8 +177,8 @@ export default function HomePage() {
           {totalBalance > 0 && (
             <div className="flex items-center gap-2 mt-2">
               <span
-                className="font-medium"
-                style={{ color: isPnlPositive ? "var(--color-phantom-green)" : "var(--color-phantom-red)", fontSize: 15, letterSpacing: "-0.01em" }}
+                className="font-bold"
+                style={{ color: isPnlPositive ? "var(--color-phantom-green)" : "var(--color-phantom-red)", fontSize: 16, letterSpacing: "-0.01em" }}
               >
                 {isPnlPositive ? "+" : "-"}
                 {Math.abs(pnl.dollarChange) > 0 && Math.abs(pnl.dollarChange) < 0.01
@@ -179,7 +190,7 @@ export default function HomePage() {
                 style={{
                   backgroundColor: isPnlPositive ? "var(--color-phantom-green)" : "var(--color-phantom-red)",
                   color: "#000000",
-                  fontSize: 13,
+                  fontSize: 14,
                   padding: "1px 7px",
                 }}
               >
@@ -196,29 +207,25 @@ export default function HomePage() {
         </div>
 
         {/* ── Action Buttons ── */}
-        <div className="grid grid-cols-4 gap-2.5 mb-5 walkthrough-actions">
+        {/* <div className="grid grid-cols-4 gap-2.5 mb-5 walkthrough-actions">
           <ActionButton Icon={SendIcon} label="Send" onClick={() => router.push('/home?modal=send')} />
           <ActionButton Icon={SwapIcon} label="Swap" onClick={() => router.push('/swap')} />
           <ActionButton Icon={ReceiveIcon} label="Receive" onClick={() => router.push('/home?modal=receive')} />
           <ActionButton Icon={BuyIcon} label="Buy" onClick={() => router.push('/home?modal=buy')} />
-        </div>
+        </div> */}
 
         {/* ── Cash Balance Card ── */}
-        <div className="bg-[#232323] rounded-xl px-4.5 py-4 mb-5 flex items-center justify-between">
-          <div>
-            <div className="text-[#a9a9a9] font-medium text-[14px] mb-0.5">Cash Balance</div>
-            <div className="text-[#f3f3f3] font-semibold text-[22px] leading-tight">{formatCurrency(cashBalance, baseCurrency)}</div>
+        <div
+          onClick={() => router.push('/home?modal=cash')}
+          className="bg-[#2a2a2a] rounded-[24px] px-7 py-5.5 mb-5 mt-1 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <img src="/icons/cash_icon.webp" alt="Cash" width={22} height={22} className="object-contain" />
+            <span className="text-white font-medium text-[17px]">Cash</span>
           </div>
-          <button
-            onClick={() => router.push('/home?modal=buy')}
-            style={{
-              fontWeight: 600,
-              fontSize: 15
-            }}
-            className="bg-[#ac9cf2] text-[#111111] px-5 py-2 rounded-lg active:scale-95 transition-transform"
-          >
-            Add Cash
-          </button>
+          <div className="text-white font-medium text-[17px]">
+            {formatCurrency(cashBalance, baseCurrency)}
+          </div>
         </div>
 
         {/* ── Tokens Section ── */}
@@ -249,44 +256,41 @@ export default function HomePage() {
             return (
               <Link
                 key={tokenInfo.symbol}
-                href={`/token/${tokenInfo.symbol}`}
+                href={`?modal=token&symbol=${tokenInfo.symbol}`}
                 prefetch={true}
-                className="w-full flex items-center gap-2.5 py-4 px-4 pr-5 bg-[#232323] rounded-xl active:scale-[0.97] transition-transform duration-[50ms]"
+                className="w-full flex items-center gap-2 py-[10.5px] px-5 bg-[#2a2a2a] rounded-[20px] active:scale-[0.97] transition-transform duration-[50ms]"
               >
                 <div className="flex-shrink-0">
                   <TokenLogo
                     token={tokenInfo}
-                    size={48}
+                    size={40}
                     liveImage={prices[tokenInfo.symbol]?.image}
                     priority={idx < 5}
                   />
                 </div>
 
-                <div className="flex-1 text-left min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="text-base font-medium text-[#f3f3f3]">
+                <div className="flex-1 text-left min-w-0 flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-[2px]">
+                    <span className="text-[15px] font-semibold text-white">
                       {tokenInfo.name}
                     </span>
                     {TOKENS.some(t => t.symbol === tokenInfo.symbol) && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                        <path fill="#ac9cf2" d="M12.737 1.271a1.136 1.136 0 0 0-1.473 0l-2.46 2.097a1.136 1.136 0 0 1-.647.268l-3.222.257a1.136 1.136 0 0 0-1.042 1.041l-.257 3.223a1.136 1.136 0 0 1-.268.646l-2.097 2.46a1.136 1.136 0 0 0 0 1.474l2.097 2.46c.155.182.249.408.268.646l.257 3.223c.044.556.486.997 1.042 1.041l3.222.257c.238.02.464.113.646.268l2.46 2.097a1.136 1.136 0 0 0 1.474 0l2.46-2.097c.182-.155.408-.249.646-.268l3.223-.257a1.136 1.136 0 0 0 1.041-1.041l.258-3.223c.019-.238.112-.464.267-.646l2.097-2.46a1.136 1.136 0 0 0 0-1.474l-2.097-2.46a1.136 1.136 0 0 1-.267-.646l-.258-3.223a1.136 1.136 0 0 0-1.041-1.041l-3.223-.257a1.136 1.136 0 0 1-.646-.268z" />
-                        <path fill="#111111" d="M16.814 9.581a1 1 0 1 0-1.628-1.162l-4.314 6.04-2.165-2.166a1 1 0 0 0-1.414 1.414l3 3a1 1 0 0 0 1.52-.126z" />
-                      </svg>
+                      <img src="/icons/verified_highlighted.webp" alt="Verified" style={{ width: 16, height: 16, flexShrink: 0, objectFit: 'contain' }} />
                     )}
                   </div>
-                  <div className="text-sm" style={{ color: "rgb(136, 136, 136)" }}>
+                  <div className="text-[15px] -mt-1" style={{ color: "#A0A0A0" }}>
                     {formatBalance(balance)} {tokenInfo.symbol}
                   </div>
                 </div>
 
-                <div className="text-right flex-shrink-0">
-                  <div className="text-base font-medium text-[#f3f3f3]">
+                <div className="text-right flex-shrink-0 flex flex-col">
+                  <div className="text-[16px]  text-white mb-[2px]">
                     {formatCurrency(usdValue, baseCurrency)}
                   </div>
                   <div
-                    className="text-sm font-medium"
+                    className="text-[15px]  -mt-1"
                     style={{
-                      color: balance === 0 ? "rgb(136, 136, 136)" : isTokenPnlPositive ? "var(--color-phantom-green)" : "var(--color-phantom-red)",
+                      color: balance === 0 ? "#A0A0A0" : isTokenPnlPositive ? "var(--color-phantom-green)" : "#FF453A",
                     }}
                   >
                     {balance === 0

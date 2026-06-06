@@ -35,7 +35,7 @@ const Rank3Shield = () => (
   <svg width="22" height="24" viewBox="0 0 22 24" fill="none">
     <path d="M4.75885 7.99661L6.21416 9.36849L6.75885 8.79068V7.99661H4.75885ZM17.2411 7.99838H15.2411V8.79212L15.7854 9.36985L17.2411 7.99838ZM13.7204 4H15.4722V0H13.7204V4ZM8.27783 4H13.7204V0H8.27783V4ZM6.52779 4H8.27783V0H6.52779V4ZM6.75885 3.73598C6.75885 3.91709 6.61977 4 6.52779 4V0C4.48189 0 2.75885 1.63736 2.75885 3.73598H6.75885ZM6.75885 7.99661V3.73598H2.75885V7.99661H6.75885ZM4.5 13.6593C4.5 12.0081 5.14463 10.5031 6.21416 9.36849L3.30354 6.62472C1.56901 8.46472 0.5 10.9386 0.5 13.6593H4.5ZM10.9991 20.0001C7.37414 20.0001 4.5 17.1259 4.5 13.6593H0.5C0.5 19.4056 5.23625 24.0001 10.9991 24.0001V20.0001ZM17.4983 13.6593C17.4983 17.1259 14.6241 20.0001 10.9991 20.0001V24.0001C16.762 24.0001 21.4983 19.4056 21.4983 13.6593H17.4983ZM15.7854 9.36985C16.8542 10.5043 17.4983 12.0088 17.4983 13.6593H21.4983C21.4983 10.9397 20.4301 8.46669 18.6968 6.62691L15.7854 9.36985ZM15.2411 3.73598V7.99838H19.2411V3.73598H15.2411ZM15.4722 4C15.3802 4 15.2411 3.91709 15.2411 3.73598H19.2411C19.2411 1.63736 17.5181 0 15.4722 0V4Z" fill="#111111"></path>
     <path d="M15.4722 2H13.7204H8.27783H6.52779C5.55083 2 4.75885 2.77722 4.75885 3.73598V7.99661C3.35682 9.48389 2.5 11.4734 2.5 13.6593C2.5 18.2658 6.30519 22.0001 10.9991 22.0001C15.6931 22.0001 19.4983 18.2658 19.4983 13.6593C19.4983 11.4743 18.6421 9.48547 17.2411 7.99838V3.73598C17.2411 2.77722 16.4491 2 15.4722 2Z" fill="#FFD13F" fillRule="evenodd"></path>
-    <path d="M15.4731 2H6.5287C5.55174 2 4.75977 2.77722 4.75977 3.73598V9.25095C4.75977 10.2097 5.55174 10.9869 6.5287 10.9869H15.4731C16.45 10.9869 17.242 10.2097 17.242 9.25095V3.73598C17.242 2.77722 16.45 2 15.4731 2Z" fill="#2EC08B"></path>
+    <path d="M15.4731 2H6.5287C5.55174 2 4.75977 2.77722 4.75977 3.73598V9.25095C4.75977 10.2097 5.55174 10.9869 6.5287 10.9869H15.4731C16.45 10.9869 17.242 10.2097 17.242 9.25095V3.73598C17.242 2.77722 16.45 2 15.4731 2Z" fill="#4FE862"></path>
     <path d="M13.72 2H8.27734V8.31632H13.72V2Z" fill="#4A87F2" opacity="0.4"></path>
     <path d="M10.9991 21.9999C15.6931 21.9999 19.4983 18.2656 19.4983 13.6591C19.4983 9.05266 15.6931 5.31836 10.9991 5.31836C6.30519 5.31836 2.5 9.05266 2.5 13.6591C2.5 18.2656 6.30519 21.9999 10.9991 21.9999Z" fill="#FF7243"></path>
     <path d="M10.9998 20.8121C15.0254 20.8121 18.2888 17.6095 18.2888 13.659C18.2888 9.70841 15.0254 6.50586 10.9998 6.50586C6.97429 6.50586 3.71094 9.70841 3.71094 13.659C3.71094 17.6095 6.97429 20.8121 10.9998 20.8121Z" fill="#FFA080" opacity="0.5"></path>
@@ -56,7 +56,7 @@ const CATEGORIES = [
   {
     id: "tokens",
     label: "Tokens",
-    bgColor: "rgb(48, 164, 108)",
+    bgColor: "#4FE862",
     svg: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="m19 7-2.515-2.515a8.485 8.485 0 0 0-12 12L7 19m15-5.5a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -293,7 +293,7 @@ export default function BrowserPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#111111] pb-12">
+    <div className="flex flex-col min-h-screen bg-transparent pb-12">
       {/* Scrollbar hiding styles */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -306,47 +306,6 @@ export default function BrowserPage() {
         }
       `}} />
 
-      {/* ── Custom Sticky Search Header ── */}
-      <div
-        className="sticky top-0 z-50 bg-[#111111] px-4 pb-3 flex items-center justify-between gap-3"
-        style={{ paddingTop: "calc(12px + env(safe-area-inset-top, 0px))" }}
-      >
-        {/* Left: Saved Profile Avatar */}
-        <div
-          className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center cursor-pointer active:opacity-75 transition-opacity"
-        >
-          <Avatar
-            iconIndex={profile.iconIndex}
-            avatarType={profile.avatarType}
-            size={32}
-          />
-        </div>
-
-        {/* Center: Search pill */}
-        <div
-          className="flex-1 flex items-center bg-[#1c1c1e] rounded-xl px-3 py-2 text-[#b4b4b4] hover:bg-[#2c2c2e]/70 transition-colors cursor-pointer"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="mr-2 shrink-0">
-            <path
-              d="m21 21-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0"
-              stroke="#b4b4b4"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span className="text-[#b4b4b4] text-[15px] font-medium leading-none select-none">
-            Sites, tokens, URL
-          </span>
-        </div>
-
-        {/* Right: Tab count indicator */}
-        <div
-          className="w-8 h-8 rounded-lg border border-[#b4b4b4] flex items-center justify-center shrink-0 cursor-pointer active:opacity-75 transition-opacity"
-        >
-          <span className="text-[#b4b4b4] text-[13px] font-bold leading-none">1</span>
-        </div>
-      </div>
 
       {/* ── Category Pills (Horizontal Scroll) ── */}
       <div
@@ -359,15 +318,15 @@ export default function BrowserPage() {
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
-            className="flex items-center bg-[#1c1c1e] rounded-[20px] pr-4 pl-1 py-1 gap-2 hover:bg-[#2c2c2e]/60 transition-colors focus:outline-none shrink-0"
+            className="flex items-center bg-[#191919] border border-[#2a2a2a] rounded-lg pr-4 pl-1.5 py-1.5 gap-2.5 hover:bg-[#2a2a2a] transition-colors focus:outline-none shrink-0"
           >
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0"
               style={{ backgroundColor: cat.bgColor }}
             >
               {cat.svg}
             </div>
-            <span className="text-white text-sm font-semibold tracking-tight">{cat.label}</span>
+            <span className="text-white text-[15px] font-semibold tracking-tight">{cat.label}</span>
           </button>
         ))}
       </div>
@@ -381,7 +340,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {TRENDING_TOKENS.map((token) => (
             <div key={token.id} className="flex items-center justify-between cursor-pointer active:opacity-75 transition-opacity">
               <div className="flex items-center flex-1 min-w-0">
@@ -416,7 +375,7 @@ export default function BrowserPage() {
                 </span>
                 <span
                   className="text-[13px] font-semibold leading-normal tracking-tight mt-0.5"
-                  style={{ color: token.isPositive ? "rgb(48, 164, 108)" : "rgb(238, 66, 32)" }}
+                  style={{ color: token.isPositive ? "#4FE862" : "rgb(238, 66, 32)" }}
                 >
                   {token.change}
                 </span>
@@ -435,7 +394,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {TRENDING_PERPS.map((perp) => (
             <div key={perp.id} className="flex items-center justify-between cursor-pointer active:opacity-75 transition-opacity">
               <div className="flex items-center flex-1 min-w-0">
@@ -477,7 +436,7 @@ export default function BrowserPage() {
                 </span>
                 <span
                   className="text-[13px] font-semibold leading-normal tracking-tight mt-0.5"
-                  style={{ color: perp.isPositive ? "rgb(48, 164, 108)" : "rgb(238, 66, 32)" }}
+                  style={{ color: perp.isPositive ? "#4FE862" : "rgb(238, 66, 32)" }}
                 >
                   {perp.change}
                 </span>
@@ -496,7 +455,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {TOP_LISTS.map((list) => (
             <div key={list.id} className="flex items-center justify-between cursor-pointer active:opacity-75 transition-opacity">
               <div className="flex items-center flex-1 min-w-0">
@@ -539,7 +498,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {TOP_TRADERS.map((trader) => {
             const isFollowing = followedTraders.includes(trader.id);
             return (
@@ -565,7 +524,7 @@ export default function BrowserPage() {
                     </span>
                     <span
                       className="text-[13px] font-semibold leading-normal tracking-tight truncate mt-0.5"
-                      style={{ color: "rgb(48, 164, 108)" }}
+                      style={{ color: "#4FE862" }}
                     >
                       {trader.profit}
                     </span>
@@ -597,7 +556,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {TRENDING_SITES.map((site) => (
             <div key={site.id} className="flex items-center justify-between cursor-pointer active:opacity-75 transition-opacity">
               <div className="flex items-center flex-1 min-w-0">
@@ -641,7 +600,7 @@ export default function BrowserPage() {
           </svg>
         </button>
 
-        <div className="bg-[#1c1c1e] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]/20">
+        <div className="bg-[#191919] rounded-[24px] mx-4 p-4 flex flex-col gap-4 border border-[#2a2a2a]">
           {LEARN.map((item) => (
             <div key={item.id} className="flex items-center justify-between cursor-pointer active:opacity-75 transition-opacity">
               <div className="flex items-center flex-1 min-w-0">
@@ -677,7 +636,7 @@ export default function BrowserPage() {
       {/* ── Competitions / Standalone Card ── */}
       <div
         tabIndex={0}
-        className="mt-6 mx-4 p-4 rounded-[24px] bg-[#1c1c1e] border border-[#2a2a2a]/20 cursor-pointer active:opacity-75 transition-opacity flex flex-col justify-center gap-1"
+        className="mt-6 mx-4 p-4 rounded-[24px] bg-[#191919] border border-[#2a2a2a] cursor-pointer active:opacity-75 transition-opacity flex flex-col justify-center gap-1"
       >
         <span className="text-white font-bold text-[15px] leading-snug tracking-tight">
           Competitions

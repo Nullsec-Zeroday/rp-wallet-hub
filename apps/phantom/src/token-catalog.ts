@@ -14,7 +14,7 @@ export const PHANTOM_TOKEN_CATALOG: PhantomTokenMeta[] = [
   { symbol: "MATIC", name: "Polygon", color: "#8247E5", icon: "P" },
   { symbol: "HYPE", name: "Hyperliquid", color: "#00E5B4", icon: "H" },
   { symbol: "BNB", name: "BNB", color: "#F3BA2F", icon: "B" },
-  { symbol: "AVAX", name: "Avalanche", color: "#E84142", icon: "A" },
+  { symbol: "AVAX", name: "Avalanche", color: "#F80633", icon: "A" },
   { symbol: "LINK", name: "Chainlink", color: "#2A5ADA", icon: "L" },
   { symbol: "UNI", name: "Uniswap", color: "#FF007A", icon: "U" },
   { symbol: "USDC", name: "USDC", color: "#2775CA", icon: "$" },
