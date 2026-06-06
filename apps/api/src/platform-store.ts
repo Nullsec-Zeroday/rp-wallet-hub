@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@rp-wallet/db";
 import type {
   CreateWalletTransactionResponse,
+  CreateWalletAccountRequest,
   CreateWalletTransactionRequest,
   CreateWalletTransactionsBatchRequest,
   HubSessionResponse,
@@ -349,6 +350,7 @@ export interface PlatformStore {
   createWalletLaunch(input: WalletLaunchInput): Promise<WalletLaunchResult | null>;
   exchangeWalletBootstrap(input: WalletBootstrapInput): Promise<WalletBootstrapResult | null>;
   getWalletState(sessionId: string, walletAppId: WalletAppId): Promise<WalletBootstrapPayload | null>;
+  createWalletAccount(sessionId: string, input: CreateWalletAccountRequest): Promise<WalletBootstrapPayload | null>;
   updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null>;
   getWalletTransactions(sessionId: string, walletAppId: WalletAppId): Promise<WalletTransaction[] | null>;
   createWalletTransaction(sessionId: string, input: CreateWalletTransactionRequest): Promise<CreateWalletTransactionResponse | null>;
@@ -800,6 +802,28 @@ class InMemoryPlatformStore implements PlatformStore {
     if (!user || !license) return null;
 
     return this.buildWalletBootstrap(user, license, walletAppId);
+  }
+
+  async createWalletAccount(sessionId: string, input: CreateWalletAccountRequest): Promise<WalletBootstrapPayload | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= new Date()) return null;
+
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+
+    const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = this.getOrCreateWalletAccounts(profile);
+    const account: WalletAccount = {
+      id: createId("wac"),
+      walletProfileId: profile.id,
+      name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      address: this.createUniqueDemoAddress(input.walletAppId),
+      createdAt: new Date().toISOString(),
+    };
+    this.walletAccounts.set(profile.id, [...accounts, account]);
+
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
   }
 
   async updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null> {
@@ -2012,6 +2036,25 @@ class NeonPlatformStore implements PlatformStore {
     const user = await this.getUser(session.userId);
     const license = await this.getLicense(session.licenseId);
     return this.buildWalletBootstrap(user, license, walletAppId);
+  }
+
+  async createWalletAccount(sessionId: string, input: CreateWalletAccountRequest): Promise<WalletBootstrapPayload | null> {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+
+    await this.db.insert(schema.walletAccounts).values({
+      id: createId("wac"),
+      walletProfileId: profile.id,
+      name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      address: await this.createUniqueDemoAddress(input.walletAppId),
+    });
+
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
   }
 
   async updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null> {

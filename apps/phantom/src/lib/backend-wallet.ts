@@ -14,7 +14,7 @@ import { useWalletStore } from "./wallet-store";
 
 const api = new RpWalletApiClient(appEnv.apiBaseUrl);
 
-function applyPayload(payload: WalletBootstrapPayload, options: { preserveLocalNotificationSettings?: boolean } = {}) {
+function applyPayload(payload: WalletBootstrapPayload, options: { preserveLocalNotificationSettings?: boolean; preferredAccountId?: string } = {}) {
   payload = applyDemoRestrictions("phantom", payload);
   const payloadToApply = options.preserveLocalNotificationSettings
     ? {
@@ -24,12 +24,25 @@ function applyPayload(payload: WalletBootstrapPayload, options: { preserveLocalN
     : payload;
 
   writeCachedBootstrap("phantom", payloadToApply);
-  syncStoreFromPayload(payloadToApply);
+  syncStoreFromPayload(payloadToApply, options.preferredAccountId);
   return payloadToApply;
 }
 
 export function getCurrentBackendAccount() {
   return useWalletStore.getState().accounts[useWalletStore.getState().currentAccountIndex];
+}
+
+export async function createBackendWalletAccount(name?: string) {
+  const existingIds = new Set(useWalletStore.getState().accounts.map((account) => account.id));
+  const payload = await api.createWalletAccount({
+    walletAppId: "phantom",
+    name,
+  });
+  const createdAccount = payload.accounts.find((account) => !existingIds.has(account.id));
+
+  return applyPayload(payload, {
+    preferredAccountId: createdAccount?.id,
+  });
 }
 
 export async function createBackendWalletTransaction(input: Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">) {

@@ -151,6 +151,11 @@ export interface WalletBootstrapPayload {
   recentNotifications?: WalletNotification[];
 }
 
+export interface CreateWalletAccountRequest {
+  walletAppId: WalletAppId;
+  name?: string;
+}
+
 export type WalletMutationType = "send" | "receive" | "same_wallet_transfer" | "cross_wallet_transfer" | "manual_adjustment";
 
 export interface CreateWalletTransactionRequest {

@@ -4,6 +4,7 @@ import { getCookie, setCookie } from "hono/cookie";
 import type { DemoActivationRequest, LicenseActivationRequest, WalletBootstrapExchangeRequest, WalletLaunchRequest } from "@rp-wallet/auth";
 import type {
   CreateWalletTransactionResponse,
+  CreateWalletAccountRequest,
   CreateWalletTransactionsBatchRequest,
   CreateWalletTransactionRequest,
   HubSessionResponse,
@@ -1029,6 +1030,29 @@ app.get("/wallet-events", async (c) => {
   }
 
   return c.json(response);
+});
+
+app.post("/wallet-accounts", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const body = await c.req.json<CreateWalletAccountRequest>();
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletAccount(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to create wallet account" }, 400);
+  }
+
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 
 app.get("/wallet-transactions", async (c) => {

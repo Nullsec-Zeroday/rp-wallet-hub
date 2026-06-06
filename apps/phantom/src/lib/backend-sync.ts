@@ -48,22 +48,40 @@ function formatLicenseExpiration(value: string) {
   }).format(date);
 }
 
-export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
+export function syncStoreFromPayload(payload: WalletBootstrapPayload, preferredAccountId?: string) {
   payload = applyDemoRestrictions("phantom", payload);
-  const account = payload.accounts[0];
-  const accountBalances = account ? payload.balances.filter((balance) => balance.accountId === account.id) : payload.balances;
-  const tokenBalances = accountBalances.map((balance) => ({
-    balance: Number(balance.amount),
-    symbol: balance.tokenSymbol,
-  }));
-  const transactions = mapTransactions(payload, account?.id);
 
   useWalletStore.setState((state) => {
-    const profile = {
-      ...state.profile,
-      ...mapBackendProfileFields(payload),
-    };
-    const currentAccount = state.accounts[state.currentAccountIndex];
+    const previousAccountId = preferredAccountId || state.accounts[state.currentAccountIndex]?.id;
+    const accounts = payload.accounts.map((account) => {
+      const previous = state.accounts.find((entry) => entry.id === account.id);
+      const profile = {
+        ...(previous?.profile || state.profile),
+        ...mapBackendProfileFields({
+          ...payload,
+          accounts: [account],
+        }),
+      };
+      const tokenBalances = payload.balances
+        .filter((balance) => balance.accountId === account.id)
+        .map((balance) => ({
+          balance: Number(balance.amount),
+          symbol: balance.tokenSymbol,
+        }));
+
+      return {
+        avatarIconIndex: previous?.avatarIconIndex ?? profile.iconIndex,
+        cashBalance: previous?.cashBalance ?? 0,
+        id: account.id,
+        name: account.name,
+        profile,
+        tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
+        transactions: mapTransactions(payload, account.id),
+        walletName: account.name,
+      };
+    });
+    const currentAccountIndex = Math.max(0, accounts.findIndex((account) => account.id === previousAccountId));
+    const currentAccount = accounts[currentAccountIndex] || accounts[0];
 
     const backendNotificationSettings = payload.notificationSettings;
     const keepLocalStoppedNotifications =
@@ -72,28 +90,18 @@ export function syncStoreFromPayload(payload: WalletBootstrapPayload) {
       state.notificationSettings.remainingTimes <= 0;
 
     return {
-      accounts: [
-        {
-          avatarIconIndex: currentAccount?.avatarIconIndex ?? profile.iconIndex,
-          cashBalance: currentAccount?.cashBalance ?? state.cashBalance,
-          id: account?.id || "initial-account",
-          name: account?.name || profile.name,
-          profile,
-          tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
-          transactions,
-          walletName: account?.name || profile.name,
-        },
-      ],
-      currentAccountIndex: 0,
+      accounts,
+      currentAccountIndex,
       notificationSettings: keepLocalStoppedNotifications
         ? state.notificationSettings
         : backendNotificationSettings || state.notificationSettings,
-      profile,
+      profile: currentAccount?.profile || state.profile,
       licenseExpiration: formatLicenseExpiration(payload.license.expiresAt) || state.licenseExpiration,
       licensePlan: payload.license.plan || state.licensePlan,
-      tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
-      transactions,
-      walletName: account?.name || profile.name,
+      tokenBalances: currentAccount?.tokenBalances || DEFAULT_BALANCES,
+      transactions: currentAccount?.transactions || [],
+      cashBalance: currentAccount?.cashBalance || 0,
+      walletName: currentAccount?.walletName || state.walletName,
     };
   });
 }

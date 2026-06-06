@@ -28,7 +28,7 @@ import SettingsPage from "./app/(wallet)/settings/page";
 import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
 import { syncStoreFromPayload } from "./lib/backend-sync";
-import { createBackendWalletTransactionsBatch, updateBackendNotificationSettings } from "./lib/backend-wallet";
+import { createBackendWalletAccount, createBackendWalletTransactionsBatch, updateBackendNotificationSettings } from "./lib/backend-wallet";
 import { logWalletDebug } from "./lib/wallet-debug";
 import { requestNotificationPermission, showSystemNotification } from "./lib/notifications";
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
@@ -69,7 +69,6 @@ function WalletRouteBody() {
   const isSettingsPage = pathname.startsWith("/settings");
   const isDemoMode = isDemoPayload(readCachedBootstrap("phantom"));
   const {
-    addAccount,
     addTransaction,
     baseCurrency,
     coingeckoApiKey,
@@ -787,10 +786,9 @@ function WalletRouteBody() {
         onAddAccount={() => {
           if (isDemoMode) {
             requestDemoPaywall("add-account");
-            return false;
+            return Promise.resolve(false);
           }
-          addAccount();
-          return true;
+          return createBackendWalletAccount().then(() => true);
         }}
         onCloseStart={() => setModalClosing(true)}
         onClose={() => {

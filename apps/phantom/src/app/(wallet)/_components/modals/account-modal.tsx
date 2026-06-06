@@ -11,7 +11,7 @@ import { toast } from "sonner";
 interface AccountModalProps {
   visible: boolean;
   onClose: () => void;
-  onAddAccount: () => boolean;
+  onAddAccount: () => Promise<boolean>;
   onOpenProfile: () => void;
   onOpenSettings: () => void;
   onCloseStart?: () => void;
@@ -100,9 +100,13 @@ export default function AccountModal({
             Your Accounts
           </div>
           <button
-            onClick={() => {
-              if (onAddAccount()) {
-                toast.success("New account added");
+            onClick={async () => {
+              try {
+                if (await onAddAccount()) {
+                  toast.success("New account added");
+                }
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Unable to create account.");
               }
             }}
             className="w-[36px] h-[36px] rounded-full bg-[#1c1c1e] flex items-center justify-center active:scale-95 transition-transform"

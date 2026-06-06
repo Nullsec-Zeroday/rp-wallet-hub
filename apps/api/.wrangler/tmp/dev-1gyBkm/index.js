@@ -16343,6 +16343,24 @@ var InMemoryPlatformStore = class {
     if (!user || !license) return null;
     return this.buildWalletBootstrap(user, license, walletAppId2);
   }
+  async createWalletAccount(sessionId, input) {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+    const profile = this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = this.getOrCreateWalletAccounts(profile);
+    const account = {
+      id: createId("wac"),
+      walletProfileId: profile.id,
+      name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      address: this.createUniqueDemoAddress(input.walletAppId),
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.walletAccounts.set(profile.id, [...accounts, account]);
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
   async updateWalletState(sessionId, input) {
     const session = this.sessions.get(sessionId);
     if (!session || new Date(session.expiresAt) <= /* @__PURE__ */ new Date()) return null;
@@ -17282,6 +17300,21 @@ var NeonPlatformStore = class {
     const user = await this.getUser(session.userId);
     const license = await this.getLicense(session.licenseId);
     return this.buildWalletBootstrap(user, license, walletAppId2);
+  }
+  async createWalletAccount(sessionId, input) {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, input.walletAppId, walletRegistry[input.walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    await this.db.insert(walletAccounts).values({
+      id: createId("wac"),
+      walletProfileId: profile.id,
+      name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      address: await this.createUniqueDemoAddress(input.walletAppId)
+    });
+    return this.buildWalletBootstrap(user, license, input.walletAppId);
   }
   async updateWalletState(sessionId, input) {
     const session = await this.getSession(sessionId);
@@ -19147,6 +19180,25 @@ app.get("/wallet-events", async (c) => {
   }
   return c.json(response);
 });
+app.post("/wallet-accounts", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const wallet = getConfiguredWallet(c.env, body.walletAppId);
+  if (!wallet) {
+    return c.json({ error: "Unknown wallet app" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
+  }
+  const response = await getPlatformStore(c.env.DATABASE_URL).createWalletAccount(sessionId, body);
+  if (!response) {
+    return c.json({ error: "Unable to create wallet account" }, 400);
+  }
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
+});
 app.get("/wallet-transactions", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
   if (!sessionId) {
@@ -19798,7 +19850,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// .wrangler/tmp/bundle-0CI4zA/middleware-insertion-facade.js
+// .wrangler/tmp/bundle-FrVeiR/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -19830,7 +19882,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// .wrangler/tmp/bundle-0CI4zA/middleware-loader.entry.ts
+// .wrangler/tmp/bundle-FrVeiR/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

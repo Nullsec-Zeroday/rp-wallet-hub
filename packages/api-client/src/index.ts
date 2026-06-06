@@ -9,6 +9,7 @@ import type {
 } from "@rp-wallet/auth";
 import type {
   CreateWalletTransactionResponse,
+  CreateWalletAccountRequest,
   CreateWalletTransactionsBatchRequest,
   CreateWalletTransactionRequest,
   HubSessionResponse,
@@ -329,6 +330,13 @@ export class RpWalletApiClient {
 
   async getWalletTransactions(walletAppId: WalletAppId) {
     return this.request<WalletTransaction[]>(`/wallet-transactions?walletAppId=${encodeURIComponent(walletAppId)}`);
+  }
+
+  async createWalletAccount(body: CreateWalletAccountRequest) {
+    return this.request<WalletBootstrapPayload>("/wallet-accounts", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
   }
 
   async getWalletEvents(walletAppId: WalletAppId, after?: string) {
