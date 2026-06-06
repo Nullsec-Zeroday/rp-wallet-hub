@@ -877,9 +877,11 @@ class InMemoryPlatformStore implements PlatformStore {
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
 
-    const counterpartAccount = this.findCounterpartAccount(user.id, input);
+    const counterpartAccount = input.type === "send"
+      ? this.findCounterpartAccount(user.id, input)
+      : null;
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (counterpartAccount?.id === account.id) {
+    if (input.type === "send" && counterpartAccount?.id === account.id) {
       throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
     }
     if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
@@ -2110,9 +2112,11 @@ class NeonPlatformStore implements PlatformStore {
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
 
-    const counterpartAccount = await this.findCounterpartAccount(user.id, input);
+    const counterpartAccount = input.type === "send"
+      ? await this.findCounterpartAccount(user.id, input)
+      : null;
     const effectiveType = getEffectiveTransactionType(input, counterpartAccount?.walletAppId);
-    if (counterpartAccount?.id === account.id) {
+    if (input.type === "send" && counterpartAccount?.id === account.id) {
       throw new Error("Choose a different wallet address. Sending to your own address is not supported.");
     }
     if (!(await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType)))) {
