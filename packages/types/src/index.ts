@@ -37,6 +37,7 @@ export interface WalletAccount {
   id: string;
   walletProfileId: string;
   name: string;
+  username?: string;
   address: string;
   createdAt: string;
 }
@@ -213,6 +214,7 @@ export interface UpdateWalletStateRequest {
     avatarUrl?: string;
   };
   accountName?: string;
+  accountUsername?: string;
   accountAddress?: string;
   balances?: Array<{
     tokenSymbol: string;

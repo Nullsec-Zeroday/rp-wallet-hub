@@ -82,6 +82,10 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
                 backgroundColor: "rgba(0, 0, 0, 0.2)",
                 WebkitBackdropFilter: "blur(20px)",
                 backdropFilter: "blur(20px)",
+                transform: "translateZ(0)",
+                WebkitTransform: "translateZ(0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
               }}
             />
 

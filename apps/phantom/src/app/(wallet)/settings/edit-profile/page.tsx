@@ -267,13 +267,13 @@ function EditProfileContent() {
     updateBackendWalletState({
       accountAddress: localProfile.walletAddress,
       accountName: localWalletName,
+      accountUsername: localProfile.username,
       balances: newBalances.map((balance) => ({
         amount: String(balance.balance),
         tokenSymbol: balance.symbol,
       })),
       profile: {
         displayName: localWalletName,
-        username: localProfile.username,
       },
     }).catch((err) => {
       console.error("Wallet state persist failed:", err);

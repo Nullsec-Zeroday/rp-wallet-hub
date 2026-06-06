@@ -9,7 +9,7 @@ function mapBackendProfileFields(payload: WalletBootstrapPayload): Pick<UserProf
 
   return {
     name: displayName,
-    username: payload.profile.username || "",
+    username: account?.username || payload.profile.username || "",
     walletAddress: account?.address || "",
   };
 }

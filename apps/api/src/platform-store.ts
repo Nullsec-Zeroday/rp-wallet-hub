@@ -818,6 +818,7 @@ class InMemoryPlatformStore implements PlatformStore {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      username: normalizeOptionalString(input.name) || `account${accounts.length + 1}`,
       address: this.createUniqueDemoAddress(input.walletAppId),
       createdAt: new Date().toISOString(),
     };
@@ -843,8 +844,8 @@ class InMemoryPlatformStore implements PlatformStore {
       const nextProfile = {
         ...profile,
         displayName: input.profile.displayName?.trim() || profile.displayName,
-        username: normalizeOptionalString(input.profile.username),
-        avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+        username: input.profile.username === undefined ? profile.username : normalizeOptionalString(input.profile.username),
+        avatarUrl: input.profile.avatarUrl === undefined ? profile.avatarUrl : normalizeOptionalString(input.profile.avatarUrl),
         updatedAt: new Date().toISOString(),
       };
       this.walletProfiles.set(`${user.id}:${input.walletAppId}`, nextProfile);
@@ -854,6 +855,16 @@ class InMemoryPlatformStore implements PlatformStore {
       this.walletAccounts.set(
         profile.id,
         accounts.map((entry) => entry.id === input.accountId ? { ...entry, name: input.accountName!.trim() } : entry),
+      );
+    }
+
+    if (input.accountUsername !== undefined) {
+      const currentAccounts = this.walletAccounts.get(profile.id) || accounts;
+      this.walletAccounts.set(
+        profile.id,
+        currentAccounts.map((entry) => entry.id === input.accountId
+          ? { ...entry, username: normalizeOptionalString(input.accountUsername) }
+          : entry),
       );
     }
 
@@ -1274,6 +1285,7 @@ class InMemoryPlatformStore implements PlatformStore {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: "Account 1",
+      username: profile.username,
       address: this.createUniqueDemoAddress(profile.walletAppId),
       createdAt: new Date().toISOString(),
     };
@@ -2051,6 +2063,7 @@ class NeonPlatformStore implements PlatformStore {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      username: normalizeOptionalString(input.name) || `account${accounts.length + 1}`,
       address: await this.createUniqueDemoAddress(input.walletAppId),
     });
 
@@ -2073,8 +2086,8 @@ class NeonPlatformStore implements PlatformStore {
         .update(schema.walletProfiles)
         .set({
           displayName: input.profile.displayName?.trim() || profile.displayName,
-          username: normalizeOptionalString(input.profile.username),
-          avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+          username: input.profile.username === undefined ? profile.username : normalizeOptionalString(input.profile.username),
+          avatarUrl: input.profile.avatarUrl === undefined ? profile.avatarUrl : normalizeOptionalString(input.profile.avatarUrl),
           updatedAt: new Date(),
         })
         .where(eq(schema.walletProfiles.id, profile.id));
@@ -2082,6 +2095,13 @@ class NeonPlatformStore implements PlatformStore {
 
     if (input.accountName?.trim()) {
       await this.db.update(schema.walletAccounts).set({ name: input.accountName.trim() }).where(eq(schema.walletAccounts.id, input.accountId));
+    }
+
+    if (input.accountUsername !== undefined) {
+      await this.db
+        .update(schema.walletAccounts)
+        .set({ username: normalizeOptionalString(input.accountUsername) })
+        .where(eq(schema.walletAccounts.id, input.accountId));
     }
 
     if (input.accountAddress?.trim()) {
@@ -2882,6 +2902,7 @@ class NeonPlatformStore implements PlatformStore {
               id: createId("wac"),
               walletProfileId: profile.id,
               name: "Account 1",
+              username: profile.username,
               address: await this.createUniqueDemoAddress(profile.walletAppId),
             })
             .returning();
@@ -2890,6 +2911,7 @@ class NeonPlatformStore implements PlatformStore {
       id: account.id,
       walletProfileId: account.walletProfileId,
       name: account.name,
+      username: account.username ?? profile.username,
       address: account.address,
       createdAt: account.createdAt.toISOString(),
     }));

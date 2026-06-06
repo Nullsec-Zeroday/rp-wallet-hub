@@ -15731,6 +15731,7 @@ var walletAccounts = pgTable("wallet_accounts", {
   id: text("id").primaryKey(),
   walletProfileId: text("wallet_profile_id").notNull().references(() => walletProfiles.id),
   name: text("name").notNull(),
+  username: text("username"),
   address: text("address").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 }, (table) => [uniqueIndex("wallet_accounts_address_unique").on(table.address)]);
@@ -16355,6 +16356,7 @@ var InMemoryPlatformStore = class {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      username: normalizeOptionalString(input.name) || `account${accounts.length + 1}`,
       address: this.createUniqueDemoAddress(input.walletAppId),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
@@ -16375,8 +16377,8 @@ var InMemoryPlatformStore = class {
       const nextProfile = {
         ...profile,
         displayName: input.profile.displayName?.trim() || profile.displayName,
-        username: normalizeOptionalString(input.profile.username),
-        avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+        username: input.profile.username === void 0 ? profile.username : normalizeOptionalString(input.profile.username),
+        avatarUrl: input.profile.avatarUrl === void 0 ? profile.avatarUrl : normalizeOptionalString(input.profile.avatarUrl),
         updatedAt: (/* @__PURE__ */ new Date()).toISOString()
       };
       this.walletProfiles.set(`${user.id}:${input.walletAppId}`, nextProfile);
@@ -16385,6 +16387,13 @@ var InMemoryPlatformStore = class {
       this.walletAccounts.set(
         profile.id,
         accounts.map((entry) => entry.id === input.accountId ? { ...entry, name: input.accountName.trim() } : entry)
+      );
+    }
+    if (input.accountUsername !== void 0) {
+      const currentAccounts = this.walletAccounts.get(profile.id) || accounts;
+      this.walletAccounts.set(
+        profile.id,
+        currentAccounts.map((entry) => entry.id === input.accountId ? { ...entry, username: normalizeOptionalString(input.accountUsername) } : entry)
       );
     }
     if (input.accountAddress?.trim()) {
@@ -16736,6 +16745,7 @@ var InMemoryPlatformStore = class {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: "Account 1",
+      username: profile.username,
       address: this.createUniqueDemoAddress(profile.walletAppId),
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
@@ -17312,6 +17322,7 @@ var NeonPlatformStore = class {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: input.name?.trim() || `Account ${accounts.length + 1}`,
+      username: normalizeOptionalString(input.name) || `account${accounts.length + 1}`,
       address: await this.createUniqueDemoAddress(input.walletAppId)
     });
     return this.buildWalletBootstrap(user, license, input.walletAppId);
@@ -17328,13 +17339,16 @@ var NeonPlatformStore = class {
     if (input.profile) {
       await this.db.update(walletProfiles).set({
         displayName: input.profile.displayName?.trim() || profile.displayName,
-        username: normalizeOptionalString(input.profile.username),
-        avatarUrl: normalizeOptionalString(input.profile.avatarUrl),
+        username: input.profile.username === void 0 ? profile.username : normalizeOptionalString(input.profile.username),
+        avatarUrl: input.profile.avatarUrl === void 0 ? profile.avatarUrl : normalizeOptionalString(input.profile.avatarUrl),
         updatedAt: /* @__PURE__ */ new Date()
       }).where(eq(walletProfiles.id, profile.id));
     }
     if (input.accountName?.trim()) {
       await this.db.update(walletAccounts).set({ name: input.accountName.trim() }).where(eq(walletAccounts.id, input.accountId));
+    }
+    if (input.accountUsername !== void 0) {
+      await this.db.update(walletAccounts).set({ username: normalizeOptionalString(input.accountUsername) }).where(eq(walletAccounts.id, input.accountId));
     }
     if (input.accountAddress?.trim()) {
       const nextAddress = input.accountAddress.trim();
@@ -17914,12 +17928,14 @@ var NeonPlatformStore = class {
       id: createId("wac"),
       walletProfileId: profile.id,
       name: "Account 1",
+      username: profile.username,
       address: await this.createUniqueDemoAddress(profile.walletAppId)
     }).returning();
     return accounts.map((account) => ({
       id: account.id,
       walletProfileId: account.walletProfileId,
       name: account.name,
+      username: account.username ?? profile.username,
       address: account.address,
       createdAt: account.createdAt.toISOString()
     }));

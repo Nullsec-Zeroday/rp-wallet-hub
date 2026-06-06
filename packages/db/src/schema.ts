@@ -147,6 +147,7 @@ export const walletAccounts = pgTable("wallet_accounts", {
     .notNull()
     .references(() => walletProfiles.id),
   name: text("name").notNull(),
+  username: text("username"),
   address: text("address").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [uniqueIndex("wallet_accounts_address_unique").on(table.address)]);
