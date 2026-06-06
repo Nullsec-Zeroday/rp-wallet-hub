@@ -217,7 +217,7 @@ export default function HomePage() {
         {/* ── Cash Balance Card ── */}
         <div
           onClick={() => router.push('/home?modal=cash')}
-          className="bg-[#2a2a2a] rounded-[24px] px-7 py-5.5 mb-5 mt-1 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer"
+          className="bg-[#191919] rounded-[24px] px-7 py-5.5 mb-5 mt-1 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer"
         >
           <div className="flex items-center gap-3">
             <img src="/icons/cash_icon.webp" alt="Cash" width={22} height={22} className="object-contain" />
@@ -258,7 +258,7 @@ export default function HomePage() {
                 key={tokenInfo.symbol}
                 href={`?modal=token&symbol=${tokenInfo.symbol}`}
                 prefetch={true}
-                className="w-full flex items-center gap-2 py-[10.5px] px-5 bg-[#2a2a2a] rounded-[20px] active:scale-[0.97] transition-transform duration-[50ms]"
+                className="w-full flex items-center gap-2 py-[10.5px] px-5 bg-[#191919] rounded-[20px] active:scale-[0.97] transition-transform duration-[50ms]"
               >
                 <div className="flex-shrink-0">
                   <TokenLogo

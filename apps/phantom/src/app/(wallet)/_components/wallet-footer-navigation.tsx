@@ -207,10 +207,10 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
               handleNavClick();
               router.push('/browser');
             }}
-            className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#191919] rounded-full active:scale-[0.98] transition-transform"
+            className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323] border border-[#2b2b2b] rounded-full active:scale-[0.98] transition-transform"
           >
-            <Search size={18} className="text-[#888888]" />
-            <span className="text-[#4d4d4d] text-[16px]">Search Phantom</span>
+            <Search size={20} className="text-white" />
+            <span className="text-[#797979] text-[16px]">Search Phantom</span>
           </button>
 
           {/* Invisible placeholder to keep the flex layout correct since the real button is floating at z-[1000] */}
