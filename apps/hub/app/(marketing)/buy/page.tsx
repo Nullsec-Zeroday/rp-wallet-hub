@@ -329,7 +329,7 @@ function BuyContent() {
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
             <Lock size={14} className="text-[#ab9ff2]" />
-            <span>Secure Checkout with Whop & NOWPayments</span>
+            <span>Secure Checkout with Pandabase & NOWPayments</span>
           </div>
 
           <p className="text-center text-[12px] text-white/40 max-w-[400px]">
@@ -386,7 +386,7 @@ function BuyContent() {
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
                 <Lock size={12} className="text-[#ab9ff2]" />
-                <span>Secure Checkout with Whop & NOWPayments</span>
+                <span>Secure Checkout with Pandabase & NOWPayments</span>
               </div>
             </div>
           </motion.div>
