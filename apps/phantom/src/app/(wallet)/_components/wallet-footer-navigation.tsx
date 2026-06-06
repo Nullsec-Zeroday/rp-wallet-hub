@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
-import { Search, Plus } from "lucide-react";
+import React, { useCallback, useState, useEffect } from "react";
+import { Search, Plus, Sparkles, BarChart2, TrendingUp, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchTrendingSolanaTokens, TrendingToken } from "@/lib/coingecko-service";
 
 /* ── Action menu items ── */
 const ACTION_ITEMS = [
@@ -33,11 +34,28 @@ const ACTION_ITEMS = [
   },
 ];
 
+
 const SPRING_CONFIG = { type: "spring" as const, stiffness: 420, damping: 20, mass: 1 };
 
 const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { activeTabOverride?: string; blurred?: boolean; hidden?: boolean, isDrawerOpen?: boolean }) => {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [trendingTokens, setTrendingTokens] = useState<TrendingToken[]>([]);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(false);
+
+  useEffect(() => {
+    if (searchOpen && trendingTokens.length === 0) {
+      setIsLoadingTrending(true);
+      fetchTrendingSolanaTokens(15, "usd").then(tokens => {
+        setTrendingTokens(tokens);
+        setIsLoadingTrending(false);
+      }).catch(err => {
+        console.error("Failed to load trending tokens", err);
+        setIsLoadingTrending(false);
+      });
+    }
+  }, [searchOpen, trendingTokens.length]);
 
   const handleNavClick = useCallback(() => {
     if (typeof window !== "undefined" && navigator.vibrate) {
@@ -63,29 +81,114 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
 
   return (
     <>
+      {/* ── Search Overlay ── */}
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            className="fixed bottom-0 left-0 right-0 h-[100dvh] z-[110] bg-black overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="pt-20 pb-[70px] max-w-[430px] mx-auto w-full">
+              {/* Categories */}
+              <div className="flex items-center gap-2 mt-4 px-4">
+                <span className="text-white text-[19px] font-semibold">Categories</span>
+                <ChevronRight size={18} className="text-[#666]" />
+              </div>
+              <div className="flex items-center gap-3 px-4 mt-4 overflow-x-auto no-scrollbar">
+                <button className="bg-[#1c1c1e] text-white px-4 py-2 rounded-full flex items-center gap-2 border border-[#2b2b2b] shrink-0">
+                  <Sparkles size={16} className="text-[#ab9ff2]" />
+                  <span className="font-medium text-[15px]">Featured</span>
+                </button>
+                <button className="bg-[#1c1c1e] text-white px-4 py-2 rounded-full flex items-center gap-2 border border-[#2b2b2b] shrink-0">
+                  <BarChart2 size={16} className="text-[#ab9ff2]" />
+                  <span className="font-medium text-[15px]">Top Volume</span>
+                </button>
+                <button className="bg-[#1c1c1e] text-white px-4 py-2 rounded-full flex items-center gap-2 border border-[#2b2b2b] shrink-0">
+                  <TrendingUp size={16} className="text-[#ab9ff2]" />
+                  <span className="font-medium text-[15px]">Top Gainers</span>
+                </button>
+              </div>
+
+              {/* Trending Tokens */}
+              <div className="mt-8 px-4">
+                <span className="text-white text-[19px] font-semibold">Trending Tokens</span>
+              </div>
+              <div className="flex flex-col mt-4 px-4 gap-5">
+                {isLoadingTrending ? (
+                  <div className="py-8 text-center text-[#888]">Loading trending tokens...</div>
+                ) : (
+                  trendingTokens.slice(0, 11).map((token) => (
+                    <div key={token.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <img src={token.image || "/avatars/avatar-1.webp"} className="w-[42px] h-[42px] rounded-full object-cover" alt={token.name} />
+                          <div
+                            className="absolute flex items-center justify-center rounded-[6px] bg-white border-[#111] border-2 shadow-sm"
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              bottom: "-2px",
+                              right: "-2px",
+                              padding: "3px"
+                            }}
+                          >
+                            <img
+                              src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=024"
+                              className="w-full h-full object-contain grayscale brightness-0"
+                              alt="solana"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-white font-medium text-[16px] truncate max-w-[140px]">{token.name}</span>
+                          </div>
+                          <div className="text-[#888] text-[14px] flex items-center gap-1">
+                            <span className="truncate max-w-[80px] uppercase">{token.symbol}</span>
+                            <span>•</span>
+                            <span>${token.price < 0.01 ? token.price.toLocaleString("en-US", { maximumSignificantDigits: 4 }) : token.price.toFixed(2)}</span>
+                            <span className={token.priceChange24h > 0 ? "text-[#00e5b4]" : "text-[#ff3b30]"}>
+                              {token.priceChange24h > 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <button className="w-[32px] h-[32px] bg-[#1c1c1e] rounded-full flex items-center justify-center border border-[#2b2b2b] shrink-0">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m21 16-4 4-4-4m4 4V4M3 8l4-4 4 4M7 4v16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Plus Menu Overlay ── */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
             key="plus-menu"
             className="fixed inset-0 z-[999]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
           >
             {/* Blurred backdrop */}
             <motion.div
               className="absolute inset-0"
               onClick={closeMenu}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               style={{
                 backgroundColor: "rgba(0, 0, 0, 0.2)",
                 WebkitBackdropFilter: "blur(20px)",
                 backdropFilter: "blur(20px)",
-                transform: "translateZ(0)",
-                WebkitTransform: "translateZ(0)",
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden",
               }}
             />
 
@@ -133,22 +236,22 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
           style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
         >
           <motion.button
-            onClick={menuOpen ? closeMenu : openMenu}
+            onClick={searchOpen ? () => setSearchOpen(false) : (menuOpen ? closeMenu : openMenu)}
             className="size-[50px] flex-shrink-0 rounded-full flex items-center justify-center pointer-events-auto active:scale-[0.95]"
             animate={{
-              backgroundColor: menuOpen ? "#222222" : "#AB9FF2",
-              rotate: menuOpen ? 45 : 0,
+              backgroundColor: (menuOpen || searchOpen) ? "#222222" : "#AB9FF2",
+              rotate: (menuOpen || searchOpen) ? 45 : 0,
             }}
             transition={{
               rotate: SPRING_CONFIG,
               backgroundColor: { duration: 0.2, ease: "linear" }
             }}
             style={{
-              boxShadow: menuOpen ? "none" : "0 0 15px rgba(171,159,242,0.15)"
+              boxShadow: (menuOpen || searchOpen) ? "none" : "0 0 15px rgba(171,159,242,0.15)"
             }}
           >
             <motion.div
-              animate={{ color: menuOpen ? "#999999" : "#000000" }}
+              animate={{ color: (menuOpen || searchOpen) ? "#999999" : "#000000" }}
               transition={{ duration: 0.2 }}
             >
               <Plus size={32} strokeWidth={1.5} color="currentColor" />
@@ -159,7 +262,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
 
       {/* ── Footer Bar ── */}
       <div
-        className={`fixed -bottom-3 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0"}`}
+        className={`fixed -bottom-3 left-0 right-0 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0"} ${searchOpen ? "z-[120]" : "z-50"}`}
       >
         {/* Stacked graduated blur layers (bottom-to-top) */}
         <div className="absolute top-[2px] left-0 right-0 bottom-0 pointer-events-none z-0">
@@ -206,16 +309,28 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
           className="relative z-10 pointer-events-auto px-4 max-w-[430px] mx-auto flex items-center justify-between gap-3 pt-2"
           style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
         >
-          <button
-            onClick={() => {
-              handleNavClick();
-              router.push('/browser');
-            }}
-            className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323] border border-[#2b2b2b] rounded-full active:scale-[0.98] transition-transform"
-          >
-            <Search size={20} className="text-white" />
-            <span className="text-[#797979] text-[16px]">Search Phantom</span>
-          </button>
+          {searchOpen ? (
+            <div className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323] border border-[#2b2b2b] rounded-full active:scale-[0.98] transition-transform">
+              <Search size={20} className="text-[#888]" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search Phantom"
+                className="bg-transparent flex-1 text-white outline-none text-[16px]"
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                handleNavClick();
+                setSearchOpen(true);
+              }}
+              className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#343434] border-[0.5px] border-[#3a3a3a] rounded-full active:scale-[0.98] transition-transform"
+            >
+              <Search size={20} className="text-white" />
+              <span className="text-[#929292] text-[16px]">Search Phantom</span>
+            </button>
+          )}
 
           {/* Invisible placeholder to keep the flex layout correct since the real button is floating at z-[1000] */}
           <div className="size-[50px] flex-shrink-0" />
