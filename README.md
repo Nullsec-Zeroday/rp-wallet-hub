@@ -1,4 +1,4 @@
-# LarperWallet Platform
+# RPWallet Platform
 
 This folder contains the new platform rebuild, separate from the legacy single-app Next.js Phantom clone in the repository root.
 

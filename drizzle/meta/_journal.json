@@ -8,6 +8,48 @@
       "when": 1779485459139,
       "tag": "0000_lush_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779566775000,
+      "tag": "0001_wallet_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779568514000,
+      "tag": "0002_unique_wallet_account_addresses",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779569826000,
+      "tag": "0003_wallet_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780339356000,
+      "tag": "0005_affiliate_dashboard_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780589550000,
+      "tag": "0006_demo_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780776229000,
+      "tag": "0007_wallet_account_usernames",
+      "breakpoints": true
     }
   ]
 }

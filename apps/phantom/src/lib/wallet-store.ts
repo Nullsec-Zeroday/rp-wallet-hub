@@ -37,7 +37,7 @@ const DEFAULT_PROFILE: UserProfile = {
   iconIndex: 1,
   avatarType: 'emoji',
   name: '',
-  username: 'larperwallet',
+  username: 'rpwallet',
   bio: '',
   email: '',
   twitter: '',

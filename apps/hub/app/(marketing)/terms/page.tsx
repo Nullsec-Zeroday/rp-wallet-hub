@@ -36,7 +36,7 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">1. Acceptance of Terms</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                By accessing, purchasing, or using LarperWallet (the "Service"), including the website at larperwallet.com and the LarperWallet progressive web application (PWA), you agree to be bound by these Terms & Conditions ("Terms"). If you do not agree with any part of these Terms, you must not use the Service.
+                By accessing, purchasing, or using RPWallet (the "Service"), including the website at rpwallet.app and the RPWallet progressive web application (PWA), you agree to be bound by these Terms & Conditions ("Terms"). If you do not agree with any part of these Terms, you must not use the Service.
               </p>
             </section>
           </FadeIn>
@@ -45,12 +45,12 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">2. Nature of the Service</h2>
               <div className="space-y-6 text-[16px] text-[#A1A1AA] leading-relaxed">
-                <p>LarperWallet is a <strong>novelty entertainment application</strong> designed for fun and social purposes only. It allows users to set custom, fictional cryptocurrency balances for display purposes.</p>
+                <p>RPWallet is a <strong>novelty entertainment application</strong> designed for fun and social purposes only. It allows users to set custom, fictional cryptocurrency balances for display purposes.</p>
 
                 <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-xl p-5 flex gap-4">
                   <AlertTriangle className="text-[#F59E0B] shrink-0 mt-1" size={20} />
                   <p className="text-[14px] text-[#FCD34D]/90">
-                    <strong className="text-[#F59E0B]">Important:</strong> LarperWallet is NOT a real cryptocurrency wallet. It does not hold, send, receive, store, or interact with any real cryptocurrency, token, coin, blockchain, or digital asset. Any balances displayed in the app are entirely fictional and have no monetary value.
+                    <strong className="text-[#F59E0B]">Important:</strong> RPWallet is NOT a real cryptocurrency wallet. It does not hold, send, receive, store, or interact with any real cryptocurrency, token, coin, blockchain, or digital asset. Any balances displayed in the app are entirely fictional and have no monetary value.
                   </p>
                 </div>
 
@@ -65,7 +65,7 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">3. Eligibility</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                You must be at least 18 years of age to purchase or use LarperWallet. By using the Service, you represent and warrant that you meet this age requirement.
+                You must be at least 18 years of age to purchase or use RPWallet. By using the Service, you represent and warrant that you meet this age requirement.
               </p>
             </section>
           </FadeIn>
@@ -74,7 +74,7 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">4. License & Access</h2>
               <div className="space-y-6 text-[16px] text-[#A1A1AA] leading-relaxed">
-                <p>Upon completing a valid purchase, you are granted a limited, non-exclusive, non-transferable, revocable license to use the LarperWallet app for personal entertainment purposes, subject to the plan you purchased:</p>
+                <p>Upon completing a valid purchase, you are granted a limited, non-exclusive, non-transferable, revocable license to use the RPWallet app for personal entertainment purposes, subject to the plan you purchased:</p>
 
                 <ul className="space-y-4">
                   <li className="flex gap-3">
@@ -101,9 +101,9 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">5. Payments & Pricing</h2>
               <div className="space-y-4 text-[16px] text-[#A1A1AA] leading-relaxed">
-                <p>All payments for LarperWallet are processed securely through <strong>SellAuth</strong> and are payable exclusively in cryptocurrency. We do not accept credit cards, debit cards, bank transfers, PayPal, or any other traditional payment method at this time.</p>
+                <p>All payments for RPWallet are processed securely through <strong>SellAuth</strong> and are payable exclusively in cryptocurrency. We do not accept credit cards, debit cards, bank transfers, PayPal, or any other traditional payment method at this time.</p>
                 <p>
-                  Purchases are facilitated through our official website (larperwallet.com) via SellAuth, or through authorized retailers listed on our website. Prices are displayed in USD but are payable in the cryptocurrency equivalent at the time of purchase.
+                  Purchases are facilitated through our official website (rpwallet.app) via SellAuth, or through authorized retailers listed on our website. Prices are displayed in USD but are payable in the cryptocurrency equivalent at the time of purchase.
                 </p>
                 <p>You are solely responsible for ensuring that you send the correct amount to the correct wallet address provided during the SellAuth checkout process. We are not responsible for funds sent to incorrect addresses or for blockchain network fees.</p>
               </div>
@@ -129,7 +129,7 @@ export default function TermsPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">8. Acceptable Use</h2>
               <div className="space-y-4 text-[16px] text-[#A1A1AA] leading-relaxed">
-                <p>You agree to use LarperWallet only for lawful entertainment purposes. You may <strong>not</strong> use the Service to:</p>
+                <p>You agree to use RPWallet only for lawful entertainment purposes. You may <strong>not</strong> use the Service to:</p>
                 <ul className="space-y-3">
                   {["Commit fraud, scam, or deceive any entity", "Impersonate a real wallet for financial gain", "Violate any local or international laws", "Engage in any harmful or damaging activity"].map((item, i) => (
                     <li key={i} className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function TermsPage() {
                   ))}
                 </ul>
                 <p className="pt-4 border-t border-white/[0.05]">
-                  You are solely responsible for how you use the app. LarperWallet is intended as a novelty product — using it to deceive or defraud others is strictly prohibited and may result in immediate license revocation without refund.
+                  You are solely responsible for how you use the app. RPWallet is intended as a novelty product — using it to deceive or defraud others is strictly prohibited and may result in immediate license revocation without refund.
                 </p>
               </div>
             </section>

@@ -28,7 +28,7 @@ function BuyContent() {
   const isExpired = searchParams.get("error") === "expired";
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
   const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
+  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
 
   const initialPlan = searchParams.get("plan");
   const validPlanId = initialPlan && PLANS.some((p) => p.id === initialPlan) ? initialPlan : "starter";

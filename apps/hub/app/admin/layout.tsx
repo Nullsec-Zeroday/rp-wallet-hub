@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex h-16 items-center px-4 md:px-8 max-w-[1600px] mx-auto w-full">
           <div className="flex items-center gap-2 font-bold text-lg">
             <ShieldCheck className="h-6 w-6 text-white" />
-            <span className="hidden sm:inline-block">LarperWallet Admin</span>
+            <span className="hidden sm:inline-block">RPWallet Admin</span>
           </div>
           <nav className="flex items-center space-x-6 ml-6 md:ml-10">
             <Link href="/" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LarperWallet",
-    short_name: "LarperWallet",
+    name: "RPWallet",
+    short_name: "RPWallet",
     description: "A premium crypto wallet simulator and Phantom-style wallet mockup for creators.",
     start_url: "/",
     display: "standalone",

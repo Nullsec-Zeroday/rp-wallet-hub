@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Fake Crypto Wallet App & Phantom Wallet Screenshot Generator",
     description:
-      "Build realistic Phantom and Trust Wallet screenshots, edit balances, and create crypto LARP content safely with LarperWallet.",
+      "Build realistic Phantom and Trust Wallet screenshots, edit balances, and create crypto LARP content safely with RPWallet.",
     url: "/",
   },
   twitter: {

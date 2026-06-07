@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "LarperWallet Affiliate Dashboard",
-  description: "Track LarperWallet referral clicks, conversions, commissions, and payouts.",
+  title: "RPWallet Affiliate Dashboard",
+  description: "Track RPWallet referral clicks, conversions, commissions, and payouts.",
 };
 
 export const viewport: Viewport = {

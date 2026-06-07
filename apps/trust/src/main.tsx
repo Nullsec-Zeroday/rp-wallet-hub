@@ -227,7 +227,7 @@ function TrustApp() {
         {!appEnv.walletAppEnabled ? (
           <InstallGate
             heading="This wallet is not available yet"
-            tone="This LarperWallet app is currently disabled. Check the hub for the wallets available on your license."
+            tone="This RPWallet app is currently disabled. Check the hub for the wallets available on your license."
           />
         ) : requiresStandalone && !standalone ? (
           <InstallGate
@@ -251,7 +251,7 @@ function TrustApp() {
           />
         ) : !loading ? (
           <DevTokenPanel
-            body={error || "Launch the app from the LarperWallet hub to attach a session to this installed app."}
+            body={error || "Launch the app from the RPWallet hub to attach a session to this installed app."}
             onErrorChange={setError}
             onExchangeToken={exchangeTrustToken}
           />
@@ -293,7 +293,7 @@ function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean
             Premium Access
           </div>
           <h1 className="text-[20px] font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-lg">
-            Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#48FF91] to-[#12C868]">LarperWallet</span>
+            Unlock <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#48FF91] to-[#12C868]">RPWallet</span>
           </h1>
           <p className="text-[14px] text-white/50 font-medium max-w-[260px] mt-1.5 leading-relaxed">
             Get unrestricted access to all features and wallet apps.
@@ -309,7 +309,7 @@ function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean
           <div className="w-full h-px bg-gradient-to-r from-transparent via-[#48FF91]/10 to-transparent my-1" />
           <PaywallFeature icon={<Send size={20} />} title="Transfer Simulator" body="Keep simulated sends, receives, notifications, and activity history unlocked." />
           <div className="w-full h-px bg-gradient-to-r from-transparent via-[#48FF91]/10 to-transparent my-1" />
-          <PaywallFeature icon={<Gamepad2 size={20} />} title="All Wallet Apps" body="Use every supported LarperWallet app from the same active license." />
+          <PaywallFeature icon={<Gamepad2 size={20} />} title="All Wallet Apps" body="Use every supported RPWallet app from the same active license." />
         </div>
 
         <div className="mt-auto pt-6">
@@ -320,7 +320,7 @@ function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean
             Upgrade Now
           </a>
           <p className="mt-3 text-center text-[12px] font-medium text-white/40 px-2 leading-snug">
-            {locked ? "Demo ended. Choose a plan on LarperWallet to continue." : "This feature is locked in demo mode. Upgrade when you are ready."}
+            {locked ? "Demo ended. Choose a plan on RPWallet to continue." : "This feature is locked in demo mode. Upgrade when you are ready."}
           </p>
           <div className="mt-5 flex items-center justify-center gap-5 text-[11px] font-semibold text-white/30">
             <a href={`${hubUrl}/privacy`} className="hover:text-white/60 transition-colors">Privacy Policy</a>
@@ -556,7 +556,7 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
       "Open the app from your home screen",
     ];
 
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://larperwallet.com");
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://rpwallet.app");
 
   return (
     <motion.div
@@ -786,7 +786,7 @@ function createDevTrustPayload(): WalletBootstrapPayload {
   return {
     user: {
       id: "dev-user",
-      email: "dev@larperwallet.local",
+      email: "dev@rpwallet.local",
       createdAt: now,
     },
     license: {

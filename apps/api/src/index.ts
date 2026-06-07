@@ -1552,9 +1552,9 @@ async function sendPurchaseEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "LarperWallet <noreply@larperwallet.com>",
+      from: "RPWallet <noreply@rpwallet.app>",
       html: buildPurchaseEmailHtml(params),
-      subject: `Your LarperWallet License Key — ${params.planLabel}`,
+      subject: `Your RPWallet License Key — ${params.planLabel}`,
       to: params.to,
     }),
   });
@@ -1586,9 +1586,9 @@ async function sendLicenseReminderEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "LarperWallet <noreply@larperwallet.com>",
+      from: "RPWallet <noreply@rpwallet.app>",
       html: buildLicenseReminderEmailHtml(params),
-      subject: "Reminder: your LarperWallet key is ready",
+      subject: "Reminder: your RPWallet key is ready",
       to: params.to,
     }),
   });
@@ -1614,7 +1614,7 @@ function buildPurchaseEmailHtml(params: {
       <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
         <h1 style="margin:0 0 12px;font-size:30px;line-height:1.08;letter-spacing:-0.04em;">Your license key is ready</h1>
         <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
-          Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your LarperWallet access.
+          Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your RPWallet access.
         </p>
         <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
           <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
@@ -1626,7 +1626,7 @@ function buildPurchaseEmailHtml(params: {
           Expires: <strong style="color:#fff;">${escapeHtml(params.expirationDate)}</strong>
         </p>
         <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
-          If you need help, contact support through the official LarperWallet site.
+          If you need help, contact support through the official RPWallet site.
         </p>
       </div>
     </div>
@@ -1645,9 +1645,9 @@ function buildLicenseReminderEmailHtml(params: {
   <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
       <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
-        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.035em;">Your LarperWallet key is ready</h1>
+        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.035em;">Your RPWallet key is ready</h1>
         <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
-          We noticed your key has not been activated yet. Open <a href="https://www.larperwallet.com" style="color:#ab9ff2;text-decoration:none;">www.larperwallet.com</a>, install the app, then enter this key.
+          We noticed your key has not been activated yet. Open <a href="https://rpwallet.app" style="color:#ab9ff2;text-decoration:none;">rpwallet.app</a>, install the app, then enter this key.
         </p>
         <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
           <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
@@ -1687,9 +1687,9 @@ async function sendAffiliateMagicLinkEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "LarperWallet <noreply@larperwallet.com>",
+      from: "RPWallet <noreply@rpwallet.app>",
       html: buildAffiliateMagicLinkHtml(params),
-      subject: "Your LarperWallet affiliate login link",
+      subject: "Your RPWallet affiliate login link",
       to: params.to,
     }),
   });
@@ -1710,7 +1710,7 @@ function buildAffiliateMagicLinkHtml(params: {
   <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
       <div style="border:1px solid #e2e8f0;border-radius:24px;background:#ffffff;padding:28px;box-shadow:0 18px 60px rgba(15,23,42,0.08);">
-        <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">LarperWallet Affiliate</p>
+        <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">RPWallet Affiliate</p>
         <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.04em;">Sign in to your dashboard</h1>
         <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.55;">
           Hi ${escapeHtml(params.affiliateName)}, use this secure link to view your clicks, conversions, commissions, and payout status.
@@ -1799,7 +1799,7 @@ function getClientIp(c: Context<HonoEnv>) {
 }
 
 function getPublicHubOrigin(env: ApiEnv) {
-  return env.HUB_ORIGIN || "https://larperwallet.com";
+  return env.HUB_ORIGIN || "https://rpwallet.app";
 }
 
 function getDemoConfig(env: ApiEnv) {

@@ -1,4 +1,4 @@
-// Service Worker for LarperWallet PWA
+// Service Worker for RPWallet PWA
 // Handles: background notifications + aggressive asset caching for native-like speed
 
 const CACHE_NAME = 'rp-wallet-v8';

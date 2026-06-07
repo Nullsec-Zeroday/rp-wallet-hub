@@ -245,7 +245,7 @@ export function TrustWalletProvider({
   const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
   const notificationSettings = payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
-  const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
+  const walletName = payload.profile.displayName || account?.name || "RPWallet";
   const walletAddress = account?.address || "";
 
   const settingsInitialValues = useMemo<TrustSettingsInput>(() => {

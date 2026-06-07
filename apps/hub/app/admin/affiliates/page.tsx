@@ -71,7 +71,7 @@ export default function AffiliateAdminPage() {
   }
 
   async function copyLink(code: string) {
-    await navigator.clipboard.writeText(`https://larperwallet.com/?ref=${code}`);
+    await navigator.clipboard.writeText(`https://rpwallet.app/?ref=${code}`);
     setNotice(`Copied referral link for ${code}.`);
   }
 

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import type { BlogPost } from "@/lib/blog-data";
 
 export const siteConfig = {
-  name: "LarperWallet",
-  url: "https://larperwallet.com",
+  name: "RPWallet",
+  url: "https://rpwallet.app",
   description:
-    "LarperWallet is a crypto wallet simulator and fake crypto wallet app for entertainment, creator content, demos, and crypto roleplay. Create realistic Phantom and Trust Wallet screenshots, edit balances, add tokens, and simulate wallet activity with no real crypto involved.",
+    "RPWallet is a crypto wallet simulator and fake crypto wallet app for entertainment, creator content, demos, and crypto roleplay. Create realistic Phantom and Trust Wallet screenshots, edit balances, add tokens, and simulate wallet activity with no real crypto involved.",
   ogImage: "/opengraph-image.png",
+  // TODO: Replace legacy social handles after RPWallet accounts are created.
   xHandle: "@LarperWallet",
 };
 
@@ -14,12 +15,12 @@ export const homepageFaq = [
   {
     question: "How do I create a fake crypto wallet screenshot?",
     answer:
-      "Use LarperWallet to open a simulated wallet interface, choose a Phantom-style or Trust Wallet-style screen, set the token balances and activity you want, then capture the screen for entertainment, demo, or content production. LarperWallet does not hold or move real crypto.",
+      "Use RPWallet to open a simulated wallet interface, choose a Phantom-style or Trust Wallet-style screen, set the token balances and activity you want, then capture the screen for entertainment, demo, or content production. RPWallet does not hold or move real crypto.",
   },
   {
     question: "Can I make a fake Phantom wallet balance?",
     answer:
-      "Yes. LarperWallet includes a realistic Phantom-style wallet simulator where you can customize token balances, prices, wallet details, and activity for screenshots or videos. It is a simulator only and cannot send, receive, swap, or store real funds.",
+      "Yes. RPWallet includes a realistic Phantom-style wallet simulator where you can customize token balances, prices, wallet details, and activity for screenshots or videos. It is a simulator only and cannot send, receive, swap, or store real funds.",
   },
   {
     question: "What is a LARP wallet?",
@@ -27,9 +28,9 @@ export const homepageFaq = [
       "A LARP wallet is a simulated crypto wallet used for roleplay, creator content, product demos, and visual mockups. It looks like a wallet on screen, but it has no blockchain access, private keys, seed phrases, or real assets.",
   },
   {
-    question: "Is LarperWallet a real crypto wallet app?",
+    question: "Is RPWallet a real crypto wallet app?",
     answer:
-      "No. LarperWallet is a wallet simulator and visual production tool. It never asks for a seed phrase, never connects to your real wallet, and cannot process real blockchain transactions.",
+      "No. RPWallet is a wallet simulator and visual production tool. It never asks for a seed phrase, never connects to your real wallet, and cannot process real blockchain transactions.",
   },
 ];
 
@@ -47,7 +48,7 @@ export function buildDefaultMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: "Fake Crypto Wallet App & Phantom Wallet Simulator | LarperWallet",
+      default: "Fake Crypto Wallet App & Phantom Wallet Simulator | RPWallet",
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,
@@ -88,9 +89,9 @@ export function buildDefaultMetadata(): Metadata {
       "hardware wallet simulator",
       "simulated crypto wallet",
       "wallet roleplay app",
-      "LarperWallet",
+      "RPWallet",
     ],
-    authors: [{ name: "LarperWallet Team" }],
+    authors: [{ name: "RPWallet Team" }],
     creator: siteConfig.name,
     publisher: siteConfig.name,
     category: "technology",
@@ -177,7 +178,7 @@ export function buildWebApplicationSchema() {
     },
     author: {
       "@type": "Organization",
-      name: "LarperWallet Team",
+      name: "RPWallet Team",
     },
     aggregateRating: {
       "@type": "AggregateRating",
@@ -231,7 +232,7 @@ export function buildBlogPostingSchema(post: BlogPost) {
     articleSection: post.category,
     author: {
       "@type": "Organization",
-      name: "LarperWallet Team",
+      name: "RPWallet Team",
     },
     datePublished: post.date,
     dateModified: post.date,

@@ -133,7 +133,7 @@ export default function LandingContent() {
     }
   };
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
+  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const demoEnabled = isDemoFeatureEnabled();
 
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
@@ -304,8 +304,8 @@ export default function LandingContent() {
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-medium">The Best Crypto Wallet Replica App</span>
-            LarperWallet is a fake crypto wallet app for entertainment. Edit balance, import any token, simulate swap or send in a realistic Phantom or Trust Wallet interface - No real crypto involved.
-            {/* LarperWallet is a crypto wallet simulator made for entertainment. */}
+            RPWallet is a fake crypto wallet app for entertainment. Edit balance, import any token, simulate swap or send in a realistic Phantom or Trust Wallet interface - No real crypto involved.
+            {/* RPWallet is a crypto wallet simulator made for entertainment. */}
           </motion.div>
         </div>
 
@@ -426,7 +426,7 @@ export default function LandingContent() {
             >
               <Image
                 src={getAssetUrl(`/product/new-product-${activeProductIdx}.webp`)}
-                alt={`LarperWallet Screenshot ${activeProductIdx}`}
+                alt={`RPWallet Screenshot ${activeProductIdx}`}
                 width={240}
                 height={500}
                 className="w-full h-auto object-cover"
@@ -468,7 +468,7 @@ export default function LandingContent() {
               Peer-to-peer <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">simulated transactions.</span>
             </h2>
             <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
-              Send simulated crypto to another LarperWallet user, their wallet updates.
+              Send simulated crypto to another RPWallet user, their wallet updates.
             </p>
 
             <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
@@ -483,7 +483,7 @@ export default function LandingContent() {
                 </div>
                 <div className="flex flex-col pt-2 md:pt-0">
                   <h4 className="text-white font-semibold text-[16px] mb-1">Send</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">Enter another LarperWallet user's address, select token and amount.</p>
+                  <p className="text-white/50 text-[14px] leading-snug">Enter another RPWallet user's address, select token and amount.</p>
                 </div>
               </div>
 
@@ -534,7 +534,7 @@ export default function LandingContent() {
             <span className="text-[#ab9ff2]">not a screenshot editor.</span>
           </h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-            LarperWallet gives you a realistic wallet simulator with editable balances, custom tokens, simulated sends, activity history and much more.
+            RPWallet gives you a realistic wallet simulator with editable balances, custom tokens, simulated sends, activity history and much more.
           </p>
         </motion.div>
 
@@ -659,7 +659,7 @@ export default function LandingContent() {
                   </div>
                   <div className="flex flex-col pt-2 md:pt-0">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
-                    <p className="text-white/50 text-[14px] leading-snug">Grab LarperWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
+                    <p className="text-white/50 text-[14px] leading-snug">Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                   </div>
                 </div>
 
@@ -694,10 +694,6 @@ export default function LandingContent() {
                 Have any questions? We respond within a few hours, contact us on{" "}
                 <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
                   telegram
-                </a>
-                {" "}or reach out to us at{" "}
-                <a href="mailto:support@larperwallet.com" className="underline underline-offset-2 hover:text-white transition-colors">
-                  support@larperwallet.com
                 </a>
                 .
               </p>
@@ -873,7 +869,7 @@ export default function LandingContent() {
             Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">Questions.</span>
           </h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
-            Everything you need to know about LarperWallet.
+            Everything you need to know about RPWallet.
           </p>
         </div>
 
@@ -886,7 +882,7 @@ export default function LandingContent() {
             },
             {
               q: "How do P2P simulated transactions work?",
-              a: "Send simulated crypto to another LarperWallet user. Their app can show a push notification, updated balance, and new transaction record, without moving any real crypto.",
+              a: "Send simulated crypto to another RPWallet user. Their app can show a push notification, updated balance, and new transaction record, without moving any real crypto.",
             },
             {
               q: "Can I customize tokens and balances?",
@@ -894,11 +890,11 @@ export default function LandingContent() {
             },
             {
               q: "Does it work on iPhone and Android?",
-              a: "Yes. LarperWallet installs as a Progressive Web App from your browser, so you can add it to your home screen without using the App Store or Play Store.",
+              a: "Yes. RPWallet installs as a Progressive Web App from your browser, so you can add it to your home screen without using the App Store or Play Store.",
             },
             {
               q: "What wallets can I simulate?",
-              a: "LarperWallet includes realistic Phantom-style and Trust Wallet-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
+              a: "RPWallet includes realistic Phantom-style and Trust Wallet-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
             },
             {
               q: "How do I get my license key?",
@@ -939,7 +935,7 @@ export default function LandingContent() {
       <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
         <div className="rounded-[2rem] border border-white/5 bg-white/[0.015] p-6 md:p-8 text-center">
           <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
-            LarperWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust Wallet simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
+            RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust Wallet simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {[

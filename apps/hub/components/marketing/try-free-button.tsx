@@ -12,7 +12,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
   const label = demoEnabled ? "Try Free Now" : "Get App Access";
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    trackEvent("clicked_get_larperwallet", {
+    trackEvent("clicked_get_rpwallet", {
       path: window.location.pathname,
       target: href,
       demoEnabled,

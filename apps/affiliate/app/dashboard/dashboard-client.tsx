@@ -55,7 +55,7 @@ export default function DashboardClient() {
       <aside className="w-full md:w-64 border-b md:border-r border-border bg-card flex flex-col shrink-0">
         <div className="p-6">
           <Badge className="mb-3 bg-primary text-primary-foreground">Affiliate Portal</Badge>
-          <div className="text-xl font-bold text-foreground">LarperWallet</div>
+          <div className="text-xl font-bold text-foreground">RPWallet</div>
         </div>
         
         <nav className="flex-1 px-4 space-y-2">

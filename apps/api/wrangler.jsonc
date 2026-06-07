@@ -8,8 +8,8 @@
   ],
   "routes": [
     {
-      "pattern": "api.larperwallet.com/*",
-      "zone_name": "larperwallet.com"
+      "pattern": "api.rpwallet.app/*",
+      "zone_name": "rpwallet.app"
     }
   ],
   // Keep only safe, non-secret defaults here.
@@ -17,16 +17,16 @@
   // Never commit DATABASE_URL, API keys, or other credentials to this file.
   "vars": {
     "SESSION_COOKIE_NAME": "rp_session",
-    "HUB_ORIGIN": "https://larperwallet.com",
-    "AFFILIATE_ORIGIN": "https://affiliate.larperwallet.com",
-    "PHANTOM_ORIGIN": "https://app1.larperwallet.com",
-    "TRUST_ORIGIN": "https://app2.larperwallet.com",
+    "HUB_ORIGIN": "https://rpwallet.app",
+    "AFFILIATE_ORIGIN": "https://affiliate.rpwallet.app",
+    "PHANTOM_ORIGIN": "https://app1.rpwallet.app",
+    "TRUST_ORIGIN": "https://app2.rpwallet.app",
     "PHANTOM_ENABLED": "true",
     "TRUST_ENABLED": "true",
-    "SELLAUTH_SHOP_ID": "241810",
-    "SELLAUTH_STARTER_PRODUCT_ID": "742866",
-    "SELLAUTH_MONTHLY_PRODUCT_ID": "742874",
-    "SELLAUTH_YEARLY_PRODUCT_ID": "742880",
+    "SELLAUTH_SHOP_ID": "234704",
+    "SELLAUTH_STARTER_PRODUCT_ID": "700824",
+    "SELLAUTH_MONTHLY_PRODUCT_ID": "700825",
+    "SELLAUTH_YEARLY_PRODUCT_ID": "700827",
     "DEMO_ENABLED": "false",
     "DEMO_DURATION_MINUTES": "5"
   }

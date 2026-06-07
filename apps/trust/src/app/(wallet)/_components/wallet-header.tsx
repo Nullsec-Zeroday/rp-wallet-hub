@@ -146,7 +146,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
 
                 <div style={{ marginBottom: "24px" }}>
                     <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }} data-i18n="settings.wallet_name">Wallet Name</div>
-                    <input id="set-walletName" type="text" placeholder="Larper Wallet" maxLength={32} value={settingsDraft.walletName} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletName: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
+                    <input id="set-walletName" type="text" placeholder="RPWallet" maxLength={32} value={settingsDraft.walletName} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletName: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
                 </div>
 
                 <div style={{ marginBottom: "24px" }}>

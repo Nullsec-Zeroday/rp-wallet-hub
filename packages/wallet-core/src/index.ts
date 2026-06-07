@@ -1,7 +1,7 @@
 import type { WalletAppId, WalletAppSummary, WalletBootstrapPayload } from "@rp-wallet/types";
 
-const DEMO_USERNAME = "larperwallet";
-const DEMO_WALLET_NAME = "LarperWallet";
+const DEMO_USERNAME = "rpwallet";
+const DEMO_WALLET_NAME = "RPWallet";
 const DEMO_PAYWALL_EVENT = "rp-wallet:demo-paywall";
 
 const DEMO_BALANCES: Record<WalletAppId, Record<string, string>> = {
@@ -25,13 +25,13 @@ export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activat
   phantom: {
     id: "phantom",
     name: "Phantom",
-    host: "app1.larperwallet.com",
+    host: "app1.rpwallet.app",
     enabled: true,
   },
   trust: {
     id: "trust",
     name: "Trust Wallet",
-    host: "app2.larperwallet.com",
+    host: "app2.rpwallet.app",
     enabled: true,
   },
 };

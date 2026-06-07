@@ -17,7 +17,7 @@ export default function DemoVideo() {
         <div className="relative glass-panel overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] w-full h-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] border-white/10 transition-all duration-700 bg-black">
           <iframe
             src="https://www.youtube.com/embed/q8zbEgjO2hM?autoplay=1&mute=0&modestbranding=1&rel=0&showinfo=0"
-            title="LarperWallet Demo"
+            title="RPWallet Demo"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             className="absolute inset-0 w-full h-full border-0"

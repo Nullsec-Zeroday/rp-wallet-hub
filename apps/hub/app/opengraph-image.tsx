@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/lib/seo";
 
-export const alt = "LarperWallet preview";
+export const alt = "RPWallet preview";
 export const size = {
   width: 1200,
   height: 630,

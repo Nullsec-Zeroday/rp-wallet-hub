@@ -10,7 +10,7 @@ export function HeroMockups() {
         <div className="animate-float-8 z-10 transition-transform hover:scale-105 duration-500" style={{ willChange: "transform" }}>
           <Image 
             src={getAssetUrl("/product/new-product-1.webp")} 
-            alt="LarperWallet Main Dashboard" 
+            alt="RPWallet Main Dashboard"
             width={280} 
             height={583} 
             priority 
@@ -21,7 +21,7 @@ export function HeroMockups() {
         <div className="animate-float-6 z-10 transition-transform hover:scale-105 duration-500" style={{ willChange: "transform" }}>
           <Image 
             src={getAssetUrl("/product/new-product-2.webp")} 
-            alt="LarperWallet Wallet Selector" 
+            alt="RPWallet Wallet Selector"
             width={280} 
             height={583} 
             priority 

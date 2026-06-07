@@ -188,7 +188,7 @@ function PhantomApp() {
         <StrictWalletApp payload={payload} />
       ) : !loading ? (
         <ReconnectPanel
-          body={error || "Launch Phantom from the LarperWallet hub to attach a session to this installed app."}
+          body={error || "Launch Phantom from the RPWallet hub to attach a session to this installed app."}
         />
       ) : null}
 
@@ -237,7 +237,7 @@ function DemoPaywall({ locked = false, onClose, walletName }: { locked?: boolean
           <div className="h-px w-full bg-white/[0.07]" />
           <PaywallFeature icon={<Send size={20} />} title="Complete Wallet Tools" body="Keep simulated transfers, notifications, swaps, and activity unlocked." />
           <div className="h-px w-full bg-white/[0.07]" />
-          <PaywallFeature icon={<Gamepad2 size={20} />} title="Every Wallet App" body="Use all supported LarperWallet experiences with the same license." />
+          <PaywallFeature icon={<Gamepad2 size={20} />} title="Every Wallet App" body="Use all supported RPWallet experiences with the same license." />
         </div>
 
         <div className="mt-5 flex flex-col gap-2.5">
@@ -321,7 +321,7 @@ function UnavailablePanel({ walletName }: { walletName: string }) {
       <section className="installPanel">
         <p className="label">{walletName} PWA</p>
         <h1 className="installTitle">This wallet is not available yet</h1>
-        <p className="muted">This LarperWallet app is currently disabled. Check the hub for the wallets available on your license.</p>
+        <p className="muted">This RPWallet app is currently disabled. Check the hub for the wallets available on your license.</p>
       </section>
     </main>
   );
@@ -333,7 +333,7 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
     ? ["Tap the Share button in Safari", 'Choose "Add to Home Screen"', 'Tap "Add"', "Open the app from your home screen"]
     : ["Open the browser menu", 'Choose "Add to Home screen"', 'Confirm with "Add"', "Open the app from your home screen"];
 
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://larperwallet.com");
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://rpwallet.app");
 
   return (
     <motion.div
@@ -426,12 +426,12 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
 }
 
 function ReconnectPanel({ body }: { body: string }) {
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || "https://larperwallet.com";
+  const hubUrl = (import.meta.env as any).VITE_HUB_URL || "https://rpwallet.app";
 
   return (
     <main className="min-h-screen bg-[#0d0d0e] text-white px-6 py-12 flex flex-col font-sans">
       <section className="mb-12 mt-12">
-        <p className="text-[#ab9ff2] text-xs font-bold tracking-widest uppercase mb-4">Larper Wallet PWA</p>
+        <p className="text-[#ab9ff2] text-xs font-bold tracking-widest uppercase mb-4">RPWallet PWA</p>
         <h1 className="text-4xl font-semibold tracking-tight text-white leading-tight mb-4">Open this from the hub</h1>
         <p className="text-white/50 text-sm leading-relaxed max-w-[280px]">
           {body}
@@ -472,7 +472,7 @@ function createDevPhantomPayload(): WalletBootstrapPayload {
   return {
     user: {
       id: "dev-user",
-      email: "dev@larperwallet.local",
+      email: "dev@rpwallet.local",
       createdAt: now,
     },
     license: {
@@ -493,8 +493,8 @@ function createDevPhantomPayload(): WalletBootstrapPayload {
       id: "dev-phantom-profile",
       userId: "dev-user",
       walletAppId: "phantom",
-      displayName: "LarperWallet",
-      username: "larperwallet",
+      displayName: "RPWallet",
+      username: "rpwallet",
       createdAt: now,
       updatedAt: now,
     },
@@ -502,7 +502,7 @@ function createDevPhantomPayload(): WalletBootstrapPayload {
       {
         id: accountId,
         walletProfileId: "dev-phantom-profile",
-        name: "LarperWallet",
+        name: "RPWallet",
         address: "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j",
         createdAt: now,
       },

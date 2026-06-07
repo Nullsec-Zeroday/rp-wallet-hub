@@ -244,7 +244,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     } catch (error) {
       await minimumAnimation;
       const message = error instanceof Error
-        ? error.message.replace(/^LarperWallet API request failed:\s*\d+:?\s*/i, "")
+        ? error.message.replace(/^RPWallet API request failed:\s*\d+:?\s*/i, "")
         : "Transaction failed. Check your balance and try again.";
       logWalletDebug("send:ui-error", {
         message,

@@ -28,8 +28,8 @@ export function getAllowedOrigins(env: ApiEnv) {
   return [
     env.HUB_ORIGIN || "http://localhost:3000",
     env.AFFILIATE_ORIGIN || "http://localhost:3001",
-    "https://affiliate.larperwallet.com",
-    "https://www.larperwallet.com",
+    "https://affiliate.rpwallet.app",
+    "https://rpwallet.app",
     "http://127.0.0.1:3000",
     env.PHANTOM_ORIGIN || "http://localhost:5173",
     env.TRUST_ORIGIN || "http://localhost:5174",
