@@ -359,8 +359,8 @@ function BuyContent() {
         <div className="w-full max-w-[500px] px-8 py-8 rounded-[2rem] border border-white/5 bg-white/[0.01] relative overflow-hidden text-center mb-10">
           <p className="text-white/40 text-[14px] leading-relaxed relative z-10">
             Need help or want to pay with another crypto currency? Message{" "}
-            <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="text-[#9c8df6] hover:text-[#aba0f7] transition-colors">
-              @LarperWallet_bot
+            <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="text-[#9c8df6] hover:text-[#aba0f7] transition-colors">
+              @RPWallet_support_bot
             </a>{" "}
             on Telegram.
           </p>

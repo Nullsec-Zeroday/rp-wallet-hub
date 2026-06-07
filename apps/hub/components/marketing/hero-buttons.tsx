@@ -10,7 +10,7 @@ export default function HeroButtons(_props: { onOpenDemo?: () => void }) {
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 w-full">
         <TryFreeButton wrapperClassName="w-full sm:w-[280px]" className="!w-full" />
         <a
-          href="https://t.me/larperwallet"
+          href="https://t.me/rpwalletTG"
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => trackEvent("clicked_join_telegram")}

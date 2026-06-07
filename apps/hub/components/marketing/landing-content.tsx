@@ -138,7 +138,7 @@ export default function LandingContent() {
 
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
   const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
-  
+
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
@@ -161,7 +161,7 @@ export default function LandingContent() {
   const handleCheckout = async (plan: any) => {
     if (checkoutLocked) return;
     setSelectedPlanId(plan.id);
-    
+
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
     trackEvent("checkout_started", {
       plan: plan.id,
@@ -285,7 +285,7 @@ export default function LandingContent() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
           </div>
-          Now available on iOS & Android
+          Now with latest Phantom UI
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
@@ -293,7 +293,7 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
           </motion.h1>
@@ -620,7 +620,7 @@ export default function LandingContent() {
 
               <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
                 Have any questions? We respond within a few hours, contact us on{" "}
-                <a href="https://t.me/LarperWallet_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+                <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
                   telegram
                 </a>
                 .
@@ -653,7 +653,7 @@ export default function LandingContent() {
           ) : (
             <>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
-              <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Pay securely with crypto, credit or debit cards.</p>
+              <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Only one-time payments. 100% secure checkout, powered by Pandabase.</p>
             </>
           )}
         </div>
@@ -748,10 +748,9 @@ export default function LandingContent() {
                     e.stopPropagation();
                     handleCheckout(plan);
                   }}
-                  className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${
-                    selectedPlanId === plan.id && checkoutPhase === "error"
-                      ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
-                      : isPopular
+                  className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${selectedPlanId === plan.id && checkoutPhase === "error"
+                    ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                    : isPopular
                       ? "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02]"
                       : isYearly
                         ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"

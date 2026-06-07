@@ -21,7 +21,7 @@ export default function Navigation() {
       <nav className="relative z-50 w-full animate-nav-entrance">
         <div className="mx-auto flex max-w-[1260px] items-center justify-between px-6 pb-6 pt-3 md:px-8">
           <Link href="/" className="group relative z-50 flex items-center gap-2">
-            <div className="size-7 md:size-12">
+            <div className="size-6 md:size-12">
               <Image
                 src="/logo_white.webp"
                 alt="RP Wallet Logo"
@@ -36,7 +36,7 @@ export default function Navigation() {
           </Link>
 
           <div className="hidden items-center gap-6 md:flex lg:gap-8">
-            <Link href="https://t.me/rpwalletchannel" target="_blank" rel="noopener noreferrer" className="font-medium text-[15px] text-white/80 transition-colors hover:text-[#ab9ff2]">
+            <Link href="https://t.me/rpwalletTG" target="_blank" rel="noopener noreferrer" className="font-medium text-[15px] text-white/80 transition-colors hover:text-[#ab9ff2]">
               Telegram
             </Link>
             <Link href="/#features" className="font-medium text-[15px] text-white/80 transition-colors hover:text-[#ab9ff2]">
@@ -71,7 +71,7 @@ export default function Navigation() {
         )}
       >
         <div className="flex w-full flex-col items-center gap-8 p-6">
-          <Link href="https://t.me/rpwalletchannel" target="_blank" rel="noopener noreferrer" className="cursor-pointer text-xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">
+          <Link href="https://t.me/rpwalletTG" target="_blank" rel="noopener noreferrer" className="cursor-pointer text-xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">
             Telegram
           </Link>
           <Link href="/#features" className="cursor-pointer text-xl font-medium text-white/90 transition-colors hover:text-[#ab9ff2]">

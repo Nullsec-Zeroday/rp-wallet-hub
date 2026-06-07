@@ -171,12 +171,12 @@ export default function PrivacyPage() {
                 If you have any questions about this Privacy Policy, you can reach us on Telegram for instant support.
               </p>
               <a 
-                href="https://t.me/LarperWallet_bot" 
+                href="https://t.me/RPWallet_support_bot" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 py-3 px-8 bg-[#8B5CF6] hover:bg-[#7e53de] rounded-xl text-[15px] font-bold text-white transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]"
               >
-                Message @LarperWallet_bot
+                Message @RPWallet_support_bot
               </a>
             </section>
           </FadeIn>
