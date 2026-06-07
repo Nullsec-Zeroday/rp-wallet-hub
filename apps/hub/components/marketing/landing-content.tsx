@@ -14,6 +14,10 @@ const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
 import { trackEvent } from "@/lib/track";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { isDemoFeatureEnabled } from "@/lib/demo-config";
+import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
+import { getStoredAttribution } from "@/lib/affiliate-attribution";
+import { RpWalletApiClient } from "@rp-wallet/api-client";
+import React from "react";
 
 const HeroMockups = dynamic(() => import("./hero-mockups").then((mod) => mod.HeroMockups), {
   ssr: false,
@@ -129,10 +133,139 @@ export default function LandingContent() {
     }
   };
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  // SellAuth logic moved to /buy page
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 241810);
   const demoEnabled = isDemoFeatureEnabled();
 
+  const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
+  const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
+  const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [isSlowCheckout, setIsSlowCheckout] = useState(false);
+
+  const checkoutLocked = isLoading || checkoutPhase === "preparing" || checkoutPhase === "opening";
+
+  useEffect(() => {
+    const resetReturnedCheckout = () => {
+      setCheckoutError("");
+      setCheckoutPhase("idle");
+      setIsSlowCheckout(false);
+      setSelectedPlanId(null);
+    };
+    window.addEventListener("pageshow", resetReturnedCheckout);
+    return () => window.removeEventListener("pageshow", resetReturnedCheckout);
+  }, []);
+
+  const handleCheckout = async (plan: any) => {
+    if (checkoutLocked) return;
+    setSelectedPlanId(plan.id);
+    
+    window.dispatchEvent(new Event("rp-wallet:checkout-started"));
+    trackEvent("checkout_started", {
+      plan: plan.id,
+      price: plan.price,
+      has_embed_config:
+        Boolean(plan.sellauthProductId) &&
+        Boolean(plan.sellauthVariantId) &&
+        Number(plan.sellauthProductId) > 0 &&
+        Number(plan.sellauthVariantId) > 0,
+    });
+    const slowTimer = window.setTimeout(() => setIsSlowCheckout(true), 4000);
+    const clearSlowTimer = () => window.clearTimeout(slowTimer);
+
+    const hasEmbedConfig =
+      plan.sellauthProductId &&
+      plan.sellauthVariantId &&
+      plan.sellauthProductId > 0 &&
+      plan.sellauthVariantId > 0;
+
+    if (hasEmbedConfig) {
+      setCheckoutError("");
+      setIsSlowCheckout(false);
+      setCheckoutPhase("preparing");
+      const attribution = getStoredAttribution();
+      let sellAuthAffiliate: string | undefined;
+      if (attribution) {
+        const intentResult = await api
+          .createAffiliateCheckoutIntent({
+            affiliateCode: attribution.affiliateCode,
+            visitorId: attribution.visitorId,
+            clickId: attribution.clickId,
+            plan: plan.id,
+            productId: plan.sellauthProductId,
+            variantId: plan.sellauthVariantId,
+          })
+          .catch(() => {
+            return null;
+          });
+        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
+      }
+      checkout({
+        cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
+        shopId,
+        affiliate: sellAuthAffiliate,
+        onPreparing: () => {
+          setCheckoutPhase("preparing");
+        },
+        onCheckoutUrlReady: () => {
+          setCheckoutPhase("opening");
+          trackEvent("checkout_url_ready", { plan: plan.id });
+        },
+        onError: (error) => {
+          clearSlowTimer();
+          setCheckoutError(error.message || "Please try again.");
+          setCheckoutPhase("error");
+          trackEvent("checkout_failed", {
+            plan: plan.id,
+            error: error.message || "Please try again.",
+          });
+        },
+        onSettled: ({ status, redirected }) => {
+          clearSlowTimer();
+          setIsSlowCheckout(false);
+          trackEvent("checkout_settled", {
+            plan: plan.id,
+            status,
+            redirected,
+          });
+          if (status === "success" && !redirected) {
+            setCheckoutPhase("idle");
+            setSelectedPlanId(null);
+          }
+        },
+      });
+    } else {
+      setCheckoutError("");
+      setIsSlowCheckout(false);
+      setCheckoutPhase("opening");
+      const attribution = getStoredAttribution();
+      let sellAuthAffiliate: string | undefined;
+      if (attribution) {
+        const intentResult = await api
+          .createAffiliateCheckoutIntent({
+            affiliateCode: attribution.affiliateCode,
+            visitorId: attribution.visitorId,
+            clickId: attribution.clickId,
+            plan: plan.id,
+          })
+          .catch(() => {
+            return null;
+          });
+        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
+      }
+      const fallbackUrl = new URL(plan.buyUrl);
+      if (sellAuthAffiliate) fallbackUrl.searchParams.set("affiliate", sellAuthAffiliate);
+      trackEvent("checkout_fallback_opened", { plan: plan.id });
+      window.open(fallbackUrl.toString(), "_blank");
+      window.setTimeout(() => {
+        clearSlowTimer();
+        setCheckoutPhase("idle");
+        setSelectedPlanId(null);
+      }, 800);
+    }
+  };
 
   return (
     <div className="w-full overflow-visible pb-12 pt-2 md:pb-0">
@@ -638,12 +771,17 @@ export default function LandingContent() {
             return (
               <div
                 key={plan.id}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] ${isPopular
+                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${isPopular
                   ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_40px_rgba(139,92,246,0.15)] z-10"
                   : isYearly
                     ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_30px_rgba(212,175,55,0.15)]"
                     : "bg-[#121212]/80 border border-white/[0.04] hover:bg-[#151515] hover:border-white/[0.08]"
                   }`}
+                onClick={() => {
+                  if (!checkoutLocked) {
+                    handleCheckout(plan);
+                  }
+                }}
               >
                 {isPopular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#8b5cf6] text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] whitespace-nowrap">
@@ -680,19 +818,47 @@ export default function LandingContent() {
                   ))}
                 </ul>
 
-                <Link
-                  href={`/buy?plan=${plan.id}`}
-                  className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${isPopular
-                    ? "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02]"
-                    : isYearly
-                      ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
-                      : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
+                <button
+                  disabled={checkoutLocked}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCheckout(plan);
+                  }}
+                  className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${
+                    selectedPlanId === plan.id && checkoutPhase === "error"
+                      ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                      : isPopular
+                      ? "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02]"
+                      : isYearly
+                        ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
+                        : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
                     }`}
                 >
-                  <>
-                    Buy <ArrowRight size={18} />
-                  </>
-                </Link>
+                  {selectedPlanId === plan.id && checkoutPhase === "error" ? (
+                    <>Checkout Failed - Try Again <X size={20} /></>
+                  ) : selectedPlanId === plan.id && checkoutLocked ? (
+                    <>
+                      <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                      </svg>
+                      {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
+                    </>
+                  ) : (
+                    <>Buy <ArrowRight size={18} /></>
+                  )}
+                </button>
+
+                {selectedPlanId === plan.id && checkoutPhase === "error" && (
+                  <div className="absolute -bottom-6 left-0 right-0 text-red-400 text-xs text-center animate-pulse">
+                    {checkoutError || "Please try again."}
+                  </div>
+                )}
+                {selectedPlanId === plan.id && isSlowCheckout && !checkoutError && (
+                  <div className="absolute -bottom-6 left-0 right-0 text-amber-400/80 text-xs text-center">
+                    SellAuth is taking a little longer. Please wait...
+                  </div>
+                )}
               </div>
             );
           })}
@@ -797,6 +963,8 @@ export default function LandingContent() {
         </div>
       </section>
       <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
+      {captcha}
+      {checkoutModal}
     </div>
   );
 }
