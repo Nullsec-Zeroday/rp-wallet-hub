@@ -20,7 +20,7 @@
     "HUB_ORIGIN": "https://rpwallet.app",
     "AFFILIATE_ORIGIN": "https://affiliate.rpwallet.app",
     "PHANTOM_ORIGIN": "https://app1.rpwallet.us",
-    "TRUST_ORIGIN": "https://app2.rpwallet.us",
+    "TRUST_ORIGIN": "https://app3.rpwallet.us",
     "PHANTOM_ENABLED": "true",
     "TRUST_ENABLED": "true",
     "SELLAUTH_SHOP_ID": "234704",

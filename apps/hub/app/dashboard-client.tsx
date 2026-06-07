@@ -114,7 +114,7 @@ export default function DashboardClient() {
 
       await navigator.clipboard.writeText(response.launchUrl);
       setCopiedWalletId(walletAppId);
-      setNotice(`${walletAppId === "trust" ? "Trust" : "Phantom"} dev launch URL copied.`);
+      setNotice(`${walletAppId === "trust" ? "Tru5t" : "Ph4ntom"} dev launch URL copied.`);
       window.setTimeout(() => {
         setCopiedWalletId((current) => (current === walletAppId ? null : current));
       }, 1800);

@@ -23,7 +23,7 @@ export function logWalletDebug(event: string, detail?: Record<string, unknown>) 
     ].slice(0, DEBUG_LOG_LIMIT);
     window.localStorage.setItem(DEBUG_LOG_KEY, JSON.stringify(next));
   } catch (error) {
-    console.warn("Unable to write Phantom debug log", error);
+    console.warn("Unable to write Ph4ntom debug log", error);
   }
 }
 

@@ -132,7 +132,7 @@ function buildLocalPayload(payload: WalletBootstrapPayload, input: TrustSettings
 
 function buildLocalTransactionPayload(payload: WalletBootstrapPayload, input: TrustTransactionInput) {
   const account = getAccount(payload);
-  if (!account) throw new Error("No Trust account is available.");
+  if (!account) throw new Error("No Tru5t account is available.");
 
   const amount = parseAmount(input.amount);
   if (amount <= 0) throw new Error("Enter a valid amount greater than zero.");
@@ -282,7 +282,7 @@ export function TrustWalletProvider({
     const localPayload = buildLocalPayload(payload, input);
 
     try {
-      if (!account) throw new Error("No Trust account is available.");
+      if (!account) throw new Error("No Tru5t account is available.");
 
       const body: UpdateWalletStateRequest = {
         accountId: account.id,
@@ -323,7 +323,7 @@ export function TrustWalletProvider({
     setTransactionPending(true);
 
     try {
-      if (!account) throw new Error("No Trust account is available.");
+      if (!account) throw new Error("No Tru5t account is available.");
 
       const request: CreateWalletTransactionRequest = {
         walletAppId: "trust",
@@ -368,7 +368,7 @@ export function TrustWalletProvider({
     setSaveError("");
 
     try {
-      if (!account) throw new Error("No Trust account is available.");
+      if (!account) throw new Error("No Tru5t account is available.");
 
       const localPayload = withNotificationSettings(payload, settings);
       if (demoMode) {

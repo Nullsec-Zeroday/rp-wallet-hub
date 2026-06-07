@@ -642,7 +642,7 @@ function WalletRouteBody() {
   ) : (
     <div className="px-4 pt-6 pb-32">
       <div className="rounded-[24px] bg-[#1c1c1e] px-5 py-6 text-[#a0a0a0]">
-        This tab is still being ported from the legacy Phantom app. Home and token detail are now running on the literal component path.
+        This tab is still being ported from the legacy Ph4ntom app. Home and token detail are now running on the literal component path.
       </div>
     </div>
   );

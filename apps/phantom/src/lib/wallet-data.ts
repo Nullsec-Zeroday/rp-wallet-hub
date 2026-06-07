@@ -1,4 +1,4 @@
-// Core wallet types for the Phantom simulator (ported from RN)
+// Core wallet types for the Ph4ntom simulator (ported from RN)
 
 export interface TokenInfo {
   symbol: string;
@@ -212,7 +212,7 @@ export const DEFAULT_BALANCES: TokenBalance[] = TOKENS.map((t) => ({
 }));
 
 
-// Avatar icons (matching Phantom Edit Profile icon grid)
+// Avatar icons (matching Ph4ntom Edit Profile icon grid)
 export const AVATAR_ICONS: string[] = [
   '🔥', '🔐', '🔮', '🖼️', '💯', '🔌', '⚒️',
   '⛓️', '🚀', '🌙', '💩', '👻', '👽', '👾',

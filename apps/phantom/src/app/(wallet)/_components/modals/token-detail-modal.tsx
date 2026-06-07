@@ -901,7 +901,7 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                               <div className="mt-1 flex items-center justify-between">
                                 <div className="text-[#888888] text-[14px] font-medium leading-tight truncate">
                                   {isSwap ? (
-                                    "Phantom"
+                                    "Ph4ntom"
                                   ) : isReceive ? (
                                     `From ${shortenAddress(tx.from)}`
                                   ) : (

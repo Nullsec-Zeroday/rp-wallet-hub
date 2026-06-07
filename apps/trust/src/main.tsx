@@ -103,7 +103,7 @@ function registerTrustServiceWorker() {
 
   const register = () => {
     navigator.serviceWorker.register("/sw.js").catch((registrationError) => {
-      console.warn("Trust service worker registration failed", registrationError);
+      console.warn("Tru5t service worker registration failed", registrationError);
     });
   };
 
@@ -239,7 +239,7 @@ function TrustApp() {
             }
           />
         ) : payload && isDemoExpired(payload, now) ? (
-          <DemoPaywall walletName="Trust" locked />
+          <DemoPaywall walletName="Tru5t" locked />
         ) : payload ? (
           <BootstrappedWallet
             api={api}
@@ -261,7 +261,7 @@ function TrustApp() {
       <AnimatePresence>
         {loading && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
-          <DemoPaywall walletName="Trust" onClose={() => setActiveDemoPaywallOpen(false)} />
+          <DemoPaywall walletName="Tru5t" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}
       </AnimatePresence>
     </>
@@ -406,7 +406,7 @@ function BootstrappedWallet({
     const settings = notificationSettingsRef.current;
     if (window.Notification.permission === "granted" && !settings.pushEnabled) {
       persistNotificationSettings({ ...settings, pushEnabled: true }).catch((error) => {
-        console.warn("Unable to persist Trust notification permission preference", error);
+        console.warn("Unable to persist Tru5t notification permission preference", error);
       });
       return;
     }
@@ -430,7 +430,7 @@ function BootstrappedWallet({
         pushEnabled: true,
       });
     } catch (error) {
-      console.warn("Unable to request Trust notification permission", error);
+      console.warn("Unable to request Tru5t notification permission", error);
     }
   };
 
@@ -470,7 +470,7 @@ function BootstrappedWallet({
           }
         }
       } catch (error) {
-        console.warn("Unable to poll Trust wallet events", error);
+        console.warn("Unable to poll Tru5t wallet events", error);
       }
     };
 
@@ -514,7 +514,7 @@ function BootstrappedWallet({
                 Enable notifications
               </h2>
               <p className="mx-auto mt-2 max-w-[280px] text-center text-[14px] leading-5 text-[#a7a7aa]">
-                Get notified when incoming Trust Wallet transfers arrive.
+                Get notified when incoming Tru5t transfers arrive.
               </p>
               <div className="mt-5 flex flex-col gap-2.5">
                 <button
@@ -798,7 +798,7 @@ function createDevTrustPayload(): WalletBootstrapPayload {
     },
     wallet: {
       id: "trust",
-      name: "Trust",
+      name: "Tru5t",
       host: "localhost:5174",
       enabled: true,
       activated: true,

@@ -55,7 +55,7 @@ export default function BlogPostClient({
     <div className="min-h-screen text-white font-sans selection:bg-[#ab9ff2] selection:text-white pb-32">
       {/* Reading Progress Bar */}
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#ab9ff2] to-phantom-accent z-[60] origin-left"
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent z-[60] origin-left"
         style={{ scaleX, top: "env(safe-area-inset-top, 0px)" }}
       />
 
@@ -77,7 +77,7 @@ export default function BlogPostClient({
       {/* Subtle top background only */}
       <div className="fixed top-0 left-0 right-0 h-[600px] overflow-hidden pointer-events-none z-0">
         <div
-          className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full"
+          className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-ph4ntom-purple/10 blur-[120px] rounded-full"
         />
       </div>
 
@@ -245,7 +245,7 @@ export default function BlogPostClient({
 
             {/* Bottom CTA */}
             <div className="glass-panel mt-20 rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 text-center sm:p-16 backdrop-blur-md shadow-xl relative overflow-hidden">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-phantom-purple/10 blur-[80px] rounded-full pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-ph4ntom-purple/10 blur-[80px] rounded-full pointer-events-none" />
               <div className="relative z-10">
                 <div className="mx-auto mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#161618] text-[#ab9ff2] shadow-lg">
                   <MessageCircle size={24} />

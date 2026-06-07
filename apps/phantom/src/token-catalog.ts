@@ -1,11 +1,11 @@
-export interface PhantomTokenMeta {
+export interface Ph4ntomTokenMeta {
   symbol: string;
   name: string;
   color: string;
   icon: string;
 }
 
-export const PHANTOM_TOKEN_CATALOG: PhantomTokenMeta[] = [
+export const PH4NTOM_TOKEN_CATALOG: Ph4ntomTokenMeta[] = [
   { symbol: "SOL", name: "Solana", color: "#9945FF", icon: "◎" },
   { symbol: "USDT", name: "USDT", color: "#26A17B", icon: "$" },
   { symbol: "ETH", name: "Ethereum", color: "#627EEA", icon: "E" },
@@ -22,18 +22,18 @@ export const PHANTOM_TOKEN_CATALOG: PhantomTokenMeta[] = [
   { symbol: "MON", name: "Monad", color: "#836EF9", icon: "M" },
 ];
 
-export const PHANTOM_TOKEN_MAP = Object.fromEntries(
-  PHANTOM_TOKEN_CATALOG.map((token) => [token.symbol, token]),
-) as Record<string, PhantomTokenMeta>;
+export const PH4NTOM_TOKEN_MAP = Object.fromEntries(
+  PH4NTOM_TOKEN_CATALOG.map((token) => [token.symbol, token]),
+) as Record<string, Ph4ntomTokenMeta>;
 
-export function formatPhantomCurrency(value: number) {
+export function formatPh4ntomCurrency(value: number) {
   return `$${value.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: value > 0 && value < 0.01 ? 6 : 2,
   })}`;
 }
 
-export function formatPhantomBalance(value: number) {
+export function formatPh4ntomBalance(value: number) {
   if (value === 0) return "0";
   if (value >= 1) {
     return value.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });

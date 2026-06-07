@@ -55,7 +55,7 @@ export default function TermsPage() {
                 </div>
 
                 <p>
-                  We are <strong>not affiliated with, endorsed by, or connected to Phantom, Solana Labs, Solana Foundation, Ledger SAS, Trust Wallet, Binance, or any other wallet provider, blockchain project, cryptocurrency exchange, or financial institution</strong>. Any visual similarities to existing wallet interfaces are for entertainment and parody purposes only.
+                  We are <strong>not affiliated with, endorsed by, or connected to Ph4ntom, Solana Labs, Solana Foundation, Ledger SAS, Tru5t, Binance, or any other wallet provider, blockchain project, cryptocurrency exchange, or financial institution</strong>. Any visual similarities to existing wallet interfaces are for entertainment and parody purposes only.
                 </p>
               </div>
             </section>

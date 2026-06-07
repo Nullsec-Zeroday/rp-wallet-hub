@@ -937,7 +937,7 @@ app.post("/wallet-launch", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
   if (hubSession.access?.kind === "demo" && body.walletAppId !== "phantom") {
-    return c.json({ error: "Demo mode only includes Phantom." }, 403);
+    return c.json({ error: "Demo mode only includes Ph4ntom." }, 403);
   }
 
   if (!wallet?.enabled) {

@@ -12,7 +12,7 @@ export default function BlogPage() {
     <div className="min-h-screen text-white font-sans overflow-x-hidden selection:bg-[#ab9ff2] selection:text-white relative pb-32">
       {/* Subtle background glow */}
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full" />
+        <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-ph4ntom-purple/10 blur-[120px] rounded-full" />
       </div>
 
       <main className="relative z-10 w-full flex flex-col items-center px-4 pt-28 md:px-6 md:pt-36">
@@ -24,7 +24,7 @@ export default function BlogPage() {
               Editorial Hub
             </div>
             <h1 className="font-display mx-auto max-w-4xl text-4xl font-medium leading-tight tracking-tight text-white md:text-5xl lg:text-6xl [text-wrap:balance]">
-              Wallet mockups, demos, and <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">content systems that actually hold up.</span>
+              Wallet mockups, demos, and <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">content systems that actually hold up.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-relaxed text-white/60 [text-wrap:pretty]">
               Practical long-form articles on wallet simulators, crypto LARP-friendly mockups, launch visuals, creator workflows, safer production, and the editorial systems that make product content more discoverable.
@@ -156,7 +156,7 @@ export default function BlogPage() {
           {/* CTA Section */}
           <FadeIn direction="up">
             <div className="glass-panel mt-12 w-full rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-10 text-center md:p-16 relative overflow-hidden flex flex-col items-center shadow-xl">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-phantom-purple/10 blur-[100px] rounded-full pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-ph4ntom-purple/10 blur-[100px] rounded-full pointer-events-none" />
               
               <div className="relative z-10 w-full max-w-2xl flex flex-col items-center">
                 <h2 className="font-display mb-4 text-3xl font-medium tracking-tight text-white md:text-4xl [text-wrap:balance]">

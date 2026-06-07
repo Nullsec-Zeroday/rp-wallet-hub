@@ -271,7 +271,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                                 <div className="mt-1 flex items-center justify-between">
                                   <div className="text-[#b4b4b4] text-[14px] font-medium leading-tight truncate">
                                     {isSwap ? (
-                                      "Phantom"
+                                      "Ph4ntom"
                                     ) : isReceive ? (
                                       `From ${shortenAddress(tx.from)}`
                                     ) : (

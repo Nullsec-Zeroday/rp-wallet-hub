@@ -133,7 +133,7 @@ self.addEventListener('fetch', (event) => {
 // Push notifications
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'Notification from Phantom';
+  const title = data.title || 'Notification from Ph4ntom';
   const options = {
     body: data.body || 'Received transaction',
     icon: '/logos/icon_512x512.png',

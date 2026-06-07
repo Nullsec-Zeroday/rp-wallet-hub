@@ -39,12 +39,12 @@ const PAYWALL_PLANS = [
   { id: "yearly", label: "1 Year", price: "$99", detail: "2 active devices", badge: "Best Value" },
 ] as const;
 
-function registerPhantomServiceWorker() {
+function registerPh4ntomServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
   const register = () => {
     navigator.serviceWorker.register("/sw.js").catch((error) => {
-      console.warn("Phantom service worker registration failed", error);
+      console.warn("Ph4ntom service worker registration failed", error);
     });
   };
 
@@ -55,12 +55,12 @@ function registerPhantomServiceWorker() {
   }
 }
 
-function PhantomApp() {
+function Ph4ntomApp() {
   const api = React.useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => {
     const cached = readCachedBootstrap("phantom");
     if (DEV_PWA_AUTH_BYPASS) {
-      return cached?.license.id === "dev-license" ? cached : createDevPhantomPayload();
+      return cached?.license.id === "dev-license" ? cached : createDevPh4ntomPayload();
     }
     return cached ? applyDemoRestrictions("phantom", cached) : null;
   });
@@ -87,7 +87,7 @@ function PhantomApp() {
 
     if (DEV_PWA_AUTH_BYPASS) {
       const cached = readCachedBootstrap("phantom");
-      const nextPayload = cached?.license.id === "dev-license" ? cached : createDevPhantomPayload();
+      const nextPayload = cached?.license.id === "dev-license" ? cached : createDevPh4ntomPayload();
       writeCachedBootstrap("phantom", nextPayload);
       setPayload(nextPayload);
       setInstallReady(true);
@@ -145,7 +145,7 @@ function PhantomApp() {
           setPayload(cached);
           setInstallReady(true);
         } else if (pendingToken) {
-          setError(getFriendlyBootstrapError(loadError, "Open Phantom again from the hub to refresh this wallet session."));
+          setError(getFriendlyBootstrapError(loadError, "Open Ph4ntom again from the hub to refresh this wallet session."));
         } else {
           setError("Reconnect through the hub to refresh this wallet session.");
         }
@@ -158,7 +158,7 @@ function PhantomApp() {
   const standalone = DEV_PWA_AUTH_BYPASS || isStandalonePwa();
 
   if (!appEnv.walletAppEnabled) {
-    return <UnavailablePanel walletName="Phantom" />;
+    return <UnavailablePanel walletName="Ph4ntom" />;
   }
 
   if (!standalone) {
@@ -178,24 +178,24 @@ function PhantomApp() {
     <>
       {DEV_PAYWALL_PREVIEW && devPaywallPreviewOpen ? (
         <DemoPaywall
-          walletName="Phantom"
+          walletName="Ph4ntom"
           locked={DEV_PAYWALL_PREVIEW !== "active"}
           onClose={DEV_PAYWALL_PREVIEW === "active" ? () => setDevPaywallPreviewOpen(false) : undefined}
         />
       ) : payload && isDemoExpired(payload, now) ? (
-        <DemoPaywall walletName="Phantom" locked />
+        <DemoPaywall walletName="Ph4ntom" locked />
       ) : payload ? (
         <StrictWalletApp payload={payload} />
       ) : !loading ? (
         <ReconnectPanel
-          body={error || "Launch Phantom from the RPWallet hub to attach a session to this installed app."}
+          body={error || "Launch Ph4ntom from the RPWallet hub to attach a session to this installed app."}
         />
       ) : null}
 
       <AnimatePresence>
         {loading && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
-          <DemoPaywall walletName="Phantom" onClose={() => setActiveDemoPaywallOpen(false)} />
+          <DemoPaywall walletName="Ph4ntom" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}
       </AnimatePresence>
     </>
@@ -448,11 +448,11 @@ function ReconnectPanel({ body }: { body: string }) {
   );
 }
 
-registerPhantomServiceWorker();
+registerPh4ntomServiceWorker();
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <PhantomApp />
+    <Ph4ntomApp />
   </React.StrictMode>,
 );
 
@@ -464,7 +464,7 @@ function getFriendlyBootstrapError(error: unknown, fallback: string) {
   return fallback;
 }
 
-function createDevPhantomPayload(): WalletBootstrapPayload {
+function createDevPh4ntomPayload(): WalletBootstrapPayload {
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   const accountId = "dev-phantom-account-1";
@@ -484,7 +484,7 @@ function createDevPhantomPayload(): WalletBootstrapPayload {
     },
     wallet: {
       id: "phantom",
-      name: "Phantom",
+      name: "Ph4ntom",
       host: "localhost:5173",
       enabled: true,
       activated: true,

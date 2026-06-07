@@ -24,14 +24,14 @@ export function getDemoBalances(walletAppId: WalletAppId) {
 export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activated">> = {
   phantom: {
     id: "phantom",
-    name: "Phantom",
+    name: "Ph4ntom",
     host: "app1.rpwallet.us",
     enabled: true,
   },
   trust: {
     id: "trust",
-    name: "Trust",
-    host: "app2.rpwallet.us",
+    name: "Tru5t",
+    host: "app3.rpwallet.us",
     enabled: true,
   },
 };

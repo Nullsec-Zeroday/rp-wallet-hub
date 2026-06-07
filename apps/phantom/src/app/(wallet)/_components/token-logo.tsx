@@ -15,7 +15,7 @@ interface TokenLogoProps {
 export default function TokenLogo({ token, size = 44, liveImage, priority = false, hideChainIcon = false }: TokenLogoProps) {
   const [imgErr, setImgErr] = useState(false);
 
-  // Prefer Phantom API live image, default back to local payload
+  // Prefer Ph4ntom API live image, default back to local payload
   const imgSrc = liveImage || token.logoUrl;
 
   React.useEffect(() => {

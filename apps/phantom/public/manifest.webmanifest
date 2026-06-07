@@ -1,7 +1,7 @@
 {
-  "name": "Phantom",
-  "short_name": "Phantom",
-  "description": "RPWallet Phantom wallet PWA.",
+  "name": "Ph4ntom",
+  "short_name": "Ph4ntom",
+  "description": "RPWallet Ph4ntom wallet PWA.",
   "start_url": "/home",
   "scope": "/",
   "display": "standalone",

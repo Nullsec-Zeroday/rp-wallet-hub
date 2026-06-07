@@ -14,8 +14,8 @@ export default function SplashScreen() {
       }}
     >
       <img 
-        src="/logos/trust-wallet-icon.webp" 
-        alt="Trust Logo" 
+        src="/logos/tru5t-wallet-icon.webp"
+        alt="Tru5t Logo" 
         style={{ width: 140, height: 140 }} 
       />
     </motion.main>

@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "RPWallet",
     short_name: "RPWallet",
-    description: "A premium crypto wallet simulator and Phantom-style wallet mockup for creators.",
+    description: "A premium crypto wallet simulator and Ph4ntom-style wallet mockup for creators.",
     start_url: "/",
     display: "standalone",
     background_color: "#0c0a18",

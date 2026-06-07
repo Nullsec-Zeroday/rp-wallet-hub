@@ -12,8 +12,8 @@ export async function showSystemNotification(title: string, body: string) {
 
   const options = {
     body,
-    icon: "/logos/trust-wallet-icon.webp",
-    badge: "/logos/trust-wallet-icon.webp",
+    icon: "/logos/tru5t-wallet-icon.webp",
+    badge: "/logos/tru5t-wallet-icon.webp",
     tag: `rp-wallet-trust-${Date.now()}`,
   };
 

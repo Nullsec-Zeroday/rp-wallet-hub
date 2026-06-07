@@ -3,13 +3,13 @@
 @theme inline {
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-display: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
-  --color-phantom-purple: var(--phantom-purple);
-  --color-phantom-green: var(--phantom-green);
-  --color-phantom-red: var(--phantom-red);
-  --color-phantom-dark: var(--phantom-dark);
-  --color-phantom-darker: var(--phantom-darker);
-  --color-phantom-light: var(--phantom-light);
-  --color-phantom-accent: var(--phantom-accent);
+  --color-ph4ntom-purple: var(--ph4ntom-purple);
+  --color-ph4ntom-green: var(--ph4ntom-green);
+  --color-ph4ntom-red: var(--ph4ntom-red);
+  --color-ph4ntom-dark: var(--ph4ntom-dark);
+  --color-ph4ntom-darker: var(--ph4ntom-darker);
+  --color-ph4ntom-light: var(--ph4ntom-light);
+  --color-ph4ntom-accent: var(--ph4ntom-accent);
 }
 
 html {
@@ -20,13 +20,13 @@ html {
   color-scheme: dark;
   --background: #111111;
   --foreground: #ffffff;
-  --phantom-purple: #ab9ff2;
-  --phantom-green: #1da861;
-  --phantom-red: #e54d34;
-  --phantom-dark: #161616;
-  --phantom-darker: #111111;
-  --phantom-light: #d6d0f8;
-  --phantom-accent: #7f66ff;
+  --ph4ntom-purple: #ab9ff2;
+  --ph4ntom-green: #1da861;
+  --ph4ntom-red: #e54d34;
+  --ph4ntom-dark: #161616;
+  --ph4ntom-darker: #111111;
+  --ph4ntom-light: #d6d0f8;
+  --ph4ntom-accent: #7f66ff;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-border: rgba(255, 255, 255, 0.08);
 }

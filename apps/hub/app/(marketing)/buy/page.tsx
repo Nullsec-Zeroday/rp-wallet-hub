@@ -310,7 +310,7 @@ function BuyContent() {
                 ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                 : selectedPlanId === "yearly"
                 ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
-                : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
+                : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
               : "bg-white/5 text-white/40 border border-white/10 pointer-events-none"
               }`}
           >
@@ -385,7 +385,7 @@ function BuyContent() {
                   ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                   : selectedPlanId === "yearly"
                   ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
-                  : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white"
+                  : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white"
                   }`}
               >
                 {checkoutPhase === "error" ? (

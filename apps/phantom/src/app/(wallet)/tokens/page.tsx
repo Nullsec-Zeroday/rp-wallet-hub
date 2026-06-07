@@ -85,7 +85,7 @@ export default function TokensPage() {
         >
           <img
             src="/icons/cash-card.webp"
-            alt="Phantom Card"
+            alt="Ph4ntom Card"
             className="w-full h-full object-contain"
           />
         </button>
@@ -116,7 +116,7 @@ export default function TokensPage() {
             <div className="w-[60px] aspect-[1.582278/1] overflow-hidden flex-shrink-0 relative">
               <img
                 src="/icons/cash-skew-card.webp"
-                alt="Phantom Card Skew"
+                alt="Ph4ntom Card Skew"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -128,8 +128,8 @@ export default function TokensPage() {
               </div>
               <div className="text-[12px] font-medium opacity-85 leading-snug line-clamp-2 mt-0.5">
                 {isJoined
-                  ? `Access to Phantom Card is coming soon. Spot #${spotNumber.toLocaleString()}`
-                  : "Access to Phantom Card & more coming soon"
+                  ? `Access to Ph4ntom Card is coming soon. Spot #${spotNumber.toLocaleString()}`
+                  : "Access to Ph4ntom Card & more coming soon"
                 }
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function TokensPage() {
           <div className="bg-[#1c1c1e] p-4 rounded-b-[24px] border-t border-[#2a2a2e] -mt-3 pt-6 animate-fade-in-up shadow-xl relative z-0">
             <div className="text-[13px] text-[#AB9FF2] font-bold mb-1 flex items-center gap-1">
               <Sparkles size={14} />
-              PHANTOM CARD WAITLIST
+              PH4NTOM CARD WAITLIST
             </div>
             <div className="text-xs text-[#a0a0a0] mb-4">
               Enter your email address to lock in your position. Waitlist spot will be linked to <span className="text-white font-semibold">@{profile.username || "your wallet"}</span>.

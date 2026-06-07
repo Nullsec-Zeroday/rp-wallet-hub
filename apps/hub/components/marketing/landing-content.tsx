@@ -69,7 +69,7 @@ export default function LandingContent() {
     return () => clearInterval(timer);
   }, []);
 
-  const VIDEOS = ["/video/phantom_send.mp4", "/video/trust_receive.mp4"];
+  const VIDEOS = ["/video/ph4ntom_send.mp4", "/video/trust_receive.mp4"];
   const [activeVideoIdx, setActiveVideoIdx] = useState(0);
 
   type Slide = {
@@ -279,11 +279,11 @@ export default function LandingContent() {
           initial={isMobile ? false : { opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center gap-1 md:gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-phantom-light relative z-10"
+          className="flex items-center gap-1 md:gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-ph4ntom-light relative z-10"
         >
           <div className="relative flex h-2 w-2 mx-1">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-phantom-green opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-phantom-green"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
           </div>
           Now available on iOS & Android
         </motion.div>
@@ -295,16 +295,16 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
-            Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-phantom-purple to-phantom-accent">the flex.</span>
+            Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
+            className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.</p>
+            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Ph4ntom and Tru5t wallet interface - no real crypto involved.</p>
           </motion.div>
         </div>
 
@@ -471,8 +471,8 @@ export default function LandingContent() {
               body: "Use a full fake crypto wallet app with balances, token lists, wallet names, and activity that behave like a real mobile wallet interface.",
             },
             {
-              title: "Phantom and Trust Wallet",
-              body: "Show realistic Phantom or Trust Wallet-style screens for content, demos, pranks, screenshots, and short videos.",
+              title: "Ph4ntom and Tru5t",
+              body: "Show realistic Ph4ntom or Tru5t-style screens for content, demos, pranks, screenshots, and short videos.",
             },
             {
               title: "LARP wallet app",
@@ -562,12 +562,12 @@ export default function LandingContent() {
             className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
           >
             {/* subtle background glow inside the panel */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-ph4ntom-purple/10 blur-[120px] rounded-full pointer-events-none" />
 
             {/* Centered Column */}
             <div className="relative z-10 w-full flex flex-col items-center">
               <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
-                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">get access.</span>
+                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">get access.</span>
               </h2>
               {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
               Get set up in less than 2 minutes. No complicated installations.
@@ -750,7 +750,7 @@ export default function LandingContent() {
                     selectedPlanId === plan.id && checkoutPhase === "error"
                       ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                       : isPopular
-                      ? "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02]"
+                      ? "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02]"
                       : isYearly
                         ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
                         : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
@@ -788,11 +788,11 @@ export default function LandingContent() {
       </section>
 
       <section className="pb-12 max-w-[760px] mx-auto px-6 relative">
-        <div className="absolute inset-0 bg-phantom-purple/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute inset-0 bg-ph4ntom-purple/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
         <div className="text-center mb-10 md:mb-14">
           <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-2">
-            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">Questions.</span>
+            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">Questions.</span>
           </h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
             Everything you need to know about RPWallet.
@@ -820,7 +820,7 @@ export default function LandingContent() {
             },
             {
               q: "What wallets can I simulate?",
-              a: "RPWallet includes realistic Phantom-style and Trust Wallet-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
+              a: "RPWallet includes realistic Ph4ntom-style and Tru5t-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
             },
             {
               q: "How do I get my license key?",
@@ -861,17 +861,17 @@ export default function LandingContent() {
       <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
         <div className="rounded-[2rem] border border-white/5 bg-white/[0.015] p-6 md:p-8 text-center">
           <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
-            RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust Wallet simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
+            RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Ph4ntom wallet, fake Ph4ntom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Ph4ntom LARP wallet, Tru5t simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {[
               "fake crypto wallet app",
               "crypto wallet simulator",
-              "fake Phantom wallet",
-              "fake Phantom wallet balance",
+              "fake Ph4ntom wallet",
+              "fake Ph4ntom wallet balance",
               "LARP wallet app",
               "fake crypto wallet screen",
-              "Trust Wallet simulator",
+              "Tru5t simulator",
               "crypto LARP app",
             ].map((term) => (
               <span

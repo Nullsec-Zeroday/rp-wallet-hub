@@ -664,7 +664,7 @@ export default function SwapPage() {
 
             {/* Footnote statement */}
             <div className="flex items-center gap-1 mt-6 text-white/60 text-[13px] font-medium leading-none">
-              <span>Quote includes a 0.85% Phantom fee</span>
+              <span>Quote includes a 0.85% Ph4ntom fee</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-35 align-middle ml-0.5">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4" />

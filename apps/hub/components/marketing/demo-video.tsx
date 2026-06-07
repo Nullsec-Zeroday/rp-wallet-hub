@@ -11,8 +11,8 @@ export default function DemoVideo() {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative group w-[calc(80vh*9/16)] max-w-full aspect-[9/16] mx-auto"
       >
-        <div className="absolute -inset-4 bg-phantom-purple/10 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition duration-1000" />
-        <div className="absolute inset-0 bg-phantom-purple/5 blur-xl rounded-[2.5rem]" />
+        <div className="absolute -inset-4 bg-ph4ntom-purple/10 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition duration-1000" />
+        <div className="absolute inset-0 bg-ph4ntom-purple/5 blur-xl rounded-[2.5rem]" />
 
         <div className="relative glass-panel overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] w-full h-full shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] border-white/10 transition-all duration-700 bg-black">
           <iframe
