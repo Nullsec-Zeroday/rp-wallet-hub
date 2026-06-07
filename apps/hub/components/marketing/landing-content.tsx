@@ -304,7 +304,7 @@ export default function LandingContent() {
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom, Trust (coming soon) wallet interface - no real crypto involved.</p>
+            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.</p>
           </motion.div>
         </div>
 
@@ -445,79 +445,6 @@ export default function LandingContent() {
           </motion.div>
         </Suspense>
       </motion.section>
-
-      <section className="py-12 px-6 max-w-[1000px] mx-auto relative">
-        <motion.div
-          variants={fadeInUp}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
-        >
-          {/* subtle background glow inside the panel */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-phantom-purple/10 blur-[120px] rounded-full pointer-events-none" />
-
-          {/* Centered Column */}
-          <div className="relative z-10 w-full flex flex-col items-center">
-            {/* <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 text-[11px] font-semibold text-white/80 uppercase tracking-widest mb-6">
-              Highlight Feature
-            </div> */}
-
-            <h2 className="font-display text-2xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
-              Peer-to-peer <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-phantom-accent">simulated transactions.</span>
-            </h2>
-            <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
-              Send simulated crypto to another RPWallet user, their wallet updates.
-            </p>
-
-            <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
-              {/* Vertical line for mobile */}
-              <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
-              {/* Horizontal line for desktop */}
-              <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
-
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <Send size={16} className="text-white/80" />
-                </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Send</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">Enter another RPWallet user's address, select token and amount.</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <Bell size={16} className="text-white/80" />
-                </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">They get notified</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">A push notification appears on their device.</p>
-                </div>
-              </div>
-
-              <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                  <Zap size={16} className="text-white/80" />
-                </div>
-                <div className="flex flex-col pt-2 md:pt-0">
-                  <h4 className="text-white font-semibold text-[16px] mb-1">Wallet updates</h4>
-                  <p className="text-white/50 text-[14px] leading-snug">Balance and transaction history update instantly.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* <a
-              href="https://t.me/LarperWallet_bot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-8 py-3.5 rounded-full text-[15px] font-medium transition-all flex items-center justify-center gap-2"
-            >
-              Join Telegram <ArrowRight size={16} />
-            </a> */}
-          </div>
-        </motion.div>
-      </section>
 
       {/* <section id="features" className="py-12 px-6 max-w-[1040px] mx-auto relative">
         <motion.div

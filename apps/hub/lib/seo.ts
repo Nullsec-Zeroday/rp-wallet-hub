@@ -12,21 +12,6 @@ export const siteConfig = {
 
 export const homepageFaq = [
   {
-    question: "How do I create a fake crypto wallet screenshot?",
-    answer:
-      "Use RPWallet to open a simulated wallet interface, choose a Phantom-style or Trust Wallet-style screen, set the token balances and activity you want, then capture the screen for entertainment, demo, or content production. RPWallet does not hold or move real crypto.",
-  },
-  {
-    question: "Can I make a fake Phantom wallet balance?",
-    answer:
-      "Yes. RPWallet includes a realistic Phantom-style wallet simulator where you can customize token balances, prices, wallet details, and activity for screenshots or videos. It is a simulator only and cannot send, receive, swap, or store real funds.",
-  },
-  {
-    question: "What is a LARP wallet?",
-    answer:
-      "A LARP wallet is a simulated crypto wallet used for roleplay, creator content, product demos, and visual mockups. It looks like a wallet on screen, but it has no blockchain access, private keys, seed phrases, or real assets.",
-  },
-  {
     question: "Is RPWallet a real crypto wallet app?",
     answer:
       "No. RPWallet is a wallet simulator and visual production tool. It never asks for a seed phrase, never connects to your real wallet, and cannot process real blockchain transactions.",
@@ -162,7 +147,7 @@ export function buildOrganizationSchema() {
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: absoluteUrl("/logo.png"),
+    logo: absoluteUrl("/logo.webp"),
   };
 }
 
@@ -187,7 +172,7 @@ export function buildBlogPostingSchema(post: BlogPost) {
       name: siteConfig.name,
       logo: {
         "@type": "ImageObject",
-        url: absoluteUrl("/logo.png"),
+        url: absoluteUrl("/logo.webp"),
       },
     },
     mainEntityOfPage: {

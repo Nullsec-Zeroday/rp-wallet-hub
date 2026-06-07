@@ -55,7 +55,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "12 min read",
     category: "Guides",
-    image: "/logo.png",
+    image: "/logo.webp",
     featured: true,
     heroLabel: "Editorial Guide",
     keywords: [
@@ -190,7 +190,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "13 min read",
     category: "Product",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Demo Workflow",
     keywords: [
       "wallet product demo",
@@ -322,7 +322,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "14 min read",
     category: "Design",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Design System",
     keywords: [
       "wallet mockup",
@@ -447,7 +447,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "11 min read",
     category: "Creators",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Creator Workflow",
     keywords: [
       "wallet screenshots",
@@ -573,7 +573,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "10 min read",
     category: "Security",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Safer Production",
     keywords: [
       "wallet demo safety",
@@ -689,7 +689,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "15 min read",
     category: "Strategy",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Editorial Strategy",
     keywords: [
       "product blog strategy",
@@ -813,7 +813,7 @@ export const blogPosts: BlogPost[] = [
   author: "RPWallet Editorial",
   readingTime: "10 min read",
   category: "Guides",
-  image: "/logo.png",
+  image: "/logo.webp",
   heroLabel: "Complete Guide",
   keywords: [
     "phantom wallet simulator",
@@ -966,7 +966,7 @@ export const blogPosts: BlogPost[] = [
   author: "RPWallet Editorial",
   readingTime: "9 min read",
   category: "Creators",
-  image: "/logo.png",
+  image: "/logo.webp",
   heroLabel: "Creator Guide",
   keywords: [
     "fake crypto portfolio",
@@ -1109,7 +1109,7 @@ export const blogPosts: BlogPost[] = [
   author: "RPWallet Editorial",
   readingTime: "9 min read",
   category: "Design",
-  image: "/logo.png",
+  image: "/logo.webp",
   heroLabel: "Screenshot Guide",
   keywords: [
     "crypto wallet screenshots",
@@ -1267,7 +1267,7 @@ export const blogPosts: BlogPost[] = [
   author: "RPWallet Editorial",
   readingTime: "10 min read",
   category: "Product",
-  image: "/logo.png",
+  image: "/logo.webp",
   heroLabel: "Demo Guide",
   keywords: [
     "wallet demo tool",
@@ -1415,7 +1415,7 @@ export const blogPosts: BlogPost[] = [
   author: "RPWallet Editorial",
   readingTime: "10 min read",
   category: "Creators",
-  image: "/logo.png",
+  image: "/logo.webp",
   heroLabel: "Culture Guide",
   keywords: [
     "crypto roleplay",
@@ -1559,7 +1559,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "14 min read",
     category: "Guides",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Complete Guide",
     keywords: [
       "fake crypto wallet",
@@ -1704,7 +1704,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "12 min read",
     category: "Guides",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Wallet Guide",
     keywords: [
       "trust wallet simulator",
@@ -1832,7 +1832,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "11 min read",
     category: "Guides",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Hardware Wallet Guide",
     keywords: [
       "ledger wallet simulator",
@@ -1960,7 +1960,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "15 min read",
     category: "Culture",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Deep Dive",
     keywords: [
       "larp wallet",
@@ -2105,7 +2105,7 @@ export const blogPosts: BlogPost[] = [
     author: "RPWallet Editorial",
     readingTime: "13 min read",
     category: "Product",
-    image: "/logo.png",
+    image: "/logo.webp",
     heroLabel: "Business Guide",
     keywords: [
       "crypto wallet simulator",
