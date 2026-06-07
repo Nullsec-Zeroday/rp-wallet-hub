@@ -72,6 +72,8 @@ export default function LandingContent() {
 
   const VIDEOS = ["/video/ph4ntom_send.mp4", "/video/trust_receive.mp4"];
   const [activeVideoIdx, setActiveVideoIdx] = useState(0);
+  const [videoReady, setVideoReady] = useState<boolean[]>([false, false]);
+
 
   type Slide = {
     text: string;
@@ -342,65 +344,36 @@ export default function LandingContent() {
                   <div className="absolute top-[150px] -right-[2px] w-[2px] h-[65px] bg-[#c7c7cc] rounded-r-[1px]"></div>
 
                   <div className="absolute inset-[2px] bg-black rounded-[42px]">
-                    <div className={`absolute inset-[5px] ${USE_NEW_MOBILE_LOOP ? "bg-[#111111] flex items-center justify-center" : "bg-[#0a0a0c]"} rounded-[38px] overflow-hidden`}>
+                    <div className="absolute inset-[5px] bg-[#0a0a0c] rounded-[38px] overflow-hidden">
                       <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[85px] h-[22px] bg-black rounded-full z-20 flex items-center justify-end px-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#050505] border border-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
                           <div className="absolute top-0 right-0.5 w-1 h-1 bg-blue-500/20 rounded-full blur-[0.5px]"></div>
                         </div>
                       </div>
 
-                      {USE_NEW_MOBILE_LOOP ? (
-                        <>
-                          <AnimatePresence mode="wait">
-                            {phase === "text" && (
-                              <motion.div
-                                key={`text-${activeSlide}`}
-                                initial={isMobile ? false : { opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 1.05 }}
-                                transition={{ duration: 0.4 }}
-                                className="absolute inset-0 flex items-center justify-center z-10 px-6 text-center"
-                              >
-                                <h3 className="text-white font-semibold text-xl tracking-tight leading-snug">{MOCKUP_SLIDES[activeSlide].text}</h3>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                      {/* Placeholder image — fades out once video plays */}
+                      <Image
+                        src={getAssetUrl(activeVideoIdx === 0 ? "/video/ph4ntom_placeholder.png" : "/video/tru5t_placeholder.png")}
+                        alt={activeVideoIdx === 0 ? "Phantom wallet placeholder" : "Trust wallet placeholder"}
+                        fill
+                        className={`object-cover object-top transition-opacity duration-700 z-10 ${videoReady[activeVideoIdx] ? "opacity-0" : "opacity-100"}`}
+                        priority
+                      />
 
-                          {MOCKUP_SLIDES.map((slide, index) =>
-                            slide.video ? (
-                              <video
-                                key={slide.video}
-                                ref={(el) => {
-                                  if (el) videoRefs.current[index] = el;
-                                }}
-                                src={getAssetUrl(slide.video)}
-                                muted
-                                playsInline
-                                onEnded={() => handleVideoEnded(index)}
-                                className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
-                              />
-                            ) : slide.image ? (
-                              <div
-                                key={slide.image}
-                                className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-1000 ${index === activeSlide && phase === "video" ? "opacity-100" : "opacity-0"}`}
-                              >
-                                <Image src={getAssetUrl(slide.image)} alt="Logo" width={140} height={140} className="opacity-90 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" />
-                              </div>
-                            ) : null,
-                          )}
-                        </>
-                      ) : (
-                        <video
-                          src={getAssetUrl(VIDEOS[activeVideoIdx])}
-                          autoPlay
-                          muted
-                          playsInline
-                          onEnded={() => {
-                            setActiveVideoIdx((prev) => (prev + 1) % VIDEOS.length);
-                          }}
-                          className="absolute inset-0 w-full h-full object-cover object-top"
-                        />
-                      )}
+                      <video
+                        key={activeVideoIdx}
+                        src={getAssetUrl(VIDEOS[activeVideoIdx])}
+                        autoPlay
+                        muted
+                        playsInline
+                        preload="auto"
+                        onPlay={() => setVideoReady((prev) => { const next = [...prev]; next[activeVideoIdx] = true; return next; })}
+                        onEnded={() => {
+                          setActiveVideoIdx((prev) => (prev + 1) % VIDEOS.length);
+                          setVideoReady((prev) => { const next = [...prev]; next[(activeVideoIdx + 1) % VIDEOS.length] = false; return next; });
+                        }}
+                        className="absolute inset-0 w-full h-full object-cover object-top"
+                      />
                     </div>
                   </div>
                 </div>
