@@ -310,7 +310,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
           style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
         >
           {searchOpen ? (
-            <div className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323] border border-[#2b2b2b] rounded-full active:scale-[0.98] transition-transform">
+            <div className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323]/80 backdrop-blur-md border border-[#2b2b2b]/80 rounded-full active:scale-[0.98] transition-transform">
               <Search size={20} className="text-[#888]" />
               <input
                 autoFocus
@@ -325,7 +325,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
                 handleNavClick();
                 setSearchOpen(true);
               }}
-              className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#343434] border-[0.5px] border-[#3a3a3a] rounded-full active:scale-[0.98] transition-transform"
+              className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#343434]/80 backdrop-blur-md border-[0.5px] border-[#3a3a3a]/80 rounded-full active:scale-[0.98] transition-transform"
             >
               <Search size={20} className="text-white" />
               <span className="text-[#929292] text-[16px]">Search Phantom</span>
