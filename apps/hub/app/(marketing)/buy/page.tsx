@@ -43,7 +43,7 @@ function BuyContent() {
   const showSticky = !isButtonInView && selectedPlanId;
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
-  const checkoutLocked = isLoading || checkoutPhase !== "idle";
+  const checkoutLocked = isLoading || checkoutPhase === "preparing" || checkoutPhase === "opening";
 
   React.useEffect(() => {
     trackEvent("buy_page_viewed", {
@@ -243,7 +243,7 @@ function BuyContent() {
                     });
                   }
                 }}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none" : "cursor-pointer"} ${isSelected
+                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${isSelected
                   ? isYearly
                     ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_40px_rgba(212,175,55,0.25)] scale-[1.02] ring-1 ring-[#fde047] z-10"
                     : "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_50px_rgba(139,92,246,0.3)] scale-[1.02] ring-1 ring-[#8b5cf6] z-10"
@@ -306,19 +306,23 @@ function BuyContent() {
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
             className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${selectedPlanId
-              ? selectedPlanId === "yearly"
+              ? checkoutPhase === "error"
+                ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                : selectedPlanId === "yearly"
                 ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
                 : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
               : "bg-white/5 text-white/40 border border-white/10 pointer-events-none"
               }`}
           >
-            {checkoutLocked ? (
+            {checkoutPhase === "error" ? (
+              <>Checkout Failed - Try Again <X size={20} /></>
+            ) : checkoutLocked ? (
               <>
                 <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                 </svg>
-                Opening checkout...
+                {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
               </>
             ) : selectedPlanId ? (
               <>Purchase {selectedPlanLabel} <ShoppingCart size={20} /></>
@@ -326,6 +330,17 @@ function BuyContent() {
               "Select a package to continue"
             )}
           </button>
+
+          {checkoutPhase === "error" && (
+            <div className="text-red-400 text-sm -mt-2 text-center animate-pulse">
+              {checkoutError || "Please try again."}
+            </div>
+          )}
+          {isSlowCheckout && !checkoutError && (
+            <div className="text-amber-400/80 text-sm -mt-2 text-center">
+              SellAuth is taking a little longer. Please wait...
+            </div>
+          )}
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
             <Lock size={14} className="text-[#ab9ff2]" />
@@ -366,23 +381,38 @@ function BuyContent() {
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${selectedPlanId === "yearly"
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${checkoutPhase === "error"
+                  ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                  : selectedPlanId === "yearly"
                   ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
                   : "bg-gradient-to-r from-phantom-purple to-phantom-accent text-white"
                   }`}
               >
-                {checkoutLocked ? (
+                {checkoutPhase === "error" ? (
+                  <>Checkout Failed - Try Again <X size={20} /></>
+                ) : checkoutLocked ? (
                   <>
                     <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                     </svg>
-                    Opening checkout...
+                    {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                   </>
                 ) : (
                   <>Purchase {selectedPlanLabel} <ShoppingCart size={20} /></>
                 )}
               </button>
+
+              {checkoutPhase === "error" && (
+                <div className="text-red-400 text-xs mt-2 text-center animate-pulse">
+                  {checkoutError || "Please try again."}
+                </div>
+              )}
+              {isSlowCheckout && !checkoutError && (
+                <div className="text-amber-400/80 text-xs mt-2 text-center">
+                  Taking a little longer...
+                </div>
+              )}
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
                 <Lock size={12} className="text-[#ab9ff2]" />
@@ -393,91 +423,8 @@ function BuyContent() {
         )}
       </AnimatePresence>
 
-      <CheckoutStatusOverlay
-        errorMessage={checkoutError}
-        isSlowCheckout={isSlowCheckout}
-        onRetry={() => {
-          setCheckoutError("");
-          setCheckoutPhase("idle");
-          setIsSlowCheckout(false);
-        }}
-        phase={checkoutPhase}
-        planLabel={selectedPlanLabel}
-      />
-
       {captcha}
       {checkoutModal}
     </div>
-  );
-}
-
-function CheckoutStatusOverlay({
-  errorMessage,
-  isSlowCheckout,
-  onRetry,
-  phase,
-  planLabel,
-}: {
-  errorMessage: string;
-  isSlowCheckout: boolean;
-  onRetry: () => void;
-  phase: CheckoutPhase;
-  planLabel: string;
-}) {
-  if (phase === "idle") return null;
-
-  const isError = phase === "error";
-  const title = isError
-    ? "Checkout could not open"
-    : phase === "opening"
-      ? "Opening SellAuth checkout..."
-      : "Preparing secure checkout...";
-  const description = isError
-    ? errorMessage || "Please try again."
-    : isSlowCheckout
-      ? "SellAuth is taking a little longer. Please wait, do not refresh or tap again."
-      : "This can take a few seconds. Please do not tap checkout again.";
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        animate={{ opacity: 1 }}
-        className="fixed inset-0 z-[100000020] flex items-center justify-center bg-[#0c0a18]/80 px-4 backdrop-blur-md"
-        exit={{ opacity: 0 }}
-        initial={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        <motion.div
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="w-full max-w-[360px] rounded-3xl border border-white/10 bg-[#121212]/95 p-7 text-center shadow-[0_0_80px_rgba(139,92,246,0.15)] backdrop-blur-2xl"
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.3, type: "spring", bounce: 0.2 }}
-        >
-          <div className={`mx-auto mb-5 flex size-14 items-center justify-center rounded-full border ${isError ? "border-red-400/30 bg-red-500/10 shadow-[0_0_20px_rgba(239,68,68,0.2)]" : "border-[#ab9ff2]/25 bg-[#ab9ff2]/10 shadow-[0_0_20px_rgba(171,159,242,0.2)]"}`}>
-            {isError ? (
-              <X size={24} className="text-red-400" />
-            ) : (
-              <svg className="size-7 animate-spin text-[#ab9ff2]" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-              </svg>
-            )}
-          </div>
-          <div className="mb-2 text-[12px] font-semibold uppercase tracking-widest text-[#ab9ff2]">{planLabel}</div>
-          <h2 className="mb-3 text-[21px] font-semibold tracking-tight text-white">{title}</h2>
-          <p className="mx-auto max-w-[280px] text-[14px] leading-relaxed text-white/60">{description}</p>
-          {isError && (
-            <button
-              className="mt-6 w-full rounded-full border border-white/10 bg-white/5 px-5 py-3 text-[15px] font-semibold text-white transition-all hover:bg-white/10 backdrop-blur-md shadow-lg"
-              onClick={onRetry}
-              type="button"
-            >
-              Try again
-            </button>
-          )}
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
   );
 }
