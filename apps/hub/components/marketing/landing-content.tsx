@@ -17,6 +17,7 @@ import { isDemoFeatureEnabled } from "@/lib/demo-config";
 import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 import { getStoredAttribution } from "@/lib/affiliate-attribution";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import React from "react";
 
 const HeroMockups = dynamic(() => import("./hero-mockups").then((mod) => mod.HeroMockups), {
@@ -137,7 +138,7 @@ export default function LandingContent() {
   const demoEnabled = isDemoFeatureEnabled();
 
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
-  const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   type CheckoutPhase = "idle" | "preparing" | "opening" | "error";

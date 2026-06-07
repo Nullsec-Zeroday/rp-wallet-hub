@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, Copy, Loader2, LogOut, Sparkles } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { HubSessionResponse, WalletAppId } from "@rp-wallet/types";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 
 const DEVICE_ID_KEY = "rp_wallet_hub_device_id";
 const walletReturnTo = (value: string) => `${value.replace(/\/+$/, "")}/bootstrap`;
@@ -16,7 +17,7 @@ const WALLET_RETURN_TO: Record<WalletAppId, string> = {
 const SHOW_DEV_WALLET_TOOLS = process.env.NODE_ENV !== "production";
 
 export default function DashboardClient() {
-  const api = useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  const api = useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
   const [licenseKey, setLicenseKey] = useState("");
   const [session, setSession] = useState<HubSessionResponse | null>(null);
   const [loading, setLoading] = useState(false);

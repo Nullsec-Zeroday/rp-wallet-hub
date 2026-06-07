@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useInView, motion, AnimatePresence } from "framer-motion";
 import { trackEvent } from "@/lib/track";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 
 const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
@@ -27,7 +28,7 @@ function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
   const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
-  const api = React.useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
 
   const initialPlan = searchParams.get("plan");

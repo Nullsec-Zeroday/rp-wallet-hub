@@ -7,8 +7,7 @@ import {
   getStoredAttribution,
   storeAttribution,
 } from "@/lib/affiliate-attribution";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8787";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 
 export default function AffiliateAttributionCapture() {
   useEffect(() => {
@@ -25,7 +24,7 @@ export default function AffiliateAttributionCapture() {
       expiresAt,
     });
 
-    fetch(`${API_BASE_URL}/affiliate/click`, {
+    fetch(`${HUB_API_BASE_URL}/affiliate/click`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Copy, ListChecks, Loader2, Mail, RefreshCcw, RotateCcw, Search, ShieldCheck, Smartphone, UserX, Plus } from "lucide-react";
 import { RpWalletApiClient, type AdminLicenseResetResult, type AdminLicenseSnapshot, type AdminUnusedLicenseSummary } from "@rp-wallet/api-client";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 
 const ADMIN_TOKEN_KEY = "rp_affiliate_admin_token";
 
@@ -14,7 +15,7 @@ const PLAN_PRESETS = [
 ] as const;
 
 export default function AdminKeysPage() {
-  const api = useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  const api = useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
   const [adminToken, setAdminToken] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<(typeof PLAN_PRESETS)[number]["id"]>("popular");
   const [email, setEmail] = useState("");

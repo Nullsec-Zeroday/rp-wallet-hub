@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Copy, Loader2, Plus, RefreshCcw, ShieldCheck } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
+import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 
 const ADMIN_TOKEN_KEY = "rp_affiliate_admin_token";
 
 type Snapshot = Awaited<ReturnType<RpWalletApiClient["getAffiliateAdminSnapshot"]>>;
 
 export default function AffiliateAdminPage() {
-  const api = useMemo(() => new RpWalletApiClient(process.env.NEXT_PUBLIC_API_BASE_URL), []);
+  const api = useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
   const [adminToken, setAdminToken] = useState("");
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(false);
