@@ -8,8 +8,8 @@
   ],
   "routes": [
     {
-      "pattern": "api.rpwallet.app/*",
-      "zone_name": "rpwallet.app"
+      "pattern": "api.rpwallet.us/*",
+      "zone_name": "rpwallet.us"
     }
   ],
   // Keep only safe, non-secret defaults here.
@@ -19,8 +19,8 @@
     "SESSION_COOKIE_NAME": "rp_session",
     "HUB_ORIGIN": "https://rpwallet.app",
     "AFFILIATE_ORIGIN": "https://affiliate.rpwallet.app",
-    "PHANTOM_ORIGIN": "https://app1.rpwallet.app",
-    "TRUST_ORIGIN": "https://app2.rpwallet.app",
+    "PHANTOM_ORIGIN": "https://app1.rpwallet.us",
+    "TRUST_ORIGIN": "https://app2.rpwallet.us",
     "PHANTOM_ENABLED": "true",
     "TRUST_ENABLED": "true",
     "SELLAUTH_SHOP_ID": "234704",

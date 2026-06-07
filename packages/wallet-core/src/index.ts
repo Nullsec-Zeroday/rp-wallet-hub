@@ -25,13 +25,13 @@ export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activat
   phantom: {
     id: "phantom",
     name: "Phantom",
-    host: "app1.rpwallet.app",
+    host: "app1.rpwallet.us",
     enabled: true,
   },
   trust: {
     id: "trust",
     name: "Trust Wallet",
-    host: "app2.rpwallet.app",
+    host: "app2.rpwallet.us",
     enabled: true,
   },
 };

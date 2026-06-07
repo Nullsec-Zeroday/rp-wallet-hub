@@ -1552,7 +1552,7 @@ async function sendPurchaseEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.app>",
+      from: "RPWallet <noreply@rpwallet.us>",
       html: buildPurchaseEmailHtml(params),
       subject: `Your RPWallet License Key — ${params.planLabel}`,
       to: params.to,
@@ -1586,7 +1586,7 @@ async function sendLicenseReminderEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.app>",
+      from: "RPWallet <noreply@rpwallet.us>",
       html: buildLicenseReminderEmailHtml(params),
       subject: "Reminder: your RPWallet key is ready",
       to: params.to,
@@ -1687,7 +1687,7 @@ async function sendAffiliateMagicLinkEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.app>",
+      from: "RPWallet <noreply@rpwallet.us>",
       html: buildAffiliateMagicLinkHtml(params),
       subject: "Your RPWallet affiliate login link",
       to: params.to,

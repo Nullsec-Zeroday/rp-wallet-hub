@@ -39,7 +39,7 @@ export default function AccountModal({
 
   const iconIndex = profile?.iconIndex ?? 1;
   const avatarType = profile?.avatarType ?? 'emoji';
-  const displayName = profile?.username || walletName || "rpwallet.app";
+  const displayName = profile?.username || walletName || "rpwallet.us";
 
   const [isClosing, setIsClosing] = React.useState(false);
 
