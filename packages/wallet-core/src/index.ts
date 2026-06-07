@@ -30,7 +30,7 @@ export const walletRegistry: Record<WalletAppId, Omit<WalletAppSummary, "activat
   },
   trust: {
     id: "trust",
-    name: "Trust Wallet",
+    name: "Trust",
     host: "app2.rpwallet.us",
     enabled: true,
   },

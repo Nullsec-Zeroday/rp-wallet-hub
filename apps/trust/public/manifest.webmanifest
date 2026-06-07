@@ -1,7 +1,7 @@
 {
-  "name": "Trust Wallet",
+  "name": "Trust",
   "short_name": "Trust",
-  "description": "RPWallet Trust Wallet PWA.",
+  "description": "RPWallet Trust PWA.",
   "start_url": "/bootstrap",
   "scope": "/",
   "display": "standalone",

@@ -239,7 +239,7 @@ function TrustApp() {
             }
           />
         ) : payload && isDemoExpired(payload, now) ? (
-          <DemoPaywall walletName="Trust Wallet" locked />
+          <DemoPaywall walletName="Trust" locked />
         ) : payload ? (
           <BootstrappedWallet
             api={api}
@@ -261,7 +261,7 @@ function TrustApp() {
       <AnimatePresence>
         {loading && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
-          <DemoPaywall walletName="Trust Wallet" onClose={() => setActiveDemoPaywallOpen(false)} />
+          <DemoPaywall walletName="Trust" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}
       </AnimatePresence>
     </>
@@ -798,7 +798,7 @@ function createDevTrustPayload(): WalletBootstrapPayload {
     },
     wallet: {
       id: "trust",
-      name: "Trust Wallet",
+      name: "Trust",
       host: "localhost:5174",
       enabled: true,
       activated: true,
