@@ -2,49 +2,48 @@ import LandingContent from "@/components/marketing/landing-content";
 import type { Metadata } from "next";
 import {
   buildFaqSchema,
-  buildOrganizationSchema,
-  buildSiteNavigationSchema,
-  buildWebApplicationSchema,
   homepageFaq,
 } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Fake Crypto Wallet App & Phantom Wallet Simulator",
+  title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
   description:
-    "Create fake crypto wallet screenshots with a realistic Phantom and Trust Wallet simulator. Edit balances, add tokens, simulate activity, and build LARP wallet content with no real crypto involved.",
+    "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app. Perfect for creators and roleplay flexes.",
   keywords: [
-    "fake crypto wallet",
-    "fake crypto wallet screen",
-    "fake crypto wallet screenshot",
-    "fake crypto wallet app",
-    "fake crypto wallet generator",
-    "fake crypto wallet balance",
-    "fake crypto wallet screenshot generator",
-    "larp wallet",
-    "larp wallet crypto",
-    "larp wallet app",
-    "phantom larp wallet",
-    "fake phantom wallet screenshot",
+    "larp",
+    "larping",
+    "content creation",
+    "simulation",
+    "fake crypto app",
+    "fake phantom app",
     "fake phantom wallet",
-    "fake phantom wallet balance",
-    "fake phantom wallet app",
-    "fake phantom wallet generator",
-    "how to create a fake crypto wallet",
-    "how to make fake phantom wallet screenshot",
+    "phantom simulator",
+    "simulator wallet",
+    "larp wallet",
+    "crypto wallet simulator",
+    "wealth simulator",
+    "fake crypto balance",
+    "content creator tools",
+    "wallet mockup app",
+    "portfolio screenshot app",
+    "crypto demo wallet",
+    "wallet roleplay app",
+    "novelty crypto wallet",
+    "crypto screenshot tool",
   ],
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Fake Crypto Wallet App & Phantom Wallet Screenshot Generator",
+    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
     description:
-      "Build realistic Phantom and Trust Wallet screenshots, edit balances, and create crypto LARP content safely with RPWallet.",
+      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
     url: "/",
   },
   twitter: {
-    title: "Fake Crypto Wallet App & Phantom Wallet Simulator",
+    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
     description:
-      "Create realistic wallet screenshots, fake Phantom balances, and crypto LARP content with no real crypto involved.",
+      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
   },
 };
 
@@ -56,18 +55,6 @@ export default function HomePage() {
       <main className="relative z-10 flex w-full flex-col items-center">
         <LandingContent />
       </main>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildWebApplicationSchema()) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationSchema()) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildSiteNavigationSchema()) }}
-      />
       {faqJsonLd ? (
         <script
           type="application/ld+json"

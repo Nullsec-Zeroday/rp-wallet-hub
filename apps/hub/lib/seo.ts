@@ -5,10 +5,9 @@ export const siteConfig = {
   name: "RPWallet",
   url: "https://rpwallet.app",
   description:
-    "RPWallet is a crypto wallet simulator and fake crypto wallet app for entertainment, creator content, demos, and crypto roleplay. Create realistic Phantom and Trust Wallet screenshots, edit balances, add tokens, and simulate wallet activity with no real crypto involved.",
+    "RPWallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay. Flex millions in crypto with an indistinguishable fake crypto app interface.",
   ogImage: "/opengraph-image.png",
-  // TODO: Replace legacy social handles after RPWallet accounts are created.
-  xHandle: "@LarperWallet",
+  xHandle: "@rpwallet",
 };
 
 export const homepageFaq = [
@@ -48,47 +47,32 @@ export function buildDefaultMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: "Fake Crypto Wallet App & Phantom Wallet Simulator | RPWallet",
+      default: "Premium Crypto Wallet Simulator & Fake Phantom Wallet for Crypto Creators",
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,
     applicationName: siteConfig.name,
     keywords: [
-      "crypto wallet simulator",
-      "fake crypto wallet",
-      "fake crypto wallet screen",
-      "fake crypto wallet screenshot",
-      "fake crypto wallet screenshot generator",
-      "fake crypto wallet app",
-      "phantom wallet simulator",
-      "trust wallet simulator",
-      "ledger wallet simulator",
-      "larp wallet",
-      "larp wallet crypto",
-      "larp wallet app",
-      "larp wallet free",
-      "larp crypto",
-      "crypto larp",
-      "fake phantom wallet",
-      "fake phantom wallet screenshot",
-      "fake phantom wallet balance",
-      "fake phantom wallet app",
-      "fake phantom wallet generator",
-      "fake phantom wallet ios",
+      "larp",
+      "larping",
+      "content creation",
+      "simulation",
+      "fake crypto app",
       "fake phantom app",
-      "crypto wallet simulator app",
-      "fake wallet app",
-      "fake bitcoin wallet",
-      "wallet mockup app",
-      "crypto roleplay wallet",
+      "fake phantom wallet",
+      "phantom simulator",
+      "simulator wallet",
+      "larp wallet",
+      "crypto wallet simulator",
+      "wealth simulator",
       "fake crypto balance",
+      "content creator tools",
+      "wallet mockup app",
       "portfolio screenshot app",
       "crypto demo wallet",
-      "wallet simulator app",
-      "crypto screenshot tool",
-      "hardware wallet simulator",
-      "simulated crypto wallet",
       "wallet roleplay app",
+      "novelty crypto wallet",
+      "crypto screenshot tool",
       "RPWallet",
     ],
     authors: [{ name: "RPWallet Team" }],
@@ -100,7 +84,7 @@ export function buildDefaultMetadata(): Metadata {
       locale: "en_US",
       url: siteConfig.url,
       siteName: siteConfig.name,
-      title: "Fake Crypto Wallet App & Phantom Wallet Screenshot Generator",
+      title: buildTitle("Show Off Millions in Crypto Instantly"),
       description: siteConfig.description,
       images: [
         {
@@ -113,7 +97,7 @@ export function buildDefaultMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Fake Crypto Wallet App & Phantom Wallet Simulator",
+      title: buildTitle("Show Off Millions in Crypto Instantly"),
       description: siteConfig.description,
       creator: siteConfig.xHandle,
       images: [ogImageUrl],
@@ -137,7 +121,7 @@ export function buildDefaultMetadata(): Metadata {
     alternates: {
       canonical: siteConfig.url,
     },
-    manifest: "/manifest.json",
+    manifest: "/manifest.webmanifest",
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
@@ -159,45 +143,16 @@ export function buildWebApplicationSchema() {
     url: siteConfig.url,
     description: siteConfig.description,
     applicationCategory: ["FinanceApplication", "EntertainmentApplication"],
-    alternateName: [
-      "Fake Crypto Wallet App",
-      "Phantom Wallet Simulator",
-      "LARP Wallet",
-      "Fake Phantom Wallet Generator",
-      "Crypto Wallet Screenshot Generator",
-    ],
     operatingSystem: "iOS, Android, Windows, macOS",
-    browserRequirements: "Requires a modern web browser with PWA support",
-    softwareVersion: "2.0",
     offers: {
-      "@type": "AggregateOffer",
-      lowPrice: "19.00",
-      highPrice: "69.00",
+      "@type": "Offer",
+      price: "19.00",
       priceCurrency: "USD",
-      offerCount: "3",
     },
     author: {
       "@type": "Organization",
       name: "RPWallet Team",
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      ratingCount: "127",
-      bestRating: "5",
-      worstRating: "1",
-    },
-    featureList: [
-      "Pixel-perfect Phantom wallet simulation",
-      "Trust Wallet-style simulation",
-      "Fake crypto wallet screenshot creation",
-      "Fake Phantom wallet balance editing",
-      "Customizable token balances",
-      "Live token price feeds",
-      "Peer-to-peer simulated transactions",
-      "Push notifications for incoming transfers",
-      "Progressive web app — no app store required",
-    ],
   };
 }
 
@@ -208,17 +163,6 @@ export function buildOrganizationSchema() {
     name: siteConfig.name,
     url: siteConfig.url,
     logo: absoluteUrl("/logo.png"),
-    description: siteConfig.description,
-    sameAs: [
-      "https://x.com/LarperWallet",
-      "https://t.me/LarperWallet_bot",
-    ],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      url: "https://t.me/LarperWallet_bot",
-      availableLanguage: "English",
-    },
   };
 }
 
@@ -303,7 +247,7 @@ export function buildSiteNavigationSchema() {
       absoluteUrl("/#features"),
       absoluteUrl("/buy"),
       absoluteUrl("/blog"),
-      absoluteUrl("/sign-in"),
+      absoluteUrl("/dashboard"),
     ],
   };
 }

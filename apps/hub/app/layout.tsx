@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { buildDefaultMetadata } from "@/lib/seo";
+import {
+  buildDefaultMetadata,
+  buildOrganizationSchema,
+  buildSiteNavigationSchema,
+  buildWebApplicationSchema,
+} from "@/lib/seo";
 import "./styles.css";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
@@ -14,7 +19,7 @@ const satoshi = localFont({
 export const metadata: Metadata = buildDefaultMetadata();
 
 export const viewport: Viewport = {
-  themeColor: "#0c0a18",
+  themeColor: "#0c0c0c",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -23,12 +28,22 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const jsonLd = [
+    buildOrganizationSchema(),
+    buildWebApplicationSchema(),
+    buildSiteNavigationSchema(),
+  ];
+
   return (
     <html lang="en" className={`dark antialiased font-sans ${satoshi.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-[#0c0a18]">
         <PostHogProvider>{children}</PostHogProvider>
         {/* <SpeedInsights /> */}
         <Analytics />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </body>
     </html>
   );

@@ -2,29 +2,49 @@ import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/blog-data";
 import { absoluteUrl } from "@/lib/seo";
 
-const staticRoutes = [
-  "",
-  "/buy",
-  "/blog",
-  "/privacy",
-  "/terms",
-];
+function parsePublishedDate(date: string) {
+  return new Date(date);
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
   return [
-    ...staticRoutes.map((route) => ({
-      url: absoluteUrl(route || "/"),
+    {
+      url: absoluteUrl("/"),
       lastModified: now,
-      changeFrequency: (route === "" ? "weekly" : route === "/blog" ? "weekly" : "monthly") as "weekly" | "monthly",
-      priority: route === "" ? 1 : route === "/buy" ? 0.9 : route === "/blog" ? 0.85 : 0.7,
-    })),
+      changeFrequency: "weekly",
+      priority: 1,
+    },
+    {
+      url: absoluteUrl("/buy"),
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: absoluteUrl("/blog"),
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: absoluteUrl("/privacy"),
+      lastModified: new Date("2026-04-23"),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: absoluteUrl("/terms"),
+      lastModified: new Date("2026-04-23"),
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
     ...blogPosts.map((post) => ({
       url: absoluteUrl(`/blog/${post.slug}`),
-      lastModified: new Date(post.date),
+      lastModified: parsePublishedDate(post.date),
       changeFrequency: "monthly" as const,
-      priority: 0.8,
+      priority: 0.7,
     })),
   ];
 }

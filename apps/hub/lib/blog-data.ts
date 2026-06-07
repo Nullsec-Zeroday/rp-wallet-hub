@@ -2234,7 +2234,7 @@ export const blogPosts: BlogPost[] = [
       {
         question: "How much does a crypto wallet simulator cost?",
         answer:
-          "RPWallet offers flexible pricing plans starting with a 7-day trial. Visit the pricing page for current rates. The cost is minimal compared to the time saved on manual screenshot editing and live wallet demo preparation.",
+        "RPWallet offers flexible pricing plans with low-friction entry pricing. Visit the pricing page for current rates. The cost is minimal compared to the time saved on manual screenshot editing and live wallet demo preparation.",
       },
     ],
   },
