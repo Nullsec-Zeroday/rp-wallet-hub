@@ -303,9 +303,8 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-phantom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-medium">The Best Crypto Wallet Replica App</span>
-            RPWallet is a fake crypto wallet app for entertainment. Edit balance, import any token, simulate swap or send in a realistic Phantom or Trust Wallet interface - No real crypto involved.
-            {/* RPWallet is a crypto wallet simulator made for entertainment. */}
+            <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
+            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom, Trust (coming soon) wallet interface - no real crypto involved.</p>
           </motion.div>
         </div>
 
