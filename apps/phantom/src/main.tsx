@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Check, Crown, Eye, Gamepad2, Send, ShoppingCart, X } from "lucide-react";
+import { Check, Crown, Eye, Gamepad2, Send, ShoppingCart, X } from "lucide-react";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
 import {
@@ -333,8 +333,6 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
     ? ["Tap the Share button in Safari", 'Choose "Add to Home Screen"', 'Tap "Add"', "Open the app from your home screen"]
     : ["Open the browser menu", 'Choose "Add to Home screen"', 'Confirm with "Add"', "Open the app from your home screen"];
 
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || (typeof document !== 'undefined' && document.referrer ? document.referrer : "https://rpwallet.app");
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -344,14 +342,6 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
       className="fixed inset-0 z-[100000000] flex items-center justify-center"
       style={{ backgroundColor: "#0a0a0a" }}
     >
-      <a
-        href={hubUrl}
-        className="absolute top-6 left-6 md:top-8 md:left-8 text-white/50 hover:text-white transition-colors flex items-center gap-2 text-[13px] font-medium z-50 bg-white/5 hover:bg-white/10 px-3.5 py-2 rounded-full backdrop-blur-sm"
-        style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-      >
-        <ArrowLeft size={16} />
-        Go Back
-      </a>
       <div className="w-full max-w-[340px] px-6 flex flex-col items-center">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
