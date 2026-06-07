@@ -612,7 +612,7 @@ export default function LandingContent() {
                       <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
                         install the app
                       </Link>
-                      , follow the steps and your wallet is ready in seconds.
+                      , follow the steps. Time to flex.
                     </p>
                   </div>
                 </div>
