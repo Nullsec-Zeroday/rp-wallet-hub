@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getAssetUrl } from "@/lib/utils";
 import { homepageFaq } from "@/lib/seo";
 import HeroButtons from "./hero-buttons";
@@ -20,13 +20,61 @@ import { RpWalletApiClient } from "@rp-wallet/api-client";
 import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import React from "react";
 
-const HeroMockups = dynamic(() => import("./hero-mockups").then((mod) => mod.HeroMockups), {
-  ssr: false,
-});
+const PRODUCT_IMAGES = [
+  { src: "/product/new-product-1.webp", alt: "RPWallet product screenshot 1" },
+  { src: "/product/new-product-2.webp", alt: "RPWallet product screenshot 2" },
+] as const;
+
+function ProductImageSwiper() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      className="relative z-0 mt-6 flex w-full flex-col items-center overflow-hidden px-2 md:mt-8"
+    >
+      <div className="relative h-[430px] w-full max-w-[280px] md:h-[560px] md:max-w-[360px]">
+        <div className="rp-product-swiper-track flex h-full w-[200%]">
+          {PRODUCT_IMAGES.map((image, index) => (
+            <Image
+              key={image.src}
+              src={getAssetUrl(image.src)}
+              alt={image.alt}
+              width={360}
+              height={748}
+              priority={index === 0}
+              sizes="(min-width: 768px) 360px, 280px"
+              className="h-full w-1/2 shrink-0 object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.48)]"
+            />
+          ))}
+        </div>
+      </div>
+      <style jsx global>{`
+        @keyframes rp-product-swipe {
+          0%,
+          42% {
+            transform: translateX(0);
+          }
+          52%,
+          92% {
+            transform: translateX(-50%);
+          }
+          100% {
+            transform: translateX(0);
+          }
+        }
+
+        .rp-product-swiper-track {
+          animation: rp-product-swipe 6s ease-in-out infinite;
+          will-change: transform;
+        }
+      `}</style>
+    </motion.div>
+  );
+}
 
 
 export default function LandingContent() {
-  const USE_NEW_MOBILE_LOOP = false;
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") return window.innerWidth < 768;
     return true;
@@ -55,86 +103,8 @@ export default function LandingContent() {
     viewport: { once: true },
   };
 
-
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
-  const [activeSlide, setActiveSlide] = useState(0);
-  const [phase, setPhase] = useState<"text" | "video">("text");
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
-  const [activeProductIdx, setActiveProductIdx] = useState(1);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveProductIdx((prev) => (prev === 1 ? 2 : 1));
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const VIDEOS = ["/video/ph4ntom_send.mp4", "/video/trust_receive.mp4"];
-  const [activeVideoIdx, setActiveVideoIdx] = useState(0);
-  const [videoReady, setVideoReady] = useState<boolean[]>([false, false]);
-
-
-  type Slide = {
-    text: string;
-    video?: string;
-    image?: string;
-  };
-
-  const MOCKUP_SLIDES: Slide[] = [
-    { video: "/video/edit-balance.mp4", text: "Set any balance. Real-time prices." },
-    { video: "/video/send-token.mp4", text: "Fake sends that look 100% real." },
-    { video: "/video/swap-token.mp4", text: "Flawless 1:1 swap animations." },
-    { image: "/logo_white.webp", text: "LARP, Prank & Create Content" },
-  ];
-
-  useEffect(() => {
-    if (!USE_NEW_MOBILE_LOOP) return;
-    if (phase === "text") {
-      const timer = setTimeout(() => {
-        setPhase("video");
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [phase, activeSlide, USE_NEW_MOBILE_LOOP]);
-
-  useEffect(() => {
-    if (!USE_NEW_MOBILE_LOOP) return;
-    const currentSlide = MOCKUP_SLIDES[activeSlide];
-
-    if (phase === "video") {
-      if (currentSlide.video) {
-        videoRefs.current.forEach((vid, idx) => {
-          if (vid) {
-            if (idx === activeSlide) {
-              vid.currentTime = 0;
-              const playPromise = vid.play();
-              if (playPromise !== undefined) {
-                playPromise.catch((e) => console.log("Play interrupted:", e));
-              }
-            } else {
-              vid.pause();
-            }
-          }
-        });
-      } else {
-        videoRefs.current.forEach((vid) => vid?.pause());
-        const timer = setTimeout(() => {
-          setActiveSlide((prev) => (prev + 1) % MOCKUP_SLIDES.length);
-          setPhase("text");
-        }, 3000);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [activeSlide, phase, USE_NEW_MOBILE_LOOP]);
-
-  const handleVideoEnded = (index: number) => {
-    if (!USE_NEW_MOBILE_LOOP) return;
-    if (index === activeSlide && phase === "video") {
-      setActiveSlide((prev) => (prev + 1) % MOCKUP_SLIDES.length);
-      setPhase("text");
-    }
-  };
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const demoEnabled = isDemoFeatureEnabled();
@@ -321,103 +291,7 @@ export default function LandingContent() {
         </motion.div>
 
 
-        <motion.div
-          initial={isMobile ? false : { opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="md:hidden relative z-0 w-full flex flex-col items-center justify-center px-2 pointer-events-none mt-4"
-        >
-          <div className="relative w-full overflow-hidden flex flex-col items-center justify-center px-2">
-            <AnimatePresence mode="popLayout">
-              <motion.div
-                key={activeVideoIdx}
-                initial={{ opacity: 0, x: 150 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -150 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="relative z-10 w-full max-w-[240px]"
-              >
-                <div className="relative mx-auto w-full max-w-[240px] aspect-[715/1496] bg-[#e5e5ea] rounded-[44px] shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
-                  <div className="absolute top-[100px] -left-[2px] w-[2px] h-[22px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-                  <div className="absolute top-[140px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-                  <div className="absolute top-[195px] -left-[2px] w-[2px] h-[46px] bg-[#c7c7cc] rounded-l-[1px]"></div>
-                  <div className="absolute top-[150px] -right-[2px] w-[2px] h-[65px] bg-[#c7c7cc] rounded-r-[1px]"></div>
-
-                  <div className="absolute inset-[2px] bg-black rounded-[42px]">
-                    <div className="absolute inset-[5px] bg-[#0a0a0c] rounded-[38px] overflow-hidden">
-                      <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[85px] h-[22px] bg-black rounded-full z-20 flex items-center justify-end px-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#050505] border border-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
-                          <div className="absolute top-0 right-0.5 w-1 h-1 bg-blue-500/20 rounded-full blur-[0.5px]"></div>
-                        </div>
-                      </div>
-
-                      {/* Placeholder image — fades out once video plays */}
-                      <Image
-                        src={getAssetUrl(activeVideoIdx === 0 ? "/video/ph4ntom_placeholder.png" : "/video/tru5t_placeholder.png")}
-                        alt={activeVideoIdx === 0 ? "Phantom wallet placeholder" : "Trust wallet placeholder"}
-                        fill
-                        className={`object-cover object-top transition-opacity duration-700 z-10 ${videoReady[activeVideoIdx] ? "opacity-0" : "opacity-100"}`}
-                        priority
-                      />
-
-                      <video
-                        key={activeVideoIdx}
-                        src={getAssetUrl(VIDEOS[activeVideoIdx])}
-                        autoPlay
-                        muted
-                        playsInline
-                        preload="auto"
-                        onPlay={() => setVideoReady((prev) => { const next = [...prev]; next[activeVideoIdx] = true; return next; })}
-                        onEnded={() => {
-                          setActiveVideoIdx((prev) => (prev + 1) % VIDEOS.length);
-                          setVideoReady((prev) => { const next = [...prev]; next[(activeVideoIdx + 1) % VIDEOS.length] = false; return next; });
-                        }}
-                        className="absolute inset-0 w-full h-full object-cover object-top"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </motion.div>
-
-        {/* <motion.div
-          initial={isMobile ? false : { opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="md:hidden relative z-0 w-full overflow-hidden mt-8 mb-4 pointer-events-none flex flex-col items-center h-[500px]"
-        >
-          <AnimatePresence mode="popLayout">
-            <motion.div
-              key={activeProductIdx}
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-              className="w-[240px] shrink-0 drop-shadow-2xl"
-            >
-              <Image
-                src={getAssetUrl(`/product/new-product-${activeProductIdx}.webp`)}
-                alt={`RPWallet Screenshot ${activeProductIdx}`}
-                width={240}
-                height={500}
-                className="w-full h-auto object-cover"
-              />
-            </motion.div>
-          </AnimatePresence>
-        </motion.div> */}
-
-        <Suspense fallback={null}>
-          <motion.div
-            initial={isMobile ? false : { opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full"
-          >
-            <HeroMockups />
-          </motion.div>
-        </Suspense>
+        <ProductImageSwiper />
       </motion.section>
 
       {/* <section id="features" className="py-12 px-6 max-w-[1040px] mx-auto relative">

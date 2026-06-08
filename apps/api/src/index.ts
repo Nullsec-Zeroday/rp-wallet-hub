@@ -901,8 +901,7 @@ app.post("/auth/logout", (c) => {
   const cookieName = getSessionCookieName(c);
   setCookie(c, cookieName, "", {
     httpOnly: true,
-    secure: false,
-    sameSite: "Lax",
+    ...getSessionCookieSecurity(c),
     path: "/",
     expires: new Date(0),
     maxAge: 0,
@@ -1293,11 +1292,17 @@ function applyWalletAvailabilityToCreateTransactionResponse(env: ApiEnv, respons
 function setSessionCookie(c: Context<HonoEnv>, sessionId: string, expiresAt: string, name: string) {
   setCookie(c, name, sessionId, {
     httpOnly: true,
-    secure: false,
-    sameSite: "Lax",
+    ...getSessionCookieSecurity(c),
     path: "/",
     expires: new Date(expiresAt),
   });
+}
+
+function getSessionCookieSecurity(c: Context<HonoEnv>) {
+  const isHttps = new URL(c.req.url).protocol === "https:";
+  return isHttps
+    ? { secure: true, sameSite: "None" as const }
+    : { secure: false, sameSite: "Lax" as const };
 }
 
 function buildIdMap(): Record<string, string> {
