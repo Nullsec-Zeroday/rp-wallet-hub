@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ChevronDown, ArrowRightLeft, CheckCircle2, Search, X, SlidersHorizontal, Info, ChevronRight } from "lucide-react";
+import { ChevronDown, ArrowRightLeft, CheckCircle2, Search, X, SlidersHorizontal, Info, ChevronRight, Sparkles, BadgeCent, ArrowUp, BarChart2, TrendingUp } from "lucide-react";
 import { fetchTrendingSolanaTokens, TrendingToken } from "@/lib/coingecko-service";
 import { useWalletStore } from "@/lib/wallet-store";
 import { TOKENS, TOKEN_MAP, formatCurrency, formatBalance, type TokenInfo } from "@/lib/wallet-data";
@@ -88,6 +88,54 @@ function TokenRankIcon({ rank }: { rank: number }) {
   }
   return <div className="text-[15px] font-semibold text-[#b4b4b4] w-[22px] flex justify-center">{rank}</div>;
 }
+
+const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => void, onDelete: () => void }) => {
+  const buttons = [
+    { num: '1', letters: '' },
+    { num: '2', letters: 'A B C' },
+    { num: '3', letters: 'D E F' },
+    { num: '4', letters: 'G H I' },
+    { num: '5', letters: 'J K L' },
+    { num: '6', letters: 'M N O' },
+    { num: '7', letters: 'P Q R S' },
+    { num: '8', letters: 'T U V' },
+    { num: '9', letters: 'W X Y Z' },
+    { num: '.', letters: '' },
+    { num: '0', letters: '' },
+    { num: 'del', letters: '' }
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-[6px] p-1.5 w-full pb-8 pt-1.5">
+      {buttons.map((btn, i) => (
+        <button
+          key={i}
+          onClick={(e) => {
+            e.preventDefault();
+            btn.num === 'del' ? onDelete() : onNumberPress(btn.num);
+          }}
+          className={`flex flex-col items-center justify-center active:bg-[#6b6b6b] rounded-[10px] h-[52px] border-none cursor-pointer ${btn.num === '.' || btn.num === 'del'
+            ? 'bg-transparent shadow-none'
+            : 'bg-[#515151] shadow-sm'
+            }`}
+        >
+          {btn.num === 'del' ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
+            </svg>
+          ) : (
+            <>
+              <span className="text-[25px] leading-[30px] font-normal text-[#ffffff]">{btn.num}</span>
+              {btn.letters && <span className="text-[10px] leading-[10px] font-bold text-[#ffffff] tracking-[1px] mt-0.5">{btn.letters}</span>}
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 // ── Token Picker Modal ──
 function TokenPickerModal({
@@ -256,75 +304,7 @@ function TokenPickerModal({
 }
 
 
-// ── Floating Swapping/Success Toast ──
-interface SwapToastProps {
-  status: "swapping" | "swapped";
-  fromSymbol: string;
-  toSymbol: string;
-}
-
-const SwapToastIcon = ({ status }: { status: "swapping" | "swapped" }) => {
-  const src = "/rive/progress-send.riv";
-  const assetBuffer = useRiveAsset(src);
-
-  const riveParams = React.useMemo(() => ({
-    buffer: assetBuffer || undefined,
-    stateMachines: "mainMachine",
-    autoplay: true,
-  }), [assetBuffer]);
-
-  const { rive, RiveComponent } = useRive(riveParams);
-
-  const startInput = useStateMachineInput(rive, "mainMachine", "start");
-  const successInput = useStateMachineInput(rive, "mainMachine", "success");
-
-  React.useEffect(() => {
-    if (startInput) {
-      startInput.fire();
-    }
-  }, [startInput]);
-
-  React.useEffect(() => {
-    if (successInput && status === "swapped") {
-      successInput.fire();
-    }
-  }, [successInput, status]);
-
-  return (
-    <div className="w-[32px] h-[32px] shrink-0 flex items-center justify-center relative bg-black/40 rounded-full select-none pointer-events-none">
-      {assetBuffer ? (
-        <div className="w-[72px] h-[72px] scale-[0.6] flex-shrink-0">
-          <RiveComponent style={{ width: "100%", height: "100%" }} />
-        </div>
-      ) : (
-        <div className="w-1.5 h-1.5 rounded-full bg-[#ab9ff2] animate-ping" />
-      )}
-    </div>
-  );
-};
-
-const SwapToast = ({ status, fromSymbol, toSymbol }: SwapToastProps) => {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const content = (
-    <motion.div
-      initial={{ opacity: 0, y: -60, scale: 0.9, x: "-50%" }}
-      animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
-      exit={{ opacity: 0, y: -20, scale: 0.9, x: "-50%" }}
-      transition={{ type: "spring", stiffness: 380, damping: 28 }}
-      className="fixed left-1/2 top-[calc(10px+env(safe-area-inset-top,0px))] z-[999999] flex items-center bg-[#222222] border border-white/[0.06] rounded-[18px] pl-2.5 pr-5 py-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] gap-3.5 text-white pointer-events-none whitespace-nowrap select-none"
-    >
-      <SwapToastIcon status={status} />
-      <span className="text-[16px] font-medium tracking-normal text-white">
-        {status === "swapping" ? `Swapping ${fromSymbol} -> ${toSymbol}` : `Swapped ${fromSymbol} -> ${toSymbol}`}
-      </span>
-    </motion.div>
-  );
-
-  if (!mounted) return null;
-  return createPortal(content, document.body);
-};
+import { SwapToast } from "../_components/swap-toast";
 
 export default function SwapPage() {
   const { baseCurrency, tokenBalances, addTransaction, updateBalance, customTokens, setTokenPickerVisible } = useWalletStore();
@@ -346,6 +326,18 @@ export default function SwapPage() {
   const [showSuccess, setShowSuccess] = useState<{ fromSymbol: string; toSymbol: string; fromAmount: string; toAmount: string } | null>(null);
   const [toastState, setToastState] = useState<"swapping" | "swapped" | null>(null);
   const [isUsdMode, setIsUsdMode] = useState(false);
+  const [isKeypadVisible, setIsKeypadVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const setFooterHidden = useWalletStore(s => s.setFooterHidden);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setFooterHidden(isKeypadVisible);
+    return () => setFooterHidden(false);
+  }, [isKeypadVisible, setFooterHidden]);
 
   useEffect(() => {
     setTokenPickerVisible(pickerTarget !== null);
@@ -380,6 +372,27 @@ export default function SwapPage() {
   const payAmountInUsd = isUsdMode ? payAmountNum : payAmountNum * payPrice;
 
   const receiveAmount = receivePrice > 0 ? payAmountInUsd / receivePrice : 0;
+
+  const handleNumberPress = (num: string) => {
+    setPayAmount((prev) => {
+      if (num === "." && prev.includes(".")) return prev;
+      if (prev === "0" && num !== ".") return num;
+      if (prev.length >= 12) return prev;
+      return prev + num;
+    });
+  };
+
+  const handleDelete = () => {
+    setPayAmount((prev) => prev.slice(0, -1));
+  };
+
+  const handlePillPress = (pct: number) => {
+    let bal = isUsdMode ? payBalance * payPrice : payBalance;
+    if (bal <= 0) return;
+    let val = bal * pct;
+    const strVal = val.toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 6 });
+    setPayAmount(strVal);
+  };
   const receiveAmountFormatted = receiveAmount > 0
     ? receiveAmount >= 1
       ? receiveAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
@@ -481,7 +494,23 @@ export default function SwapPage() {
   return (
     <div className="flex flex-col pb-44 bg-transparent text-[#eeeeee]">
 
-      <div className="flex flex-col px-4 pt-4">
+      {/* Categories */}
+      {/* <div className="flex items-center gap-3 px-4 mt-2 mb-2 overflow-x-auto no-scrollbar">
+        <button className="bg-[#1c1c1e] text-[#eeeeee] px-4 py-2.5 rounded-full flex items-center gap-2 shrink-0 border border-[#2b2b2b]">
+          <Sparkles size={16} className="text-[#ab9ff2]" />
+          <span className="font-medium text-[15px]">Featured</span>
+        </button>
+        <button className="bg-[#1c1c1e] text-[#eeeeee] px-4 py-2.5 rounded-full flex items-center gap-2 shrink-0 border border-[#2b2b2b]">
+          <BadgeCent size={16} className="text-[#ab9ff2]" />
+          <span className="font-medium text-[15px]">Top Volume</span>
+        </button>
+        <button className="bg-[#1c1c1e] text-[#eeeeee] px-4 py-2.5 rounded-full flex items-center gap-2 shrink-0 border border-[#2b2b2b]">
+          <ArrowUp size={16} className="text-[#ab9ff2]" />
+          <span className="font-medium text-[15px]">Top Gainers</span>
+        </button>
+      </div> */}
+
+      <div className="flex flex-col px-4 pt-2">
         {/* You Pay Section */}
         <div className="flex flex-col bg-[#1c1c1e] rounded-[16px] p-4 relative z-0">
           <div className="text-[#eeeeee] text-[15px] font-semibold mb-2 opacity-40">You Pay</div>
@@ -491,16 +520,14 @@ export default function SwapPage() {
                 <span className="text-[#eeeeee] font-bold text-[30px] mr-1 select-none leading-none">$</span>
               )}
               <input
-                inputMode="decimal"
+                readOnly
+                inputMode="none"
                 placeholder="0"
-                className="bg-transparent text-[#eeeeee] font-semibold outline-none placeholder-[#6e6e6e] text-[30px] w-full flex-1"
+                className="bg-transparent text-[#eeeeee] font-semibold outline-none placeholder-[#6e6e6e] text-[30px] w-full flex-1 caret-transparent cursor-pointer"
                 style={{ fontSize: "30px", lineHeight: "1" }}
                 type="text"
                 value={payAmount}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "" || /^\d*\.?\d*$/.test(v)) setPayAmount(v);
-                }}
+                onClick={() => setIsKeypadVisible(true)}
               />
             </div>
             <button
@@ -800,6 +827,48 @@ export default function SwapPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* NumberPad Modal Slide Up */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isKeypadVisible && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[110] bg-transparent"
+                onClick={() => setIsKeypadVisible(false)}
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                className="fixed bottom-0 left-0 right-0 z-[120] flex flex-col gap-3 max-w-[430px] mx-auto"
+              >
+                {/* Pills outside the glass container */}
+                <div className="flex items-center gap-[8px] px-3">
+                  <button onClick={() => handlePillPress(0.25)} className="flex-1 py-3.5 rounded-full bg-[#1c1c1c] active:bg-[#3a3a3c] text-[#eeeeee] text-[16px] font-semibold transition-colors shadow-lg border border-white/5">25%</button>
+                  <button onClick={() => handlePillPress(0.50)} className="flex-1 py-3.5 rounded-full bg-[#1c1c1c] active:bg-[#3a3a3c] text-[#eeeeee] text-[16px] font-semibold transition-colors shadow-lg border border-white/5">50%</button>
+                  <button onClick={() => handlePillPress(1)} className="flex-1 py-3.5 rounded-full bg-[#1c1c1c] active:bg-[#3a3a3c] text-[#eeeeee] text-[16px] font-semibold transition-colors shadow-lg border border-white/5">Max</button>
+                  <button onClick={() => setIsKeypadVisible(false)} className="flex-1 py-3.5 rounded-full bg-[#1c1c1c] active:bg-[#3a3a3c] text-[#eeeeee] text-[16px] font-semibold transition-colors shadow-lg border border-white/5">Done</button>
+                </div>
+
+                {/* Glassmorphic container ONLY for keypad */}
+                <div
+                  className="bg-[#3a3a3c]/50 backdrop-blur-2xl shadow-[0_-8px_40px_rgba(0,0,0,0.5)] border-t border-white/10"
+                  style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}
+                >
+                  <NumberPad onNumberPress={handleNumberPress} onDelete={handleDelete} />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
 
       {/* Floating Success Toast Portal */}

@@ -24,6 +24,7 @@ import ManageTokensModal from "./app/(wallet)/_components/modals/manage-tokens-m
 import ChatsModal from "./app/(wallet)/_components/modals/chats-modal";
 import TokenDetailModal from "./app/(wallet)/_components/modals/token-detail-modal";
 import CashModal from "./app/(wallet)/_components/modals/cash-modal";
+import TradeModal from "./app/(wallet)/_components/modals/trade-modal";
 import SettingsPage from "./app/(wallet)/settings/page";
 import EditProfilePage from "./app/(wallet)/settings/edit-profile/page";
 import { fetchLivePrices, getStaticPrices } from "./lib/coingecko-service";
@@ -34,7 +35,7 @@ import { requestNotificationPermission, showSystemNotification } from "./lib/not
 import { useWalletStore, type NotificationSettings } from "./lib/wallet-store";
 import { isDemoPayload, readCachedBootstrap, requestDemoPaywall } from "@rp-wallet/wallet-core";
 
-type WalletModal = "send" | "receive" | "buy" | "cash" | null;
+type WalletModal = "send" | "receive" | "buy" | "cash" | "trade" | null;
 const api = new RpWalletApiClient(appEnv.apiBaseUrl);
 const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:phantom:notification-permission-prompted";
 
@@ -77,6 +78,7 @@ function WalletRouteBody() {
     manageTokensVisible,
     notificationSettings,
     profile,
+    footerHidden,
     setManageTokensVisible,
     updateBalance,
     updateNotificationSettings,
@@ -775,12 +777,13 @@ function WalletRouteBody() {
             }}
           />
         )}
-        {!isSettingsPage && <WalletFooterNavigation isDrawerOpen={isDrawerOpen} />}
+        {!isSettingsPage && <WalletFooterNavigation hidden={footerHidden} isDrawerOpen={isDrawerOpen} />}
       </div>
       <SendModal initialTokenSymbol={symbol} onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "send"} />
       <ReceiveModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "receive"} />
       <BuyModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "buy"} />
       <CashModal onClose={closeModal} visible={modal === "cash"} />
+      <TradeModal onClose={closeModal} onCloseStart={() => setModalClosing(true)} visible={modal === "trade"} />
       <AccountModal
         visible={accountModalVisible}
         onAddAccount={() => {

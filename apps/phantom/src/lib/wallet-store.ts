@@ -127,6 +127,7 @@ interface WalletStore {
   currentAccountIndex: number;
   addressBook: AddressEntry[];
   recentAddresses: AddressEntry[];
+  footerHidden: boolean;
 
   // Actions
   addAccount: (name?: string) => void;
@@ -164,6 +165,7 @@ interface WalletStore {
   setTokenPickerVisible: (visible: boolean) => void;
   addRecentAddress: (address: string, name?: string) => void;
   toggleAddressBook: (address: string, name?: string) => void;
+  setFooterHidden: (hidden: boolean) => void;
 
 
   // Computed
@@ -263,6 +265,7 @@ export const useWalletStore = create<WalletStore>()(
       currentAccountIndex: 0,
       addressBook: generateRandomContacts(5),
       recentAddresses: generateRandomContacts(3),
+      footerHidden: false,
 
       addAccount: (name) => {
         const { accounts } = get();
@@ -731,6 +734,9 @@ export const useWalletStore = create<WalletStore>()(
           };
           set({ addressBook: [...addressBook, newEntry] });
         }
+      },
+      setFooterHidden: (hidden) => {
+        set({ footerHidden: hidden });
       },
     }),
     {

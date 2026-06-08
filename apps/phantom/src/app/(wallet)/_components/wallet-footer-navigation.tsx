@@ -29,7 +29,7 @@ const ACTION_ITEMS = [
   {
     label: "Trade",
     icon: <img src="/icons/trade_icon.webp" alt="Trade" width={22} height={22} className="object-contain" />,
-    action: "/swap",
+    action: "/home?modal=trade",
     initialY: 70,
   },
 ];

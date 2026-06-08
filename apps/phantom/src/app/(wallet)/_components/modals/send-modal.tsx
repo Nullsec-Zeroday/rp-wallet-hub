@@ -13,6 +13,54 @@ import { useRiveAsset } from "../rive-asset-provider";
 import { createBackendWalletTransaction, updateBackendWalletState } from "@/lib/backend-wallet";
 import { logWalletDebug } from "@/lib/wallet-debug";
 
+const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => void, onDelete: () => void }) => {
+  const buttons = [
+    { num: '1', letters: '' },
+    { num: '2', letters: 'A B C' },
+    { num: '3', letters: 'D E F' },
+    { num: '4', letters: 'G H I' },
+    { num: '5', letters: 'J K L' },
+    { num: '6', letters: 'M N O' },
+    { num: '7', letters: 'P Q R S' },
+    { num: '8', letters: 'T U V' },
+    { num: '9', letters: 'W X Y Z' },
+    { num: '.', letters: '' },
+    { num: '0', letters: '' },
+    { num: 'del', letters: '' }
+  ];
+
+  return (
+    <div className="grid grid-cols-3 gap-[6px] p-1.5 bg-[#2c2c2e] w-full pb-1.5 pt-1.5">
+      {buttons.map((btn, i) => (
+        <button
+          key={i}
+          onClick={(e) => {
+            e.preventDefault();
+            btn.num === 'del' ? onDelete() : onNumberPress(btn.num);
+          }}
+          className={`flex flex-col items-center justify-center active:bg-[#6b6b6b] rounded-[8px] h-[48px] border-none cursor-pointer ${btn.num === '.' || btn.num === 'del'
+              ? 'bg-transparent shadow-none'
+              : 'bg-[#515151] shadow-sm'
+            }`}
+        >
+          {btn.num === 'del' ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
+            </svg>
+          ) : (
+            <>
+              <span className="text-[25px] leading-[30px] font-normal text-[#ffffff]">{btn.num}</span>
+              {btn.letters && <span className="text-[10px] leading-[10px] font-bold text-[#ffffff] tracking-[1px] mt-0.5">{btn.letters}</span>}
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
   const src = "/rive/progress-send.riv";
   const assetBuffer = useRiveAsset(src);
@@ -135,8 +183,25 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     setIsClosing(true);
     onCloseStart?.();
     setTimeout(() => {
+      setAmount("");
+      setRecipientAddress("");
+      setStep("TOKEN_SELECT");
       onClose();
     }, 180);
+  };
+
+  const handleNumberPress = (num: string) => {
+    setAmount(prev => {
+      if (num === '.' && prev.includes('.')) return prev;
+      if (prev === '0' && num !== '.') return num;
+      const next = prev + num;
+      if (/^\d*\.?\d{0,5}$/.test(next)) return next;
+      return prev;
+    });
+  };
+
+  const handleDelete = () => {
+    setAmount(prev => prev.slice(0, -1));
   };
 
   const allTokens = useMemo(() => [...TOKENS, ...customTokens], [customTokens]);
@@ -284,10 +349,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         className="w-full max-w-lg bg-[#000000] rounded-t-[32px] overflow-hidden relative flex flex-col will-change-transform"
         style={{
           height: "94vh",
-          paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
-          animation: isClosing
-            ? "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards"
-            : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+          animation: visible ? "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards" : "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
         }}
       >
         {/* Grabber */}
@@ -308,12 +370,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                 <path d="M15 18l-6-6 6-6"></path>
               </svg>
             </button>
-
-            {/* <h2 className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white pointer-events-none">
-              {step === "SENDING" && "Sending..."}
-              {step === "SUCCESS" && "Sent!"}
-            </h2> */}
-
             <div className="w-10 h-10" /> {/* Spacer */}
           </div>
         )}
@@ -330,7 +386,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                 className="h-full overflow-y-auto bg-[#000000] flex flex-col absolute inset-0"
               >
                 <div className="sticky top-0 bg-[#000000] z-10 pt-2">
-                  {/* Header */}
                   <div className="flex items-center gap-4 px-4 pt-2 pb-4">
                     <button
                       onClick={handleClose}
@@ -341,7 +396,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                     <span className="text-[18px] font-semibold text-white tracking-wide">Select Token</span>
                   </div>
 
-                  {/* Search */}
                   <div className="px-4 pb-4">
                     <div className="flex items-center gap-2.5 bg-[#1c1c1e] rounded-full h-11 px-4">
                       <input
@@ -514,7 +568,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                   )}
                 </div>
 
-                <div className="flex-shrink-0 px-4 py-3 pb-6 mt-auto">
+                <div className="flex-shrink-0 px-4 py-3 mt-auto" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
                   <button
                     disabled={!canAdvanceAddress}
                     onClick={() => setStep("AMOUNT")}
@@ -537,80 +591,51 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
               >
                 {/* Header */}
                 <div className="bg-[#000000] flex-shrink-0 flex items-center justify-between px-4 py-3 sticky top-0 z-20">
-                  <button onClick={() => setStep("ADDRESS")} className="bg-transparent border-none p-1 -ml-1 cursor-pointer active:opacity-60 transition-opacity">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 18l-6-6 6-6"></path>
-                    </svg>
-                  </button>
-                  <span className="text-[18px] font-semibold text-[#eeeeee]">Enter Amount</span>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setStep("ADDRESS")} className="bg-[#1c1c1e] w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-60 transition-opacity">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6"></path>
+                      </svg>
+                    </button>
+                    <span className="text-[18px] font-semibold text-[#eeeeee]">Enter Amount</span>
+                  </div>
                   <button
                     disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > selectedTokenBalance}
                     onClick={() => setStep("CONFIRM")}
-                    className="bg-transparent border-none p-1 font-semibold text-[16px] disabled:text-[#4a3b75] text-[#ab9ff2] disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    className="bg-transparent border-none p-1 font-semibold text-[16px] disabled:text-[#666666] text-[#ab9ff2] disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
                     Next
                   </button>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 pb-0 overflow-y-auto">
-                  {/* To Bar */}
-                  <div className="flex items-center px-4 py-3 justify-between flex-shrink-0 bg-[#000000]">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[15px] font-semibold text-[#a0a0a0]">To:</span>
-                      <span className="text-[15px] font-semibold text-[#eeeeee] truncate max-w-[200px]">
-                        {recipientAddress.length > 12 ? `${recipientAddress.slice(0, 4)}...${recipientAddress.slice(-4)}` : recipientAddress}
-                      </span>
-                    </div>
-                    <button onClick={() => setStep("ADDRESS")} className="bg-transparent border-none p-1 cursor-pointer active:opacity-60 transition-opacity">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20h9"></path>
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                      </svg>
-                    </button>
-                  </div>
+                  <div className="flex-1 min-h-[24px]" />
 
                   {/* Amount Input Area */}
-                  <div className="px-5 pt-7 pb-[18px] flex items-center flex-shrink-0 justify-start min-h-0 mt-[42px] transition-all duration-150">
+                  <div className="px-5 pt-2 pb-6 flex items-center flex-shrink-0 justify-start min-h-0 transition-all duration-150">
                     <div className="w-full flex justify-center">
                       <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center justify-center max-w-full w-full">
-                        <div /> {/* Spacer */}
+                        <div />
 
-                        <div className="flex flex-col items-center justify-center min-h-[92px] min-w-0 justify-self-center">
-                          <div className="inline-flex items-baseline justify-center gap-2 whitespace-nowrap max-w-full font-tabular-nums">
+                        <div className="flex flex-col items-center justify-center min-h-[110px] min-w-0 justify-self-center">
+                          <div className="inline-flex items-baseline justify-center gap-6 whitespace-nowrap max-w-full font-tabular-nums">
                             <div className="flex items-baseline min-w-0">
-                              <input
-                                inputMode="decimal"
-                                enterKeyHint="next"
-                                placeholder="0"
-                                type="text"
-                                value={amount}
-                                onChange={(e) => {
-                                  // only allow numbers and one decimal, max 5 decimals
-                                  const val = e.target.value;
-                                  if (/^\d*\.?\d{0,5}$/.test(val) || val === "") {
-                                    setAmount(val);
-                                  }
-                                }}
-                                onBlur={() => setTimeout(() => window.scrollTo(0, 0), 100)}
-                                style={{ width: `${amount.length || 1}ch`, minWidth: "1ch", fontSize: "52px", lineHeight: "62px" }}
-                                className="bg-transparent border-none outline-none shadow-none p-0 m-0 text-[#eeeeee] text-[52px] leading-[62px] font-semibold text-right caret-[#ab9ff2] appearance-none rounded-none font-tabular-nums flex-shrink-0 focus:ring-0"
-                              />
+                              <div
+                                style={{ fontSize: "64px", lineHeight: "74px" }}
+                                className={`font-sans font-semibold text-right caret-[#ab9ff2] appearance-none rounded-none font-tabular-nums flex-shrink-0 ${(parseFloat(amount) || 0) > selectedTokenBalance ? "text-[#F80633]" : "text-[#eeeeee]"}`}
+                              >
+                                {amount || "0"}
+                              </div>
                             </div>
-                            <span className="text-[34px] leading-[41px] font-semibold text-[#eeeeee] flex-shrink-0">
+                            <span className={`text-[64px] leading-[50px] font-semibold flex-shrink-0 ${(parseFloat(amount) || 0) > selectedTokenBalance ? "text-[#F80633]" : "text-[#eeeeee]"}`}>
                               {selectedToken.symbol}
                             </span>
                           </div>
-                          <div className="text-[15px] leading-5 text-[#b4b4b4] mt-1.5 text-center self-center">
+                          <div className="text-[22px] leading-[24px] font-medium text-[#888888] mt-2 text-center self-center">
                             ~{formatCurrency(usdValue, baseCurrency)}
                           </div>
                         </div>
-
-                        <button className="w-8 h-8 rounded-full bg-[#1c1c1e] border-none cursor-pointer flex items-center justify-center flex-shrink-0 justify-self-end active:scale-95 transition-transform">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M7 16V4m0 0L3 8m4-4l4 4"></path>
-                            <path d="M17 8v12m0 0l4-4m-4 4l-4-4"></path>
-                          </svg>
-                        </button>
+                        <div />
                       </div>
                     </div>
                   </div>
@@ -620,17 +645,27 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                   {/* Available To Send */}
                   <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0 justify-between">
                     <div>
-                      <span className="text-[13px] font-semibold text-[#a0a0a0] block">Available To Send</span>
-                      <span className="text-[15px] font-semibold text-[#eeeeee] block mt-0.5">
+                      <div className="text-[13px] text-[#a0a0a0] mb-0.5">Available To Send</div>
+                      <div className="text-[15px] font-semibold text-[#eeeeee]">
                         {formatBalance(selectedTokenBalance)} {selectedToken.symbol}
-                      </span>
+                      </div>
                     </div>
                     <button
                       onClick={() => setAmount(selectedTokenBalance.toString())}
-                      className="bg-[#1c1c1e] rounded-[20px] border-none py-2 px-4 cursor-pointer text-[15px] font-semibold text-[#eeeeee] flex-shrink-0 active:opacity-80 transition-opacity"
+                      className="bg-[#1c1c1e] text-[#eeeeee] font-medium text-[14px] px-3.5 py-1.5 rounded-full border-none cursor-pointer active:opacity-80 transition-opacity"
                     >
                       Max
                     </button>
+                  </div>
+
+                  {/* Custom Number Pad */}
+                  <div
+                    className="flex-shrink-0 w-full bg-[#2c2c2e]"
+                    style={{
+                      paddingBottom: "calc(24px + env(safe-area-inset-bottom))"
+                    }}
+                  >
+                    <NumberPad onNumberPress={handleNumberPress} onDelete={handleDelete} />
                   </div>
                 </div>
               </motion.div>
@@ -645,29 +680,26 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                 className="h-full bg-[#000000] flex flex-col absolute inset-0"
               >
                 {/* Header */}
-                <div className="bg-[#000000] flex-shrink-0 flex items-center justify-between px-4 py-3 sticky top-0 z-20">
-                  <button onClick={() => setStep("AMOUNT")} className="bg-transparent border-none p-1 -ml-1 cursor-pointer active:opacity-60 transition-opacity">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="bg-[#000000] flex-shrink-0 flex items-center gap-3 px-4 py-3 sticky top-0 z-20">
+                  <button onClick={() => setStep("AMOUNT")} className="bg-[#1c1c1e] w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-60 transition-opacity">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M15 18l-6-6 6-6"></path>
                     </svg>
                   </button>
                   <span className="text-[18px] font-semibold text-[#eeeeee]">Summary</span>
-                  <div className="w-[30px]" />
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 px-4 overflow-y-auto mt-6">
                   {/* Top Icon */}
                   <div className="flex justify-center mb-4">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m7.842 12-1.94 3.217c-1.594 2.641 1.359 5.68 4.045 4.161l9.973-5.637c1.354-.765 1.354-2.716 0-3.482L9.946 4.622C7.26 3.104 4.308 6.142 5.902 8.783zm0 0H11" stroke="#ab9ff2" strokeWidth="2.5"></path>
-                    </svg>
+                    <img src="/icons/send_icon_highlighted.webp" alt="Send" width={36} height={36} className="object-contain" />
                   </div>
 
                   {/* Amount Text */}
                   <div className="text-center mb-8 px-4 flex flex-col items-center">
                     <div className="font-bold text-[#eeeeee] tracking-tight break-words max-w-full flex justify-center flex-wrap gap-x-3 items-baseline leading-[1.1]">
                       <span className="text-[60px]">{parseFloat(amount).toLocaleString()}</span>
-                      <span className="text-[52px]">{selectedToken.symbol}</span>
+                      <span className="text-[60px]">{selectedToken.symbol}</span>
                     </div>
                     <span className="text-[18px] leading-[24px] font-medium text-[#a0a0a0] block mt-3">
                       ~{formatCurrency(usdValue, baseCurrency)}
@@ -697,10 +729,10 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                 </div>
 
                 {/* Footer */}
-                <div className="flex-shrink-0 px-4 py-3 pb-6">
+                <div className="flex-shrink-0 px-4 py-3" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom))" }}>
                   <button
                     onClick={handleSend}
-                    className="w-full h-[56px] rounded-[20px] border-none bg-[#ab9ff2] text-black text-[17px] font-bold cursor-pointer active:scale-[0.98] transition-transform"
+                    className="w-full h-[56px] rounded-full border-none bg-[#ab9ff2] text-black text-[17px] font-bold cursor-pointer active:scale-[0.98] transition-transform"
                   >
                     Send
                   </button>
@@ -746,7 +778,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                   )}
                 </div>
 
-                <div className="w-full mt-auto pb-6">
+                <div className="w-full mt-auto px-4" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom))" }}>
                   <button
                     onClick={() => {
                       if (step === "SUCCESS") {
@@ -756,7 +788,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         handleClose();
                       }
                     }}
-                    className="w-full h-[56px] rounded-[20px] bg-[#1c1c1e] text-[#eeeeee] font-semibold text-[17px] active:scale-[0.98] transition-transform"
+                    className="w-full h-[56px] rounded-full border-none bg-[#1c1c1e] text-[#eeeeee] font-semibold text-[17px] active:scale-[0.98] transition-transform"
                   >
                     Close
                   </button>
