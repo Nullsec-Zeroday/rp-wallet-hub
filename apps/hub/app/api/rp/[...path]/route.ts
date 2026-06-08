@@ -14,7 +14,6 @@ const HOP_BY_HOP_HEADERS = new Set([
 function getApiBaseUrl() {
   const configured =
     process.env.API_PROXY_TARGET_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
     (process.env.NODE_ENV === "production" ? apiDefaults.productionBaseUrl : apiDefaults.localBaseUrl);
 
   return configured.startsWith("/") ? apiDefaults.productionBaseUrl : configured.replace(/\/+$/, "");
