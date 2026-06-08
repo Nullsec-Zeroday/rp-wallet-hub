@@ -20,7 +20,7 @@ function getApiBaseUrl() {
   return configured.startsWith("/") ? apiDefaults.productionBaseUrl : configured.replace(/\/+$/, "");
 }
 
-async function proxyRequest(request: NextRequest, context: { params: Promise<{ path?: string[] }> | { path?: string[] } }) {
+async function proxyRequest(request: NextRequest, context: { params: Promise<{ path?: string[] }> }) {
   const params = await context.params;
   const path = params.path?.join("/") || "";
   const incomingUrl = new URL(request.url);
