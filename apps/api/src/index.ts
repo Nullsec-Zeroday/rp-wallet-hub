@@ -32,6 +32,27 @@ type PriceEntry = {
   image?: string;
 };
 
+type CoinGeckoSearchCoin = {
+  id?: string;
+  large?: string;
+  market_cap_rank?: number | null;
+  name?: string;
+  symbol?: string;
+  thumb?: string;
+};
+
+type DexScreenerPair = {
+  baseToken?: {
+    name?: string;
+    symbol?: string;
+  };
+  chainId?: string;
+  info?: {
+    imageUrl?: string;
+  };
+  priceUsd?: string;
+};
+
 const CG_BASE_URL = "https://api.coingecko.com/api/v3";
 const TOKENS = [
   { symbol: "SOL", price: 130, coingeckoId: "solana" },
@@ -96,6 +117,158 @@ app.get("/health", (c) =>
     storage: c.env.DATABASE_URL ? "neon" : "memory",
   }),
 );
+
+app.get("/search", async (c) => {
+  const query = c.req.query("query")?.trim();
+  const dsKey = c.req.query("dsKey");
+
+  if (!query) {
+    return c.json({ error: "Query parameter is required" }, 400);
+  }
+
+  const isAddress = query.length > 30 && !query.includes(" ");
+
+  if (isAddress) {
+    try {
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (dsKey) headers["X-API-KEY"] = dsKey;
+
+      const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${encodeURIComponent(query)}`, { headers });
+      if (response.ok) {
+        const data = await response.json() as { pairs?: DexScreenerPair[] };
+        const pair = data.pairs?.[0];
+        if (pair?.baseToken?.name && pair.baseToken.symbol) {
+          const image = pair.info?.imageUrl || "";
+          return c.json([{
+            id: query,
+            name: pair.baseToken.name,
+            symbol: pair.baseToken.symbol.toUpperCase(),
+            market_cap_rank: null,
+            thumb: image,
+            large: image,
+            chainId: pair.chainId || "",
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error("[search] DexScreener search failed", error);
+    }
+  }
+
+  try {
+    const response = await fetch(`${CG_BASE_URL}/search?query=${encodeURIComponent(query)}`, {
+      headers: {
+        Accept: "application/json",
+        "x-cg-demo-api-key": c.env.COINGECKO_API_KEY || "",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`[search] CoinGecko error: ${response.status} ${response.statusText}`);
+      return c.json({ error: "Failed to fetch token search results" }, response.status as 400 | 401 | 403 | 404 | 429 | 500);
+    }
+
+    const data = await response.json() as { coins?: CoinGeckoSearchCoin[] };
+    return c.json((data.coins || []).slice(0, 20).flatMap((coin) => {
+      if (!coin.id || !coin.name || !coin.symbol) return [];
+      return [{
+        id: coin.id,
+        name: coin.name,
+        symbol: coin.symbol.toUpperCase(),
+        market_cap_rank: coin.market_cap_rank ?? null,
+        thumb: coin.thumb || "",
+        large: coin.large || "",
+      }];
+    }));
+  } catch (error) {
+    console.error("[search] Error fetching token search results", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+app.get("/token-info", async (c) => {
+  const id = c.req.query("id")?.trim();
+  const dsKey = c.req.query("dsKey");
+
+  if (!id) {
+    return c.json({ error: "ID parameter is required" }, 400);
+  }
+
+  const isAddress = id.length > 30 && !id.includes(" ");
+
+  if (isAddress) {
+    try {
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (dsKey) headers["X-API-KEY"] = dsKey;
+
+      const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${encodeURIComponent(id)}`, { headers });
+      if (response.ok) {
+        const data = await response.json() as { pairs?: DexScreenerPair[] };
+        const pair = data.pairs?.[0];
+        if (pair?.baseToken?.name && pair.baseToken.symbol) {
+          return c.json({
+            symbol: pair.baseToken.symbol.toUpperCase(),
+            name: pair.baseToken.name,
+            price: Number.parseFloat(pair.priceUsd || "0") || 0,
+            decimals: 18,
+            defaultBalance: 0,
+            color: "#888888",
+            icon: "",
+            logoUrl: pair.info?.imageUrl || "",
+            coingeckoId: id,
+            chainId: pair.chainId || "",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[token-info] DexScreener lookup failed", error);
+    }
+  }
+
+  try {
+    const response = await fetch(
+      `${CG_BASE_URL}/coins/${encodeURIComponent(id)}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`,
+      {
+        headers: {
+          Accept: "application/json",
+          "x-cg-demo-api-key": c.env.COINGECKO_API_KEY || "",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      console.error(`[token-info] CoinGecko error: ${response.status} ${response.statusText}`);
+      return c.json({ error: "Failed to fetch token information" }, response.status as 400 | 401 | 403 | 404 | 429 | 500);
+    }
+
+    const data = await response.json() as {
+      id?: string;
+      image?: { large?: string; small?: string };
+      market_data?: { current_price?: { usd?: number } };
+      name?: string;
+      symbol?: string;
+    };
+
+    if (!data.id || !data.name || !data.symbol) {
+      return c.json({ error: "Invalid token information response" }, 502);
+    }
+
+    return c.json({
+      symbol: data.symbol.toUpperCase(),
+      name: data.name,
+      price: data.market_data?.current_price?.usd || 0,
+      decimals: 18,
+      defaultBalance: 0,
+      color: "#888888",
+      icon: "",
+      logoUrl: data.image?.large || data.image?.small || "",
+      coingeckoId: data.id,
+    });
+  } catch (error) {
+    console.error("[token-info] Error fetching token information", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
 
 app.get("/demo/config", (c) => c.json(getDemoConfig(c.env)));
 

@@ -18,12 +18,13 @@ import {
   updateBackendWalletState,
 } from "@/lib/backend-wallet";
 import { requestNotificationPermission } from "@/lib/notifications";
+import { appEnv } from "@/app-env";
 
 interface SearchResult {
   id: string;
   name: string;
   symbol: string;
-  market_cap_rank: number;
+  market_cap_rank: number | null;
   thumb: string;
   large: string;
   chainId?: string;
@@ -145,10 +146,11 @@ function EditProfileContent() {
   const handleSearch = async () => {
     setSearchLoading(true);
     try {
-      const url = `/api/search?query=${encodeURIComponent(searchQuery)}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`;
+      const url = `${appEnv.apiBaseUrl}/search?query=${encodeURIComponent(searchQuery.trim())}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Search failed");
-      const data = await res.json();
+      const data: unknown = await res.json();
+      if (!Array.isArray(data)) throw new Error("Invalid search response");
       setSearchResults(data);
     } catch (err) {
       console.error("Search error:", err);
@@ -163,7 +165,7 @@ function EditProfileContent() {
     setIsImporting(result.id);
 
     try {
-      const url = `/api/token-info?id=${result.id}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`;
+      const url = `${appEnv.apiBaseUrl}/token-info?id=${encodeURIComponent(result.id)}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch token info");
       const tokenInfo: TokenInfo = await res.json();
