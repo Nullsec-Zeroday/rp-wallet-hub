@@ -36,7 +36,7 @@ export default function TryFreeButton({ className, wrapperClassName }: { classNa
       <Link
         href={href}
         onClick={handleClick}
-        className={`relative overflow-hidden w-full sm:w-[240px] h-12 md:h-14 px-4 sm:px-8 rounded-xl flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent border border-white/20 transition-all group whitespace-nowrap ${className || ""}`}
+        className={`relative overflow-hidden w-full sm:w-[240px] h-12 md:h-14 px-4 sm:px-8 rounded-full flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent border border-white/20 transition-all group whitespace-nowrap ${className || ""}`}
       >
         <motion.div
           initial={{ x: "-150%" }}

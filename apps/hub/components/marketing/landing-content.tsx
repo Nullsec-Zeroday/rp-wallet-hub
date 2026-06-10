@@ -541,7 +541,7 @@ export default function LandingContent() {
                 className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${isPopular
                   ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_40px_rgba(139,92,246,0.15)] z-10"
                   : isYearly
-                    ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_30px_rgba(212,175,55,0.15)]"
+                    ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#ffffff,transparent)_border-box] shadow-[0_0_30px_rgba(255,255,255,0.15)]"
                     : "bg-[#121212]/80 border border-white/[0.04] hover:bg-[#151515] hover:border-white/[0.08]"
                   }`}
                 onClick={() => {
@@ -556,7 +556,7 @@ export default function LandingContent() {
                   </div>
                 )}
                 {isYearly && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black text-[11px] font-bold tracking-wider uppercase rounded-full shadow-[0_5px_15px_rgba(212,175,55,0.4)] whitespace-nowrap">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-white via-gray-100 to-gray-300 text-black text-[11px] font-bold tracking-wider uppercase rounded-full shadow-[0_5px_15px_rgba(255,255,255,0.3)] whitespace-nowrap">
                     Best Value
                   </div>
                 )}
@@ -572,7 +572,7 @@ export default function LandingContent() {
                   {plan.features.map((feat, idx) => (
                     <li key={idx} className={`flex gap-3 items-start ${!feat.included ? "opacity-35" : ""}`}>
                       {feat.included ? (
-                        <div className={`flex size-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${isYearly ? "bg-gradient-to-br from-[#fde047] to-[#ca8a04]" : "bg-[#9c8df6]"}`}>
+                        <div className={`flex size-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${isYearly ? "bg-gradient-to-br from-white to-gray-300" : "bg-[#9c8df6]"}`}>
                           <Check size={13} strokeWidth={3} className={isYearly ? "text-black" : "text-white"} />
                         </div>
                       ) : (
@@ -596,7 +596,7 @@ export default function LandingContent() {
                     : isPopular
                       ? "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02]"
                       : isYearly
-                        ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
+                        ? "bg-gradient-to-r from-white via-gray-100 to-gray-300 text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(255,255,255,0.2)]"
                         : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
                     }`}
                 >
