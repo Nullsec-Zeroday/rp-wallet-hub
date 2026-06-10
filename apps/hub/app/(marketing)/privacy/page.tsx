@@ -39,7 +39,7 @@ export default function PrivacyPage() {
                   RPWallet ("we," "us," or "our") operates the RPWallet progressive web application (PWA) and the website located at rpwallet.app (collectively, the "Service"). This Privacy Policy explains how we collect, use, and protect information when you use our Service.
                 </p>
                 <p>
-                  RPWallet is a novelty entertainment application. It is <strong>not</strong> a real cryptocurrency wallet. It does not hold, send, receive, or interact with any real cryptocurrency, blockchain, or digital asset. We are <strong>not affiliated with Ph4ntom, Solana Labs, Ledger SAS, Tru5t, Binance, or any other wallet provider or blockchain project</strong>.
+                  RPWallet is a novelty entertainment application. It is <strong>not</strong> a real cryptocurrency wallet. It does not hold, send, receive, or interact with any real cryptocurrency, blockchain, or digital asset. We are <strong>not affiliated with Phantom, Solana Labs, Ledger SAS, Trust, Binance, or any other wallet provider or blockchain project</strong>.
                 </p>
               </div>
             </section>

@@ -6,18 +6,18 @@ import {
 } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "The Ultimate Ph4ntom Wallet & Fake Crypto Simulator App",
+  title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
   description:
-    "The #1 fake ph4ntom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app. Perfect for creators and roleplay flexes.",
+    "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app. Perfect for creators and roleplay flexes.",
   keywords: [
     "larp",
     "larping",
     "content creation",
     "simulation",
     "fake crypto app",
-    "fake ph4ntom app",
-    "fake ph4ntom wallet",
-    "ph4ntom simulator",
+    "fake phantom app",
+    "fake phantom wallet",
+    "phantom simulator",
     "simulator wallet",
     "larp wallet",
     "crypto wallet simulator",
@@ -35,15 +35,15 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "The Ultimate Ph4ntom Wallet & Fake Crypto Simulator App",
+    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
     description:
-      "The #1 fake ph4ntom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
+      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
     url: "/",
   },
   twitter: {
-    title: "The Ultimate Ph4ntom Wallet & Fake Crypto Simulator App",
+    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
     description:
-      "The #1 fake ph4ntom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
+      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
   },
 };
 

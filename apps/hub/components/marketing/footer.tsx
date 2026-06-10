@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="w-full max-w-[1200px] mx-auto flex flex-col gap-16 relative z-10">
         <div className="w-full max-w-4xl mx-auto border border-[#d4af37]/20 bg-[#d4af37]/[0.03] rounded-3xl p-6 md:p-8 text-center shadow-lg">
           <p className="text-[#d4af37]/80 text-[14px] md:text-[15px] leading-relaxed font-medium">
-            <span className="text-[#d4af37] font-bold">⚠️ Disclaimer:</span> RPWallet is a novelty app for entertainment purposes only. It is not a real cryptocurrency wallet and does not hold, send, or receive any real crypto assets. Not affiliated with Ph4ntom, Ledger, Tru5t, Binance, or Solana Labs.
+            <span className="text-[#d4af37] font-bold">⚠️ Disclaimer:</span> RPWallet is a novelty app for entertainment purposes only. It is not a real cryptocurrency wallet and does not hold, send, or receive any real crypto assets. Not affiliated with Phantom, Ledger, Trust, Binance, or Solana Labs.
           </p>
         </div>
 

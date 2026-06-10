@@ -5,7 +5,7 @@ export const siteConfig = {
   name: "RPWallet",
   url: "https://rpwallet.app",
   description:
-    "RPWallet is the world's most realistic ph4ntom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay. Flex millions in crypto with an indistinguishable fake crypto app interface.",
+    "RPWallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay. Flex millions in crypto with an indistinguishable fake crypto app interface.",
   ogImage: "/opengraph-image.png",
   xHandle: "@rpwallet",
 };
@@ -32,7 +32,7 @@ export function buildDefaultMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: "Premium Crypto Wallet Simulator & Fake ph4ntom Wallet for Crypto Creators",
+      default: "Premium Crypto Wallet Simulator & Fake phantom Wallet for Crypto Creators",
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,
@@ -43,9 +43,9 @@ export function buildDefaultMetadata(): Metadata {
       "content creation",
       "simulation",
       "fake crypto app",
-      "fake ph4ntom app",
-      "fake ph4ntom wallet",
-      "ph4ntom simulator",
+      "fake phantom app",
+      "fake phantom wallet",
+      "phantom simulator",
       "simulator wallet",
       "larp wallet",
       "crypto wallet simulator",

@@ -802,13 +802,13 @@ export const blogPosts: BlogPost[] = [
     ],
   },
   {
-  slug: "ph4ntom-wallet-simulator-complete-guide",
+  slug: "phantom-wallet-simulator-complete-guide",
   title:
-    "ph4ntom Wallet Simulator: What It Is, Who Uses It, and Why It Exists",
+    "phantom Wallet Simulator: What It Is, Who Uses It, and Why It Exists",
   excerpt:
-    "A clear breakdown of what a ph4ntom wallet simulator actually is, who uses one, and how it differs from scam tools — plus the legitimate use cases that drive the category.",
+    "A clear breakdown of what a phantom wallet simulator actually is, who uses one, and how it differs from scam tools — plus the legitimate use cases that drive the category.",
   description:
-    "Understand what a ph4ntom wallet simulator is, who needs one, and why the category exists. Covers content creation, product demos, mockups, roleplay content, and how RPWallet fits in.",
+    "Understand what a phantom wallet simulator is, who needs one, and why the category exists. Covers content creation, product demos, mockups, roleplay content, and how RPWallet fits in.",
   date: "May 24, 2026",
   author: "RPWallet Editorial",
   readingTime: "10 min read",
@@ -816,14 +816,14 @@ export const blogPosts: BlogPost[] = [
   image: "/logo.webp",
   heroLabel: "Complete Guide",
   keywords: [
-    "ph4ntom wallet simulator",
-    "ph4ntom simulator app",
-    "fake ph4ntom wallet",
-    "ph4ntom wallet mockup",
+    "phantom wallet simulator",
+    "phantom simulator app",
+    "fake phantom wallet",
+    "phantom wallet mockup",
     "crypto wallet simulator",
   ],
   takeaways: [
-    "A ph4ntom wallet simulator is a visual mockup tool — it does not connect to any blockchain or hold real funds.",
+    "A phantom wallet simulator is a visual mockup tool — it does not connect to any blockchain or hold real funds.",
     "The primary users are content creators, product teams, designers, and crypto educators who need controlled wallet visuals.",
     "Legitimate simulators like RPWallet are clearly separate from phishing tools or scam kits — the intent, the audience, and the output are completely different.",
   ],
@@ -850,24 +850,24 @@ export const blogPosts: BlogPost[] = [
   },
   sections: [
     {
-      title: "What exactly is a ph4ntom wallet simulator?",
+      title: "What exactly is a phantom wallet simulator?",
       summary:
-        "It's a visual replica of the ph4ntom wallet interface, built for content and design — not for moving crypto.",
+        "It's a visual replica of the phantom wallet interface, built for content and design — not for moving crypto.",
       paragraphs: [
-        "A ph4ntom wallet simulator is a tool that recreates the look and feel of the ph4ntom wallet interface without connecting to any blockchain. No real funds, no real transactions, no private keys. You get a realistic-looking wallet screen where you can set custom balances, choose which tokens appear, and capture the result for screenshots, videos, demos, or mockups.",
-        "Think of it like a movie prop. A prop gun looks like a real gun, but it cannot fire. A ph4ntom wallet mockup looks like a real ph4ntom wallet, but it cannot send or receive SOL. The entire point is controlled visual output — giving people the ability to show what a wallet looks like without needing to own or risk anything.",
+        "A phantom wallet simulator is a tool that recreates the look and feel of the phantom wallet interface without connecting to any blockchain. No real funds, no real transactions, no private keys. You get a realistic-looking wallet screen where you can set custom balances, choose which tokens appear, and capture the result for screenshots, videos, demos, or mockups.",
+        "Think of it like a movie prop. A prop gun looks like a real gun, but it cannot fire. A phantom wallet mockup looks like a real phantom wallet, but it cannot send or receive SOL. The entire point is controlled visual output — giving people the ability to show what a wallet looks like without needing to own or risk anything.",
         "The category exists because there is genuine demand for it. Creators need wallet visuals for thumbnails. Product teams need interface screenshots for pitch decks. Designers need realistic UI states for prototypes. Educators need safe examples for tutorials. None of these people need a live wallet — they need something that looks like one.",
       ],
       callout:
-        "A ph4ntom wallet simulator is a visual tool. It does not interact with any blockchain, hold real assets, or process transactions.",
+        "A phantom wallet simulator is a visual tool. It does not interact with any blockchain, hold real assets, or process transactions.",
     },
     {
-      title: "Who actually uses a ph4ntom simulator app?",
+      title: "Who actually uses a phantom simulator app?",
       summary:
         "The audience is wider than most people expect — and almost none of them are trying to scam anyone.",
       paragraphs: [
-        "The most common users of a ph4ntom simulator app fall into four groups: content creators, product teams, designers, and educators. Content creators — especially on YouTube, TikTok, and X — use wallet screenshots and screen recordings constantly. Crypto reaction videos, portfolio update posts, trading recap content, and roleplay-style entertainment all need wallet visuals. Creating those with a real wallet means exposing actual balances, real addresses, and live transaction history. A simulator removes all of that risk.",
-        "Product teams and startup founders are the second big group. If you are building a crypto product and need to show what a wallet interaction looks like during a demo or investor presentation, you do not want to rely on a live environment where prices shift and balances change mid-recording. A ph4ntom wallet mockup gives you a stable, repeatable screen state you can record cleanly every time.",
+        "The most common users of a phantom simulator app fall into four groups: content creators, product teams, designers, and educators. Content creators — especially on YouTube, TikTok, and X — use wallet screenshots and screen recordings constantly. Crypto reaction videos, portfolio update posts, trading recap content, and roleplay-style entertainment all need wallet visuals. Creating those with a real wallet means exposing actual balances, real addresses, and live transaction history. A simulator removes all of that risk.",
+        "Product teams and startup founders are the second big group. If you are building a crypto product and need to show what a wallet interaction looks like during a demo or investor presentation, you do not want to rely on a live environment where prices shift and balances change mid-recording. A phantom wallet mockup gives you a stable, repeatable screen state you can record cleanly every time.",
         "Designers and educators round out the user base. Designers working on crypto-adjacent products often need realistic wallet UI references for prototypes, landing pages, or comparison mockups. Educators — whether they are running a course, writing a blog, or presenting at a meetup — need safe, clear visuals that explain wallet concepts without accidentally showing sensitive data.",
       ],
       bullets: [
@@ -882,8 +882,8 @@ export const blogPosts: BlogPost[] = [
       summary:
         "The difference is intent, transparency, and what the tool actually does.",
       paragraphs: [
-        "This is the question that comes up the most, so it is worth being direct about it. Scam tools are designed to deceive someone into thinking a fake wallet is real — usually to trick a victim into sending funds, proving solvency they do not have, or faking transaction receipts. They are built for deception. A ph4ntom wallet simulator like RPWallet is built for content production. It is openly marketed as a simulation tool, it says \"simulator\" right on the label, and it cannot interact with any blockchain.",
-        "The distinction is the same one that separates a stage prop from a counterfeit. A prop knife in a theater production is not a weapon — everyone involved knows it is fake, and its purpose is to support a story. A fake ph4ntom wallet used in a YouTube skit or a product demo is serving the same function. The audience either knows it is simulated or the context makes it obvious.",
+        "This is the question that comes up the most, so it is worth being direct about it. Scam tools are designed to deceive someone into thinking a fake wallet is real — usually to trick a victim into sending funds, proving solvency they do not have, or faking transaction receipts. They are built for deception. A phantom wallet simulator like RPWallet is built for content production. It is openly marketed as a simulation tool, it says \"simulator\" right on the label, and it cannot interact with any blockchain.",
+        "The distinction is the same one that separates a stage prop from a counterfeit. A prop knife in a theater production is not a weapon — everyone involved knows it is fake, and its purpose is to support a story. A fake phantom wallet used in a YouTube skit or a product demo is serving the same function. The audience either knows it is simulated or the context makes it obvious.",
         "RPWallet is transparent about what it is. The app is a crypto wallet simulator for content creators, designers, and product teams. There is no hidden functionality that connects to a real network. There are no private key prompts. There is no send button that actually does anything. The tool exists to make realistic wallet visuals quickly — nothing more.",
       ],
       callout:
@@ -895,7 +895,7 @@ export const blogPosts: BlogPost[] = [
         "From roleplay content to pitch deck screenshots, the real-world applications are surprisingly practical.",
       paragraphs: [
         "The most popular use case right now is content creation. Crypto YouTube and TikTok creators churn through wallet visuals at a pace that makes live-account screenshots impractical. A creator posting daily portfolio updates, market reaction videos, or \"what if\" scenario content needs to set up wallet states quickly, capture them cleanly, and move on. A crypto wallet simulator built for that workflow saves hours per week.",
-        "Roleplay content is another growing use case that does not get talked about enough. There is a whole genre of crypto entertainment content — especially on TikTok and Instagram Reels — where creators act out scenarios like \"when your meme coin hits\" or \"checking your wallet after the crash.\" These are comedy and entertainment pieces. Nobody watching thinks the wallet is real, the same way nobody watching a sketch comedy show thinks the actors are actually in the situations they are portraying. A ph4ntom wallet mockup is just a production tool for that content.",
+        "Roleplay content is another growing use case that does not get talked about enough. There is a whole genre of crypto entertainment content — especially on TikTok and Instagram Reels — where creators act out scenarios like \"when your meme coin hits\" or \"checking your wallet after the crash.\" These are comedy and entertainment pieces. Nobody watching thinks the wallet is real, the same way nobody watching a sketch comedy show thinks the actors are actually in the situations they are portraying. A phantom wallet mockup is just a production tool for that content.",
         "On the more professional side, product demos and pitch decks are a huge driver. Early-stage crypto startups often need to show what a wallet integration will look like before the integration is actually built. Designers building landing pages need wallet UI that looks production-ready. Sales teams need demo environments that do not break mid-call. All of these are legitimate, practical reasons to use a simulator instead of a live wallet.",
       ],
       bullets: [
@@ -907,12 +907,12 @@ export const blogPosts: BlogPost[] = [
       ],
     },
     {
-      title: "What to look for in a good ph4ntom wallet simulator",
+      title: "What to look for in a good phantom wallet simulator",
       summary:
         "Not all simulators are equal — here is what separates useful tools from flimsy ones.",
       paragraphs: [
-        "The first thing that matters is visual fidelity. If the simulator does not look convincingly close to a real ph4ntom wallet, it fails at its only job. The spacing, the font rendering, the color palette, the token icons, the balance formatting — all of it needs to feel native. Users who work with wallet UI every day will spot a cheap mockup instantly, and so will their audiences.",
-        "Customization depth is the second factor. A good ph4ntom simulator app lets you set specific token balances, add or remove tokens from the portfolio, adjust the total value, and ideally tweak details like wallet addresses and transaction histories. The more control you have over the visual state, the more useful the tool becomes across different projects. A simulator that only shows one hardcoded balance is barely a step above a static screenshot.",
+        "The first thing that matters is visual fidelity. If the simulator does not look convincingly close to a real phantom wallet, it fails at its only job. The spacing, the font rendering, the color palette, the token icons, the balance formatting — all of it needs to feel native. Users who work with wallet UI every day will spot a cheap mockup instantly, and so will their audiences.",
+        "Customization depth is the second factor. A good phantom simulator app lets you set specific token balances, add or remove tokens from the portfolio, adjust the total value, and ideally tweak details like wallet addresses and transaction histories. The more control you have over the visual state, the more useful the tool becomes across different projects. A simulator that only shows one hardcoded balance is barely a step above a static screenshot.",
         "The third thing — and this is where RPWallet puts a lot of focus — is workflow speed. Creators and product teams do not want to spend twenty minutes configuring a wallet mockup. They want to open the app, set the state they need, capture the output, and move on. The best simulators treat the setup process as a production tool, not a novelty toy. That means fast token selection, instant balance editing, and an interface that stays out of your way while you work.",
       ],
       callout:
@@ -921,9 +921,9 @@ export const blogPosts: BlogPost[] = [
     {
       title: "Why RPWallet is built for this exact job",
       summary:
-        "RPWallet was designed from the start as a ph4ntom wallet simulator for people who need clean, controlled wallet visuals.",
+        "RPWallet was designed from the start as a phantom wallet simulator for people who need clean, controlled wallet visuals.",
       paragraphs: [
-        "RPWallet is not a repurposed fintech app or a hacked-together screenshot generator. It was built specifically as a ph4ntom wallet simulator for content creators, designers, and product teams. Every design decision — from the token selection flow to the balance editing interface to the overall visual polish — was made with one goal: give users a realistic wallet screen they can capture and use immediately.",
+        "RPWallet is not a repurposed fintech app or a hacked-together screenshot generator. It was built specifically as a phantom wallet simulator for content creators, designers, and product teams. Every design decision — from the token selection flow to the balance editing interface to the overall visual polish — was made with one goal: give users a realistic wallet screen they can capture and use immediately.",
         "The app supports custom token balances, realistic portfolio layouts, and the kind of visual accuracy that makes the output actually usable in professional contexts. Whether you need a quick screenshot for a tweet, a detailed wallet state for a product demo, or a series of consistent visuals for a landing page, RPWallet handles the production side so you can focus on the creative side.",
         "And because RPWallet is openly positioned as a simulator — not disguised as a real wallet — users never have to worry about the ethical grey areas that surround shadier tools. The app is what it says it is: a premium wallet mockup tool for people who make things.",
       ],
@@ -931,24 +931,24 @@ export const blogPosts: BlogPost[] = [
   ],
   faq: [
     {
-      question: "Is a ph4ntom wallet simulator legal?",
+      question: "Is a phantom wallet simulator legal?",
       answer:
-        "Yes. A ph4ntom wallet simulator is a visual mockup tool, similar to a design template or a UI prototype. It does not connect to any blockchain, hold real funds, or facilitate transactions. Using one for content creation, product demos, design work, or education is completely legal. What would be illegal is using any tool — simulator or otherwise — to defraud someone. The tool itself is not the issue; the intent and usage determine legality.",
+        "Yes. A phantom wallet simulator is a visual mockup tool, similar to a design template or a UI prototype. It does not connect to any blockchain, hold real funds, or facilitate transactions. Using one for content creation, product demos, design work, or education is completely legal. What would be illegal is using any tool — simulator or otherwise — to defraud someone. The tool itself is not the issue; the intent and usage determine legality.",
     },
     {
       question:
-        "Can you make real transactions with a ph4ntom wallet simulator?",
+        "Can you make real transactions with a phantom wallet simulator?",
       answer:
-        "No. A legitimate ph4ntom wallet simulator like RPWallet has zero blockchain connectivity. You cannot send, receive, swap, or stake real tokens. The app generates visual output only — it is a screen that looks like a wallet, not a wallet that functions like one. There are no private keys, no seed phrases, and no network connections involved.",
+        "No. A legitimate phantom wallet simulator like RPWallet has zero blockchain connectivity. You cannot send, receive, swap, or stake real tokens. The app generates visual output only — it is a screen that looks like a wallet, not a wallet that functions like one. There are no private keys, no seed phrases, and no network connections involved.",
     },
     {
       question:
-        "What is the difference between a ph4ntom wallet simulator and a fake wallet scam?",
+        "What is the difference between a phantom wallet simulator and a fake wallet scam?",
       answer:
         "Intent and transparency. A simulator is openly marketed as a mockup and content tool — it says 'simulator' in the name and on the product page. A scam tool is designed to trick someone into believing a fake wallet is real, usually to steal funds or fake proof of holdings. RPWallet is a production tool for creators and teams, not a deception tool.",
     },
     {
-      question: "Who should use a ph4ntom wallet simulator?",
+      question: "Who should use a phantom wallet simulator?",
       answer:
         "Content creators who need wallet visuals for videos and social posts, product teams building demos or pitch decks, designers creating UI mockups or landing page screenshots, and educators who need safe wallet examples for tutorials and presentations. Basically, anyone who needs a realistic wallet screen without the risk or hassle of using a live account.",
     },
@@ -1018,7 +1018,7 @@ export const blogPosts: BlogPost[] = [
       summary:
         "The internet is very good at spotting inconsistencies, and the fallout from a sloppy fake can wreck a channel's credibility.",
       paragraphs: [
-        "Crypto Twitter and YouTube comments are ruthless about fake wallet screenshots. If your decimal precision is wrong, someone will notice. If the font doesn't match the real ph4ntom interface, someone will zoom in. If your token list includes coins that don't exist on the chain you're supposedly using, someone will screenshot your screenshot and turn it into a meme. The crypto portfolio mockup you spent ten minutes on in Canva can become the thing your channel is remembered for — and not in a good way.",
+        "Crypto Twitter and YouTube comments are ruthless about fake wallet screenshots. If your decimal precision is wrong, someone will notice. If the font doesn't match the real phantom interface, someone will zoom in. If your token list includes coins that don't exist on the chain you're supposedly using, someone will screenshot your screenshot and turn it into a meme. The crypto portfolio mockup you spent ten minutes on in Canva can become the thing your channel is remembered for — and not in a good way.",
         "The problem isn't that creators use fake visuals. Everybody understands that content involves some level of staging. The problem is when the fake is lazy enough to be insulting. A poorly edited fake wallet balance signals to your audience that you either don't understand what you're talking about or don't respect them enough to do it well.",
         "This is why simulation tools exist. A proper simulated crypto portfolio carries the right interface details — spacing, typography, token hierarchy, decimal handling — because it's built on top of the real visual structure. The output doesn't need manual correction because the tool already knows what the interface is supposed to look like.",
       ],
@@ -1031,7 +1031,7 @@ export const blogPosts: BlogPost[] = [
         "A simulation tool gives you control over every detail without the risk of editing real screenshots or exposing live accounts.",
       paragraphs: [
         "The workflow is straightforward. Instead of screenshotting a real wallet and editing out the parts you don't want, you start from a simulation tool like RPWallet and build the exact scene your content needs. Pick your tokens. Set balances that support the story. Arrange the portfolio in a way that makes visual sense for the format you're publishing in — whether that's a vertical reel, a wide thumbnail, or a square post.",
-        "This approach is better than manual editing for a few reasons. First, the interface details stay accurate. You're not guessing at padding, font weights, or how ph4ntom actually renders a token list. Second, you can reuse scenes. If you create a fake crypto balance for one video, that same setup can power your next three thumbnails without starting over. Third, there's nothing to leak. No real addresses, no actual transaction history, no accidental exposure of operational data.",
+        "This approach is better than manual editing for a few reasons. First, the interface details stay accurate. You're not guessing at padding, font weights, or how phantom actually renders a token list. Second, you can reuse scenes. If you create a fake crypto balance for one video, that same setup can power your next three thumbnails without starting over. Third, there's nothing to leak. No real addresses, no actual transaction history, no accidental exposure of operational data.",
         "The creators who do this well usually build a small library of three to five wallet states they rotate through. One might be a high-balance overview for attention-grabbing thumbnails. Another might be a more modest, realistic-looking portfolio for tutorial content. A third might be set up specifically for short-form clips where only the top portion of the screen is visible.",
       ],
       bullets: [
@@ -1470,7 +1470,7 @@ export const blogPosts: BlogPost[] = [
         "The intersection of meme culture, financial fantasy, and short-form video created the perfect storm.",
       paragraphs: [
         "The term 'larping' — borrowed from live-action role-playing — started showing up on Crypto Twitter around 2021. People would joke about 'larping as a whale' or 'larping as a degen' when they posted exaggerated portfolio screenshots or talked about trades they never actually made. What began as self-deprecating humor turned into a genuine content format. Accounts dedicated to crypto larp content now pull tens of thousands of followers.",
-        "Part of the reason this works is that crypto itself is already performative. The culture rewards bold claims, big numbers, and dramatic narratives. Larping fits right into that energy. A creator posting a simulated $2M ph4ntom wallet screenshot with the caption 'me if I hadn't sold in 2021' is tapping into a feeling that most crypto-native audiences immediately understand. It is comedy built on shared regret, aspiration, and absurdity.",
+        "Part of the reason this works is that crypto itself is already performative. The culture rewards bold claims, big numbers, and dramatic narratives. Larping fits right into that energy. A creator posting a simulated $2M phantom wallet screenshot with the caption 'me if I hadn't sold in 2021' is tapping into a feeling that most crypto-native audiences immediately understand. It is comedy built on shared regret, aspiration, and absurdity.",
         "Short-form video made this even more accessible. A TikTok creator can film a 15-second reaction to a fake wallet balance, add a trending sound, and reach an audience that would never sit through a 10-minute trading tutorial. The larp wallet is just the visual hook. The real product is the joke, the story, or the vibe. And that hook needs to look convincing enough to land — which is exactly where simulation apps come in.",
       ],
     },
@@ -1664,7 +1664,7 @@ export const blogPosts: BlogPost[] = [
         summary:
           "RPWallet was built specifically for this use case, with a focus on visual fidelity, customizability, and safety.",
         paragraphs: [
-          "RPWallet is a progressive web app that simulates the ph4ntom wallet interface with pixel-perfect accuracy. Every screen, animation, and interaction is replicated faithfully so the output is indistinguishable from the real app. Users can set any balance, add any Solana token, and customize their portfolio to match any scenario.",
+          "RPWallet is a progressive web app that simulates the phantom wallet interface with pixel-perfect accuracy. Every screen, animation, and interaction is replicated faithfully so the output is indistinguishable from the real app. Users can set any balance, add any Solana token, and customize their portfolio to match any scenario.",
           "The app supports live token price feeds, so balances update with real market data. It also supports peer-to-peer simulated transactions between RPWallet users, complete with push notifications, balance updates, and transaction history changes. No other fake wallet app offers this level of interactivity.",
           "Because it runs as a PWA, there is nothing to download from an app store. Users install it directly from the browser, which also means there is no risk of app store takedowns or policy violations. The setup takes less than two minutes.",
         ],
@@ -1695,11 +1695,11 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: "trust-wallet-simulator-guide",
-    title: "Tru5t Simulator: How to Create Realistic Tru5t Screenshots and Demos",
+    title: "Trust Simulator: How to Create Realistic Trust Screenshots and Demos",
     excerpt:
-      "A practical guide to creating Tru5t-style screenshots, demos, and video content using wallet simulation tools.",
+      "A practical guide to creating Trust-style screenshots, demos, and video content using wallet simulation tools.",
     description:
-      "Learn how to simulate Tru5t for content creation, product demos, and entertainment. Create realistic Tru5t screenshots and recordings without using real funds.",
+      "Learn how to simulate Trust for content creation, product demos, and entertainment. Create realistic Trust screenshots and recordings without using real funds.",
     date: "May 25, 2026",
     author: "RPWallet Editorial",
     readingTime: "12 min read",
@@ -1707,23 +1707,23 @@ export const blogPosts: BlogPost[] = [
     image: "/logo.webp",
     heroLabel: "Wallet Guide",
     keywords: [
-      "tru5t simulator",
-      "tru5t simulator app",
-      "fake tru5t",
-      "tru5t screenshot generator",
-      "tru5t demo",
-      "tru5t mockup",
-      "simulated tru5t",
-      "tru5t balance generator",
+      "trust simulator",
+      "trust simulator app",
+      "fake trust",
+      "trust screenshot generator",
+      "trust demo",
+      "trust mockup",
+      "simulated trust",
+      "trust balance generator",
       "crypto wallet simulator",
     ],
     takeaways: [
-      "Tru5t is one of the most recognized multi-chain wallets, making it a popular target for content creation and demo production.",
-      "A good Tru5t simulator replicates the token list, balance display, and portfolio view with enough fidelity to be useful in screenshots and videos.",
+      "Trust is one of the most recognized multi-chain wallets, making it a popular target for content creation and demo production.",
+      "A good Trust simulator replicates the token list, balance display, and portfolio view with enough fidelity to be useful in screenshots and videos.",
       "The safest and fastest approach is using a dedicated wallet simulation app rather than editing screenshots manually or using real accounts.",
     ],
     audience: [
-      "Creators making Tru5t content for YouTube or TikTok",
+      "Creators making Trust content for YouTube or TikTok",
       "Product teams demoing multi-chain wallet features",
       "Educators teaching about multi-chain portfolio management",
       "Marketers building comparison content across wallet types",
@@ -1731,11 +1731,11 @@ export const blogPosts: BlogPost[] = [
     checklist: [
       "Choose a simulator that supports multi-chain token display",
       "Configure balances across BNB, Ethereum, and Solana tokens",
-      "Test the output against real Tru5t screenshots for fidelity",
+      "Test the output against real Trust screenshots for fidelity",
       "Disclose that the content uses simulated visuals",
     ],
     stats: [
-      { label: "Tru5t monthly users", value: "25M+" },
+      { label: "Trust monthly users", value: "25M+" },
       { label: "Supported chains", value: "100+" },
       { label: "Primary content format", value: "Screenshots, video" },
     ],
@@ -1745,22 +1745,22 @@ export const blogPosts: BlogPost[] = [
     },
     sections: [
       {
-        title: "Why people search for a Tru5t simulator",
+        title: "Why people search for a Trust simulator",
         summary:
-          "Tru5t is one of the most widely used mobile crypto wallets in the world, and that popularity drives demand for simulation tools.",
+          "Trust is one of the most widely used mobile crypto wallets in the world, and that popularity drives demand for simulation tools.",
         paragraphs: [
-          "Tru5t holds a unique position in the crypto ecosystem. It is the default wallet for millions of Binance users, supports over 100 blockchains, and has one of the most recognizable mobile interfaces in the space. That visibility makes it a natural choice for content creators, educators, and product teams who need wallet visuals for their work.",
-          "The search for a Tru5t simulator comes from a simple problem: people need to show Tru5t screens in their content, but using a real wallet with real funds is slow, risky, and hard to control. A simulator solves all three issues by providing a customizable, risk-free environment.",
-          "The demand is especially strong in emerging markets where Tru5t has deep adoption. Creators in Africa, Southeast Asia, and Latin America frequently produce crypto education and entertainment content that needs believable wallet visuals without requiring actual holdings.",
+          "Trust holds a unique position in the crypto ecosystem. It is the default wallet for millions of Binance users, supports over 100 blockchains, and has one of the most recognizable mobile interfaces in the space. That visibility makes it a natural choice for content creators, educators, and product teams who need wallet visuals for their work.",
+          "The search for a Trust simulator comes from a simple problem: people need to show Trust screens in their content, but using a real wallet with real funds is slow, risky, and hard to control. A simulator solves all three issues by providing a customizable, risk-free environment.",
+          "The demand is especially strong in emerging markets where Trust has deep adoption. Creators in Africa, Southeast Asia, and Latin America frequently produce crypto education and entertainment content that needs believable wallet visuals without requiring actual holdings.",
         ],
       },
       {
-        title: "What a good Tru5t simulator needs to do",
+        title: "What a good Trust simulator needs to do",
         summary:
           "The bar is set by the real app. Any simulator needs to match the visual language closely enough to be convincing in content.",
         paragraphs: [
-          "Tru5t has a distinctive interface. The portfolio overview, token list layout, individual token detail screens, and transaction history all have specific visual patterns that users recognize immediately. A simulator needs to replicate these patterns with enough fidelity that the output feels authentic in screenshots and videos.",
-          "Multi-chain support is critical. Tru5t is not just a BNB wallet — users expect to see Ethereum, Solana, Polygon, Avalanche, and dozens of other networks represented. A simulator that only supports one chain misses the point of what makes Tru5t distinctive.",
+          "Trust has a distinctive interface. The portfolio overview, token list layout, individual token detail screens, and transaction history all have specific visual patterns that users recognize immediately. A simulator needs to replicate these patterns with enough fidelity that the output feels authentic in screenshots and videos.",
+          "Multi-chain support is critical. Trust is not just a BNB wallet — users expect to see Ethereum, Solana, Polygon, Avalanche, and dozens of other networks represented. A simulator that only supports one chain misses the point of what makes Trust distinctive.",
           "Balance customization needs to be fast and intuitive. Content creators often need to switch between different portfolio scenarios within a single production session. The simulator should make it easy to set any token to any balance without complex configuration.",
         ],
         bullets: [
@@ -1771,33 +1771,33 @@ export const blogPosts: BlogPost[] = [
         ],
       },
       {
-        title: "Current options for Tru5t simulation",
+        title: "Current options for Trust simulation",
         summary:
           "The landscape ranges from purpose-built apps to manual workarounds, each with different tradeoffs.",
         paragraphs: [
-          "Purpose-built wallet simulators like RPWallet offer the highest-fidelity approach. While RPWallet currently focuses on ph4ntom wallet replication, the core simulation engine and the visual production workflow it enables are directly transferable to Tru5t-style content. The token customization, live price feeds, and screenshot-ready interface work regardless of which wallet brand the creator is targeting.",
+          "Purpose-built wallet simulators like RPWallet offer the highest-fidelity approach. While RPWallet currently focuses on phantom wallet replication, the core simulation engine and the visual production workflow it enables are directly transferable to Trust-style content. The token customization, live price feeds, and screenshot-ready interface work regardless of which wallet brand the creator is targeting.",
           "Manual screenshot editing with Photoshop or Figma is another option, but it is painfully slow for regular content production. Every new balance, token addition, or portfolio change requires manual pixel work. For a one-off screenshot it is manageable, but for ongoing content it becomes a bottleneck.",
-          "Using a real Tru5t with small test amounts is technically possible but introduces all the problems that simulators are designed to solve: unpredictable balances, live price fluctuations, and the risk of accidentally exposing real account details.",
+          "Using a real Trust with small test amounts is technically possible but introduces all the problems that simulators are designed to solve: unpredictable balances, live price fluctuations, and the risk of accidentally exposing real account details.",
         ],
       },
       {
-        title: "How to create Tru5t content with RPWallet",
+        title: "How to create Trust content with RPWallet",
         summary:
-          "Even though RPWallet focuses on ph4ntom simulation, the visual production workflow applies directly to Tru5t content.",
+          "Even though RPWallet focuses on phantom simulation, the visual production workflow applies directly to Trust content.",
         paragraphs: [
           "RPWallet provides the cleanest workflow for creating wallet simulation content. Set up a portfolio with the tokens and balances you want to show, capture screenshots or screen recordings, and use the output in your content. The process takes minutes instead of hours.",
-          "For creators who specifically need Tru5t branding, RPWallet serves as the production backbone. The simulated portfolio and balance data can be captured and used as reference material, while the overall content strategy — consistent visuals, reusable scenes, and professional output — transfers directly.",
-          "The peer-to-peer transaction simulation feature is particularly valuable for Tru5t-style content. Showing a live incoming transfer with a notification and balance update creates much more engaging content than a static screenshot, regardless of which wallet interface is being presented.",
+          "For creators who specifically need Trust branding, RPWallet serves as the production backbone. The simulated portfolio and balance data can be captured and used as reference material, while the overall content strategy — consistent visuals, reusable scenes, and professional output — transfers directly.",
+          "The peer-to-peer transaction simulation feature is particularly valuable for Trust-style content. Showing a live incoming transfer with a notification and balance update creates much more engaging content than a static screenshot, regardless of which wallet interface is being presented.",
         ],
         callout:
           "A great simulation workflow matters more than matching a specific wallet brand pixel for pixel. Audiences care about the content, not the exact shade of blue in the header.",
       },
       {
-        title: "Tru5t simulation for education and training",
+        title: "Trust simulation for education and training",
         summary:
           "Teaching crypto concepts is much safer and more effective with simulated wallets.",
         paragraphs: [
-          "Crypto education is one of the fastest-growing content categories globally, and Tru5t is often the wallet that educators choose to teach with because of its multi-chain simplicity. A simulator makes teaching dramatically easier because the instructor can show any portfolio state, any transaction, and any balance without managing real funds.",
+          "Crypto education is one of the fastest-growing content categories globally, and Trust is often the wallet that educators choose to teach with because of its multi-chain simplicity. A simulator makes teaching dramatically easier because the instructor can show any portfolio state, any transaction, and any balance without managing real funds.",
           "Training programs for crypto newcomers benefit especially from simulation. New users can explore the wallet interface, understand how token balances work, and see what a transaction looks like — all without the anxiety of handling real money. The learning curve drops significantly when the financial risk is removed.",
           "Educators should consider building a library of simulated wallet states that they reuse across lessons. A consistent visual environment helps students build familiarity with the interface faster than seeing different random states every session.",
         ],
@@ -1805,17 +1805,17 @@ export const blogPosts: BlogPost[] = [
     ],
     faq: [
       {
-        question: "Is there a Tru5t simulator app?",
+        question: "Is there a Trust simulator app?",
         answer:
-          "There is no official Tru5t simulator from Tru5t itself. Third-party tools like RPWallet provide wallet simulation capabilities that can be used to create Tru5t-style content for demos, education, and entertainment.",
+          "There is no official Trust simulator from Trust itself. Third-party tools like RPWallet provide wallet simulation capabilities that can be used to create Trust-style content for demos, education, and entertainment.",
       },
       {
-        question: "Can I fake a Tru5t balance?",
+        question: "Can I fake a Trust balance?",
         answer:
           "Yes, using a wallet simulator app you can display any balance for any token. This is commonly used for content creation, product demos, and educational materials. Always disclose that the balance is simulated when publishing content.",
       },
       {
-        question: "Is it safe to use a Tru5t simulator?",
+        question: "Is it safe to use a Trust simulator?",
         answer:
           "A legitimate simulator like RPWallet never asks for seed phrases or private keys. It creates a completely separate simulated environment with no connection to real funds or real wallets.",
       },
@@ -1877,7 +1877,7 @@ export const blogPosts: BlogPost[] = [
         summary:
           "Hardware wallets present a unique simulation challenge because part of the experience is physical.",
         paragraphs: [
-          "Ledger wallets are different from software wallets like ph4ntom or Tru5t in one fundamental way: the interface is split between a physical device (the Ledger Nano or Stax) and companion software (Ledger Live). Simulating the physical device screen is difficult and usually unnecessary for most content scenarios. What creators and educators actually need is simulation of the portfolio view — the balances, token lists, and transaction history that users see in Ledger Live.",
+          "Ledger wallets are different from software wallets like phantom or Trust in one fundamental way: the interface is split between a physical device (the Ledger Nano or Stax) and companion software (Ledger Live). Simulating the physical device screen is difficult and usually unnecessary for most content scenarios. What creators and educators actually need is simulation of the portfolio view — the balances, token lists, and transaction history that users see in Ledger Live.",
           "The search for a Ledger wallet simulator usually comes from people who need to show what a Ledger-managed portfolio looks like without connecting a real device or exposing real holdings. This is common in tutorial content, product comparison articles, and educational presentations where the audience needs to understand the Ledger experience visually.",
           "The practical solution is to use a wallet simulation tool that can replicate the portfolio view with the right tokens, balances, and visual structure. The physical device component can be handled with stock photography, device mockups, or simple illustrations.",
         ],
@@ -1889,7 +1889,7 @@ export const blogPosts: BlogPost[] = [
         paragraphs: [
           "When someone searches for a Ledger wallet simulator, they are usually trying to solve one of three problems. First, they want to show a portfolio that looks like it is managed by a Ledger without revealing their real holdings. Second, they want to demonstrate how a Ledger-managed portfolio appears for educational content. Third, they want to compare the Ledger experience with other wallets in a review or comparison article.",
           "All three of these use cases are portfolio-level problems. The simulation needs to show realistic token balances across multiple chains (Ledger supports Bitcoin, Ethereum, Solana, and hundreds of other tokens), a clean portfolio overview, and believable transaction history. The actual Ledger device screen is a secondary detail.",
-          "This insight is important because it means the same wallet simulation tools used for ph4ntom or Tru5t content work just as well for Ledger portfolio content. The visual production workflow is the same: configure tokens, set balances, capture screenshots, and use the output in content.",
+          "This insight is important because it means the same wallet simulation tools used for phantom or Trust content work just as well for Ledger portfolio content. The visual production workflow is the same: configure tokens, set balances, capture screenshots, and use the output in content.",
         ],
         bullets: [
           "Portfolio overview with multi-chain token display",
@@ -1901,7 +1901,7 @@ export const blogPosts: BlogPost[] = [
       {
         title: "How to create Ledger wallet content with RPWallet",
         summary:
-          "The same simulation workflow that works for ph4ntom applies directly to Ledger-style content production.",
+          "The same simulation workflow that works for phantom applies directly to Ledger-style content production.",
         paragraphs: [
           "RPWallet provides the ideal production environment for creating Ledger-style wallet content. Set up a portfolio with Bitcoin, Ethereum, Solana, and any other tokens relevant to your content. Customize the balances to match your scenario. Capture screenshots or recordings and use them alongside Ledger device imagery.",
           "For tutorial content, the workflow is especially powerful. Show the portfolio view from RPWallet while explaining how Ledger hardware security works. The audience gets a clear visual reference for the portfolio side while you explain the security concepts separately. This separation actually makes the content clearer than trying to film a tiny Ledger device screen.",
@@ -2027,7 +2027,7 @@ export const blogPosts: BlogPost[] = [
           "RPWallet was purpose-built for this exact use case, and its features reflect the needs of the LARP community.",
         paragraphs: [
           "RPWallet exists because no other tool was good enough. Before it launched, creators relied on Photoshop edits, inspect-element browser hacks, or screenshots from wallets with tiny real balances. Each method was either too slow, too inconsistent, or too risky for regular content production.",
-          "The app solves these problems with a pixel-perfect ph4ntom wallet simulation that supports any Solana token, live price feeds, and fully customizable balances. Creators can go from zero to a convincing whale portfolio in under two minutes. The output is screenshot-ready and video-ready immediately.",
+          "The app solves these problems with a pixel-perfect phantom wallet simulation that supports any Solana token, live price feeds, and fully customizable balances. Creators can go from zero to a convincing whale portfolio in under two minutes. The output is screenshot-ready and video-ready immediately.",
           "The peer-to-peer transaction feature is what sets RPWallet apart from simple screenshot generators. Two RPWallet users can simulate transactions between each other in real time, complete with push notifications, balance updates, and transaction history entries. This creates genuinely immersive content that static screenshots cannot match.",
         ],
         bullets: [
@@ -2066,7 +2066,7 @@ export const blogPosts: BlogPost[] = [
           "Setting up RPWallet takes less than two minutes and requires no downloads, seed phrases, or real crypto.",
         paragraphs: [
           "Getting started is deliberately simple. Visit the RPWallet dashboard, activate your license key, and install the progressive web app on your device. The installation takes seconds because there is nothing to download from an app store.",
-          "Once installed, you can immediately start building your LARP portfolio. Add tokens, set balances, and configure the wallet to match whatever scenario you want to create. The interface is designed to feel exactly like a real ph4ntom wallet, so the learning curve is essentially zero if you have ever used a crypto wallet before.",
+          "Once installed, you can immediately start building your LARP portfolio. Add tokens, set balances, and configure the wallet to match whatever scenario you want to create. The interface is designed to feel exactly like a real phantom wallet, so the learning curve is essentially zero if you have ever used a crypto wallet before.",
           "For your first piece of content, start simple. Create a portfolio state that tells a clear story — maybe a whale-sized SOL position, or a diversified portfolio across trending tokens. Capture a screenshot, add it to your content with a disclosure note, and you are ready to publish.",
         ],
       },
@@ -2085,7 +2085,7 @@ export const blogPosts: BlogPost[] = [
       {
         question: "What is the best LARP wallet app?",
         answer:
-          "RPWallet is the leading LARP wallet app. It provides pixel-perfect ph4ntom wallet simulation, customizable balances, live price feeds, and peer-to-peer transaction simulation.",
+          "RPWallet is the leading LARP wallet app. It provides pixel-perfect phantom wallet simulation, customizable balances, live price feeds, and peer-to-peer transaction simulation.",
       },
       {
         question: "Can I use RPWallet for TikTok content?",
@@ -2112,7 +2112,7 @@ export const blogPosts: BlogPost[] = [
       "wallet simulator app",
       "crypto wallet demo tool",
       "wallet simulation for presentations",
-      "ph4ntom wallet simulator",
+      "phantom wallet simulator",
       "crypto demo app",
       "wallet mockup tool",
       "simulated crypto wallet for business",
@@ -2191,7 +2191,7 @@ export const blogPosts: BlogPost[] = [
         paragraphs: [
           "Landing page hero images, social media ads, email graphics, comparison charts, feature highlight screenshots — modern crypto marketing requires a continuous stream of wallet visuals. Creating each one from a live wallet is impractical. Creating each one in Photoshop is slow. A simulator provides the production layer that makes consistent, high-quality output possible.",
           "The visual consistency that simulators enable is a genuine competitive advantage. When every wallet screenshot across your marketing materials uses the same token set, similar balances, and identical visual quality, the overall brand impression improves significantly. Audiences may not consciously notice the consistency, but they feel it.",
-          "RPWallet is particularly effective for this use case because the output is always pixel-perfect. The simulated wallet looks exactly like the real ph4ntom wallet, which means screenshots can be used directly in marketing without any post-processing or editing.",
+          "RPWallet is particularly effective for this use case because the output is always pixel-perfect. The simulated wallet looks exactly like the real phantom wallet, which means screenshots can be used directly in marketing without any post-processing or editing.",
         ],
       },
       {
@@ -2219,7 +2219,7 @@ export const blogPosts: BlogPost[] = [
       {
         question: "What is the best crypto wallet simulator for business?",
         answer:
-          "RPWallet is the leading option for business use cases. It provides pixel-perfect ph4ntom wallet simulation, full portfolio customization, live price feeds, and real-time P2P transaction simulation — all without requiring real funds.",
+          "RPWallet is the leading option for business use cases. It provides pixel-perfect phantom wallet simulation, full portfolio customization, live price feeds, and real-time P2P transaction simulation — all without requiring real funds.",
       },
       {
         question: "Can I use a wallet simulator in a live presentation?",

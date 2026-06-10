@@ -26,49 +26,44 @@ const PRODUCT_IMAGES = [
 ] as const;
 
 function ProductImageSwiper() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % PRODUCT_IMAGES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="relative z-0 mt-6 flex w-full flex-col items-center overflow-hidden px-2 md:mt-8"
+      className="relative z-0 mt-6 flex w-full flex-col items-center px-2 md:mt-8"
     >
-      <div className="relative h-[430px] w-full max-w-[280px] md:h-[560px] md:max-w-[360px]">
-        <div className="rp-product-swiper-track flex h-full w-[200%]">
-          {PRODUCT_IMAGES.map((image, index) => (
+      <div className="relative h-[480px] w-full max-w-[310px] md:h-[640px] md:max-w-[410px]">
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -50, scale: 0.95 }}
+            transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
+            className="absolute inset-0 flex h-full w-full"
+          >
             <Image
-              key={image.src}
-              src={getAssetUrl(image.src)}
-              alt={image.alt}
-              width={360}
-              height={748}
-              priority={index === 0}
-              sizes="(min-width: 768px) 360px, 280px"
-              className="h-full w-1/2 shrink-0 object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.48)]"
+              src={getAssetUrl(PRODUCT_IMAGES[currentIndex].src)}
+              alt={PRODUCT_IMAGES[currentIndex].alt}
+              width={410}
+              height={852}
+              priority={currentIndex === 0}
+              sizes="(min-width: 768px) 410px, 310px"
+              className="h-full w-full object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.48)]"
             />
-          ))}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
-      <style jsx global>{`
-        @keyframes rp-product-swipe {
-          0%,
-          42% {
-            transform: translateX(0);
-          }
-          52%,
-          92% {
-            transform: translateX(-50%);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-
-        .rp-product-swiper-track {
-          animation: rp-product-swipe 6s ease-in-out infinite;
-          will-change: transform;
-        }
-      `}</style>
     </motion.div>
   );
 }
@@ -277,7 +272,7 @@ export default function LandingContent() {
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Ph4ntom and Tru5t wallet interface - no real crypto involved.</p>
+            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.</p>
           </motion.div>
         </div>
 
@@ -319,8 +314,8 @@ export default function LandingContent() {
               body: "Use a full fake crypto wallet app with balances, token lists, wallet names, and activity that behave like a real mobile wallet interface.",
             },
             {
-              title: "Ph4ntom and Tru5t",
-              body: "Show realistic Ph4ntom or Tru5t-style screens for content, demos, pranks, screenshots, and short videos.",
+              title: "Phantom and Trust",
+              body: "Show realistic Phantom or Trust-style screens for content, demos, pranks, screenshots, and short videos.",
             },
             {
               title: "LARP wallet app",
@@ -344,10 +339,10 @@ export default function LandingContent() {
           <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
             Looks exactly like
             <br />
-            <span className="text-[#ab9ff2]">the real thing.</span>
+            <span className="text-[#ab9ff2]">Phantom & Trust.</span>
           </h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
-            Looks real. Feels real. Set any balance on any token and nobody will know.
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-lg mx-auto leading-relaxed mt-4">
+            Flawless 1:1 simulations for both wallets. Set any balance, simulate any token, and nobody will know it's not the real thing.
           </p>
         </div>
 
@@ -669,7 +664,7 @@ export default function LandingContent() {
             },
             {
               q: "What wallets can I simulate?",
-              a: "RPWallet includes realistic Ph4ntom-style and Tru5t-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
+              a: "RPWallet includes realistic Phantom-style and Trust-style mobile experiences, with live-looking balances, token pages, activity, and wallet flows.",
             },
             {
               q: "How do I get my license key?",
@@ -710,17 +705,17 @@ export default function LandingContent() {
       <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
         <div className="rounded-[2rem] border border-white/5 bg-white/[0.015] p-6 md:p-8 text-center">
           <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
-            RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Ph4ntom wallet, fake Ph4ntom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Ph4ntom LARP wallet, Tru5t simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
+            RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             {[
               "fake crypto wallet app",
               "crypto wallet simulator",
-              "fake Ph4ntom wallet",
-              "fake Ph4ntom wallet balance",
+              "fake Phantom wallet",
+              "fake Phantom wallet balance",
               "LARP wallet app",
               "fake crypto wallet screen",
-              "Tru5t simulator",
+              "Trust simulator",
               "crypto LARP app",
             ].map((term) => (
               <span
