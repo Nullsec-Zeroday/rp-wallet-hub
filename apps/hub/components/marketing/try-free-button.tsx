@@ -5,17 +5,29 @@ import { ArrowDown, ArrowRight, ArrowUpRight, Wallet2, WalletCards } from "lucid
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/lib/track";
+import type { LandingCopyVariant } from "@/hooks/useLandingCopyExperiment";
 
-export default function TryFreeButton({ className, wrapperClassName }: { className?: string, wrapperClassName?: string }) {
+export default function TryFreeButton({
+  className,
+  wrapperClassName,
+  label: labelOverride,
+  copyVariant = "control",
+}: {
+  className?: string;
+  wrapperClassName?: string;
+  label?: string;
+  copyVariant?: LandingCopyVariant;
+}) {
   const demoEnabled = process.env.NEXT_PUBLIC_FREE_DEMO_ENABLED === "true";
   const href = demoEnabled ? "/dashboard" : "/#installation";
-  const label = demoEnabled ? "Try Free Now" : "Get App Access";
+  const label = labelOverride || (demoEnabled ? "Try Free Now" : "Get App Access");
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     trackEvent("clicked_get_rpwallet", {
       path: window.location.pathname,
       target: href,
       demoEnabled,
+      landing_copy_variant: copyVariant,
     });
 
     if (demoEnabled) return;

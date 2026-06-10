@@ -18,6 +18,7 @@ import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 import { getStoredAttribution } from "@/lib/affiliate-attribution";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import { HUB_API_BASE_URL } from "@/lib/api-base-url";
+import { useLandingCopyExperiment } from "@/hooks/useLandingCopyExperiment";
 import React from "react";
 
 const PRODUCT_IMAGES = [
@@ -70,6 +71,8 @@ function ProductImageSwiper() {
 
 
 export default function LandingContent() {
+  const landingCopyVariant = useLandingCopyExperiment();
+  const isMakeMoneyVariant = landingCopyVariant === "make-money";
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") return window.innerWidth < 768;
     return true;
@@ -130,10 +133,18 @@ export default function LandingContent() {
     if (checkoutLocked) return;
     setSelectedPlanId(plan.id);
 
+    trackEvent("pricing_buy_clicked", {
+      plan: plan.id,
+      price: plan.price,
+      source: "landing_pricing",
+      landing_copy_variant: landingCopyVariant,
+    });
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
     trackEvent("checkout_started", {
       plan: plan.id,
       price: plan.price,
+      source: "landing_pricing",
+      landing_copy_variant: landingCopyVariant,
       has_embed_config:
         Boolean(plan.sellauthProductId) &&
         Boolean(plan.sellauthVariantId) &&
@@ -253,7 +264,7 @@ export default function LandingContent() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
           </div>
-          Now with latest Phantom UI
+          {isMakeMoneyVariant ? "Built for creators who monetize" : "Now with latest Phantom UI"}
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
@@ -263,7 +274,15 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
-            Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
+            {isMakeMoneyVariant ? (
+              <>
+                Create crypto content <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">that converts.</span>
+              </>
+            ) : (
+              <>
+                Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
+              </>
+            )}
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
@@ -271,8 +290,14 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-semibold">The #1 Fake Crypto Wallet App 🥇</span>
-            <p>RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.</p>
+            <span className="text-white/90 font-semibold">
+              {isMakeMoneyVariant ? "A wallet visual toolkit for revenue-focused creators" : "The #1 Fake Crypto Wallet App 🥇"}
+            </span>
+            <p>
+              {isMakeMoneyVariant
+                ? "Create pixel-perfect Phantom and Trust wallet scenes for paid content, product demos, ads, and client work - without risking real funds."
+                : "RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved."}
+            </p>
           </motion.div>
         </div>
 
@@ -282,7 +307,7 @@ export default function LandingContent() {
           transition={{ duration: 0.4 }}
           className="relative z-10 w-full flex flex-col items-center justify-center mt-2 md:mt-0"
         >
-          <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} />
+          <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} copyVariant={landingCopyVariant} />
         </motion.div>
 
 
@@ -487,7 +512,11 @@ export default function LandingContent() {
             <>
               <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.28em] text-[#ab9ff2]">Pricing</p>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3 leading-tight">
-                Try it for free.<br />Pay when you&apos;re ready.
+                {isMakeMoneyVariant ? (
+                  <>Create first.<br />Upgrade when it earns its place.</>
+                ) : (
+                  <>Try it for free.<br />Pay when you&apos;re ready.</>
+                )}
               </h2>
               {/* <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
                 Open a timed demo session first. Upgrade only when you want unlimited wallet access.
@@ -496,7 +525,11 @@ export default function LandingContent() {
           ) : (
             <>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
-              <p className="text-white/60 text-base md:text-lg font-medium max-w-xs mx-auto leading-relaxed">Only one-time payments. 100% secure checkout, powered by Pandabase.</p>
+              <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
+                {isMakeMoneyVariant
+                  ? "Get the production tool for sharper sponsored content, client demos, and crypto campaigns. No income is guaranteed."
+                  : "Only one-time payments. 100% secure checkout, powered by Pandabase."}
+              </p>
             </>
           )}
         </div>
@@ -611,7 +644,7 @@ export default function LandingContent() {
                       {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                     </>
                   ) : (
-                    <>Buy <ArrowRight size={18} /></>
+                    <>{isMakeMoneyVariant ? "Start Creating" : "Buy"} <ArrowRight size={18} /></>
                   )}
                 </button>
 

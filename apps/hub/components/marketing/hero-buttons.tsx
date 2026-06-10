@@ -3,12 +3,24 @@
 import React from "react";
 import { trackEvent } from "@/lib/track";
 import TryFreeButton from "./try-free-button";
+import type { LandingCopyVariant } from "@/hooks/useLandingCopyExperiment";
 
-export default function HeroButtons(_props: { onOpenDemo?: () => void }) {
+export default function HeroButtons({
+  onOpenDemo: _onOpenDemo,
+  copyVariant = "control",
+}: {
+  onOpenDemo?: () => void;
+  copyVariant?: LandingCopyVariant;
+}) {
   return (
     <div className="flex flex-col mb-8 w-full max-w-lg px-4">
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-center gap-4 w-full">
-        <TryFreeButton wrapperClassName="w-full sm:w-[280px]" className="!w-full" />
+        <TryFreeButton
+          wrapperClassName="w-full sm:w-[280px]"
+          className="!w-full"
+          label={copyVariant === "make-money" ? "Create Revenue-Ready Content" : undefined}
+          copyVariant={copyVariant}
+        />
         <a
           href="https://t.me/rpwalletTG"
           target="_blank"
