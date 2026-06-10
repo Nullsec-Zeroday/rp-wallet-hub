@@ -18,7 +18,7 @@ export default function HeroButtons({
         <TryFreeButton
           wrapperClassName="w-full sm:w-[280px]"
           className="!w-full"
-          label={copyVariant === "make-money" ? "Create Revenue-Ready Content" : undefined}
+          // label={copyVariant === "make-money" ? "Start Simulating Free" : undefined}
           copyVariant={copyVariant}
         />
         <a

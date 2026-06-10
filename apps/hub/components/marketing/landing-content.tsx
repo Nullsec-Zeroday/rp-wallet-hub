@@ -264,7 +264,7 @@ export default function LandingContent() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
           </div>
-          {isMakeMoneyVariant ? "Built for creators who monetize" : "Now with latest Phantom UI"}
+          {isMakeMoneyVariant ? "The #1 Premium Simulator" : "Now with latest Phantom UI"}
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
@@ -276,7 +276,7 @@ export default function LandingContent() {
           >
             {isMakeMoneyVariant ? (
               <>
-                Create crypto content <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">that converts.</span>
+                The perfect crypto <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">illusion.</span>
               </>
             ) : (
               <>
@@ -291,11 +291,11 @@ export default function LandingContent() {
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90 font-semibold">
-              {isMakeMoneyVariant ? "A wallet visual toolkit for revenue-focused creators" : "The #1 Fake Crypto Wallet App 🥇"}
+              {isMakeMoneyVariant ? "Reality is whatever you type." : "The #1 Fake Crypto Wallet App 🥇"}
             </span>
             <p>
               {isMakeMoneyVariant
-                ? "Create pixel-perfect Phantom and Trust wallet scenes for paid content, product demos, ads, and client work - without risking real funds."
+                ? "Instantly generate live, interactive Phantom and Trust simulations. Set any balance, simulate any token, and craft the perfect scene—no real funds required."
                 : "RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved."}
             </p>
           </motion.div>
@@ -513,7 +513,7 @@ export default function LandingContent() {
               <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.28em] text-[#ab9ff2]">Pricing</p>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3 leading-tight">
                 {isMakeMoneyVariant ? (
-                  <>Create first.<br />Upgrade when it earns its place.</>
+                  <>Perfect realism.<br />Zero risk.</>
                 ) : (
                   <>Try it for free.<br />Pay when you&apos;re ready.</>
                 )}
@@ -527,7 +527,7 @@ export default function LandingContent() {
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
               <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
                 {isMakeMoneyVariant
-                  ? "Get the production tool for sharper sponsored content, client demos, and crypto campaigns. No income is guaranteed."
+                  ? "The premium simulator for flawless screenshots, videos, and custom scenarios."
                   : "Only one-time payments. 100% secure checkout, powered by Pandabase."}
               </p>
             </>
@@ -644,7 +644,7 @@ export default function LandingContent() {
                       {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                     </>
                   ) : (
-                    <>{isMakeMoneyVariant ? "Start Creating" : "Buy"} <ArrowRight size={18} /></>
+                    <>{isMakeMoneyVariant ? "Unlock Full Access" : "Buy"} <ArrowRight size={18} /></>
                   )}
                 </button>
 
