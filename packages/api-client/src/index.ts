@@ -132,6 +132,17 @@ export class RpWalletApiClient {
     });
   }
 
+  async createNowPaymentsCheckout(body: {
+    planId: string;
+    email: string;
+    affiliateCode?: string;
+  }) {
+    return this.request<{ checkoutUrl: string; orderId: string }>("/payments/nowpayments/checkout", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
   async requestAffiliateMagicLink(body: { email: string }) {
     return this.request<{ ok: boolean }>("/affiliate/auth/request", {
       method: "POST",

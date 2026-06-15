@@ -44,6 +44,29 @@ export const licenses = pgTable(
   (table) => [uniqueIndex("licenses_key_hash_unique").on(table.keyHash)],
 );
 
+export const paymentOrders = pgTable(
+  "payment_orders",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(),
+    providerPaymentId: text("provider_payment_id"),
+    email: text("email").notNull(),
+    planId: text("plan_id").notNull(),
+    planLabel: text("plan_label").notNull(),
+    priceAmount: numeric("price_amount", { precision: 12, scale: 2 }).notNull(),
+    priceCurrency: text("price_currency").default("USD").notNull(),
+    durationDays: integer("duration_days").notNull(),
+    allowedDevices: integer("allowed_devices").default(1).notNull(),
+    affiliateCode: text("affiliate_code"),
+    status: text("status").default("created").notNull(),
+    licenseId: text("license_id").references(() => licenses.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+  },
+  (table) => [uniqueIndex("payment_orders_provider_payment_unique").on(table.provider, table.providerPaymentId)],
+);
+
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),
   userId: text("user_id")

@@ -12,6 +12,8 @@ export interface ApiEnv {
   DEMO_ENABLED?: string;
   DEMO_DURATION_MINUTES?: string;
   AFFILIATE_ADMIN_TOKEN?: string;
+  NOWPAYMENTS_API_KEY?: string;
+  NOWPAYMENTS_IPN_SECRET?: string;
   SELLAUTH_API_KEY?: string;
   SELLAUTH_WEBHOOK_SECRET?: string;
   SELLAUTH_SHOP_ID?: string;
@@ -31,6 +33,7 @@ export function getAllowedOrigins(env: ApiEnv) {
     "https://affiliate.rpwallet.app",
     "https://rpwallet.app",
     "https://www.rpwallet.app",
+    "http://localhost:3000",
     "http://127.0.0.1:3000",
     env.PHANTOM_ORIGIN || "http://localhost:5173",
     env.TRUST_ORIGIN || "http://localhost:5174",

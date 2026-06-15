@@ -14,12 +14,7 @@ const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
 import { trackEvent } from "@/lib/track";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { isDemoFeatureEnabled } from "@/lib/demo-config";
-import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
-import { getStoredAttribution } from "@/lib/affiliate-attribution";
-import { RpWalletApiClient } from "@rp-wallet/api-client";
-import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import { useLandingCopyExperiment } from "@/hooks/useLandingCopyExperiment";
-import React from "react";
 
 const PRODUCT_IMAGES = [
   { src: "/product/new-product-1.webp", alt: "RPWallet product screenshot 1" },
@@ -104,11 +99,7 @@ export default function LandingContent() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
   const demoEnabled = isDemoFeatureEnabled();
-
-  const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
-  const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
 
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
@@ -116,7 +107,7 @@ export default function LandingContent() {
   const [checkoutError, setCheckoutError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
 
-  const checkoutLocked = isLoading || checkoutPhase === "preparing" || checkoutPhase === "opening";
+  const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
 
   useEffect(() => {
     const resetReturnedCheckout = () => {
@@ -145,105 +136,12 @@ export default function LandingContent() {
       price: plan.price,
       source: "landing_pricing",
       landing_copy_variant: landingCopyVariant,
-      has_embed_config:
-        Boolean(plan.sellauthProductId) &&
-        Boolean(plan.sellauthVariantId) &&
-        Number(plan.sellauthProductId) > 0 &&
-        Number(plan.sellauthVariantId) > 0,
+      provider: "nowpayments",
     });
-    const slowTimer = window.setTimeout(() => setIsSlowCheckout(true), 4000);
-    const clearSlowTimer = () => window.clearTimeout(slowTimer);
-
-    const hasEmbedConfig =
-      plan.sellauthProductId &&
-      plan.sellauthVariantId &&
-      plan.sellauthProductId > 0 &&
-      plan.sellauthVariantId > 0;
-
-    if (hasEmbedConfig) {
-      setCheckoutError("");
-      setIsSlowCheckout(false);
-      setCheckoutPhase("preparing");
-      const attribution = getStoredAttribution();
-      let sellAuthAffiliate: string | undefined;
-      if (attribution) {
-        const intentResult = await api
-          .createAffiliateCheckoutIntent({
-            affiliateCode: attribution.affiliateCode,
-            visitorId: attribution.visitorId,
-            clickId: attribution.clickId,
-            plan: plan.id,
-            productId: plan.sellauthProductId,
-            variantId: plan.sellauthVariantId,
-          })
-          .catch(() => {
-            return null;
-          });
-        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
-      }
-      checkout({
-        cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
-        shopId,
-        affiliate: sellAuthAffiliate,
-        onPreparing: () => {
-          setCheckoutPhase("preparing");
-        },
-        onCheckoutUrlReady: () => {
-          setCheckoutPhase("opening");
-          trackEvent("checkout_url_ready", { plan: plan.id });
-        },
-        onError: (error) => {
-          clearSlowTimer();
-          setCheckoutError(error.message || "Please try again.");
-          setCheckoutPhase("error");
-          trackEvent("checkout_failed", {
-            plan: plan.id,
-            error: error.message || "Please try again.",
-          });
-        },
-        onSettled: ({ status, redirected }) => {
-          clearSlowTimer();
-          setIsSlowCheckout(false);
-          trackEvent("checkout_settled", {
-            plan: plan.id,
-            status,
-            redirected,
-          });
-          if (status === "success" && !redirected) {
-            setCheckoutPhase("idle");
-            setSelectedPlanId(null);
-          }
-        },
-      });
-    } else {
-      setCheckoutError("");
-      setIsSlowCheckout(false);
-      setCheckoutPhase("opening");
-      const attribution = getStoredAttribution();
-      let sellAuthAffiliate: string | undefined;
-      if (attribution) {
-        const intentResult = await api
-          .createAffiliateCheckoutIntent({
-            affiliateCode: attribution.affiliateCode,
-            visitorId: attribution.visitorId,
-            clickId: attribution.clickId,
-            plan: plan.id,
-          })
-          .catch(() => {
-            return null;
-          });
-        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
-      }
-      const fallbackUrl = new URL(plan.buyUrl);
-      if (sellAuthAffiliate) fallbackUrl.searchParams.set("affiliate", sellAuthAffiliate);
-      trackEvent("checkout_fallback_opened", { plan: plan.id });
-      window.open(fallbackUrl.toString(), "_blank");
-      window.setTimeout(() => {
-        clearSlowTimer();
-        setCheckoutPhase("idle");
-        setSelectedPlanId(null);
-      }, 800);
-    }
+    setCheckoutError("");
+    setIsSlowCheckout(false);
+    setCheckoutPhase("opening");
+    window.location.href = `/buy?plan=${encodeURIComponent(plan.id)}&checkout=1`;
   };
 
   return (
@@ -528,7 +426,7 @@ export default function LandingContent() {
               <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
                 {isMakeMoneyVariant
                   ? "The premium simulator for flawless screenshots, videos, and custom scenarios."
-                  : "Only one-time payments. 100% secure checkout, powered by Pandabase."}
+                  : "Crypto-only payments with secure checkout powered by NOWPayments."}
               </p>
             </>
           )}
@@ -565,8 +463,6 @@ export default function LandingContent() {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
             const isYearly = plan.id === "yearly";
-
-            const hasEmbedConfig = plan.sellauthProductId && plan.sellauthVariantId && plan.sellauthProductId > 0 && plan.sellauthVariantId > 0;
 
             return (
               <div
@@ -655,7 +551,7 @@ export default function LandingContent() {
                 )}
                 {selectedPlanId === plan.id && isSlowCheckout && !checkoutError && (
                   <div className="absolute -bottom-6 left-0 right-0 text-amber-400/80 text-xs text-center">
-                    SellAuth is taking a little longer. Please wait...
+                    Checkout is taking a little longer. Please wait...
                   </div>
                 )}
               </div>
@@ -762,8 +658,6 @@ export default function LandingContent() {
         </div>
       </section>
       <DemoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
-      {captcha}
-      {checkoutModal}
     </div>
   );
 }

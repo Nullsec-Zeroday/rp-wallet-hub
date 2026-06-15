@@ -4,7 +4,6 @@ import React, { Suspense, useState } from "react";
 import { Check, ShoppingCart, X, Lock } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
-import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 import { getStoredAttribution } from "@/lib/affiliate-attribution";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import Link from "next/link";
@@ -27,9 +26,8 @@ export default function BuyPage() {
 function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
-  const { checkout, isLoading, modal: checkoutModal, captcha } = useSellAuthEmbed();
+  const paymentResult = searchParams.get("payment");
   const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
-  const shopId = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 234704);
 
   const initialPlan = searchParams.get("plan");
   const validPlanId = initialPlan && PLANS.some((p) => p.id === initialPlan) ? initialPlan : "starter";
@@ -37,6 +35,7 @@ function BuyContent() {
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
+  const [email, setEmail] = useState("");
   const autoCheckoutStartedRef = useRef(false);
 
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -44,7 +43,7 @@ function BuyContent() {
   const showSticky = !isButtonInView && selectedPlanId;
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
-  const checkoutLocked = isLoading || checkoutPhase === "preparing" || checkoutPhase === "opening";
+  const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
 
   React.useEffect(() => {
     trackEvent("buy_page_viewed", {
@@ -85,27 +84,24 @@ function BuyContent() {
     trackEvent("checkout_started", {
       plan: plan.id,
       price: plan.price,
-      has_embed_config:
-        Boolean(plan.sellauthProductId) &&
-        Boolean(plan.sellauthVariantId) &&
-        Number(plan.sellauthProductId) > 0 &&
-        Number(plan.sellauthVariantId) > 0,
+      provider: "nowpayments",
     });
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setCheckoutError("Enter a valid email address for license delivery.");
+      setCheckoutPhase("error");
+      return;
+    }
+
     const slowTimer = window.setTimeout(() => setIsSlowCheckout(true), 4000);
     const clearSlowTimer = () => window.clearTimeout(slowTimer);
+    setCheckoutError("");
+    setIsSlowCheckout(false);
+    setCheckoutPhase("preparing");
 
-    const hasEmbedConfig =
-      plan.sellauthProductId &&
-      plan.sellauthVariantId &&
-      plan.sellauthProductId > 0 &&
-      plan.sellauthVariantId > 0;
-
-    if (hasEmbedConfig) {
-      setCheckoutError("");
-      setIsSlowCheckout(false);
-      setCheckoutPhase("preparing");
+    try {
       const attribution = getStoredAttribution();
-      let sellAuthAffiliate: string | undefined;
+      let affiliateCode: string | undefined;
       if (attribution) {
         const intentResult = await api
           .createAffiliateCheckoutIntent({
@@ -113,81 +109,31 @@ function BuyContent() {
             visitorId: attribution.visitorId,
             clickId: attribution.clickId,
             plan: plan.id,
-            productId: plan.sellauthProductId,
-            variantId: plan.sellauthVariantId,
+            buyerEmail: normalizedEmail,
           })
-          .catch(() => {
-            // Checkout should continue even if attribution tracking is unavailable.
-            return null;
-          });
-        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
+          .catch(() => null);
+        affiliateCode = intentResult?.accepted ? attribution.affiliateCode : undefined;
       }
-      checkout({
-        cart: [{ productId: plan.sellauthProductId!, variantId: plan.sellauthVariantId!, quantity: 1 }],
-        shopId,
-        affiliate: sellAuthAffiliate,
-        onPreparing: () => {
-          setCheckoutPhase("preparing");
-        },
-        onCheckoutUrlReady: () => {
-          setCheckoutPhase("opening");
-          trackEvent("checkout_url_ready", { plan: plan.id });
-        },
-        onError: (error) => {
-          clearSlowTimer();
-          setCheckoutError(error.message || "Please try again.");
-          setCheckoutPhase("error");
-          trackEvent("checkout_failed", {
-            plan: plan.id,
-            error: error.message || "Please try again.",
-          });
-        },
-        onSettled: ({ status, redirected }) => {
-          clearSlowTimer();
-          setIsSlowCheckout(false);
-          trackEvent("checkout_settled", {
-            plan: plan.id,
-            status,
-            redirected,
-          });
-          if (status === "success" && !redirected) {
-            setCheckoutPhase("idle");
-          }
-        },
+
+      const result = await api.createNowPaymentsCheckout({
+        planId: plan.id,
+        email: normalizedEmail,
+        affiliateCode,
       });
-    } else {
-      setCheckoutError("");
-      setIsSlowCheckout(false);
       setCheckoutPhase("opening");
-      const attribution = getStoredAttribution();
-      let sellAuthAffiliate: string | undefined;
-      if (attribution) {
-        const intentResult = await api
-          .createAffiliateCheckoutIntent({
-            affiliateCode: attribution.affiliateCode,
-            visitorId: attribution.visitorId,
-            clickId: attribution.clickId,
-            plan: plan.id,
-          })
-          .catch(() => {
-            // Checkout should continue even if attribution tracking is unavailable.
-            return null;
-          });
-        sellAuthAffiliate = intentResult?.accepted ? attribution.affiliateCode : undefined;
-      }
-      const fallbackUrl = new URL(plan.buyUrl);
-      if (sellAuthAffiliate) fallbackUrl.searchParams.set("affiliate", sellAuthAffiliate);
-      trackEvent("checkout_fallback_opened", { plan: plan.id });
-      window.open(fallbackUrl.toString(), "_blank");
-      window.setTimeout(() => {
-        clearSlowTimer();
-        setCheckoutPhase("idle");
-      }, 800);
+      trackEvent("checkout_url_ready", { plan: plan.id, provider: "nowpayments" });
+      window.location.href = result.checkoutUrl;
+    } catch (error) {
+      clearSlowTimer();
+      const message = error instanceof Error ? error.message : "Please try again.";
+      setCheckoutError(message);
+      setCheckoutPhase("error");
+      trackEvent("checkout_failed", { plan: plan.id, provider: "nowpayments", error: message });
     }
   };
 
   React.useEffect(() => {
-    if (searchParams.get("checkout") !== "1" || autoCheckoutStartedRef.current || checkoutLocked || !selectedPlanId) {
+    if (searchParams.get("checkout") !== "1" || autoCheckoutStartedRef.current || checkoutLocked || !selectedPlanId || !email.trim()) {
       return;
     }
 
@@ -197,13 +143,23 @@ function BuyContent() {
     url.searchParams.delete("source");
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     void handleCheckout();
-  }, [checkoutLocked, searchParams, selectedPlanId]);
+  }, [checkoutLocked, email, searchParams, selectedPlanId]);
 
   return (
     <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">
       {isExpired && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-red-500/10 border-b border-red-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
           <p className="text-red-400 text-sm font-medium">Your license key has expired. Please choose a new plan to continue.</p>
+        </div>
+      )}
+      {paymentResult === "success" && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-emerald-500/10 border-b border-emerald-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
+          <p className="text-emerald-300 text-sm font-medium">Payment submitted. Your license key will be emailed after blockchain confirmation.</p>
+        </div>
+      )}
+      {paymentResult === "cancelled" && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
+          <p className="text-amber-300 text-sm font-medium">Checkout was cancelled. No license has been issued.</p>
         </div>
       )}
 
@@ -215,10 +171,10 @@ function BuyContent() {
             Instant key delivery
           </div> */}
           <h1 className="font-display text-4xl md:text-5xl tracking-tight font-medium text-white mb-3">
-            Choose Your Plan
+            Choose Your Plan & Pay with Crypto
           </h1>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
-            Select your preferred tier and continue with the checkout button. You'll receive your license key in your email instantly after purchase.
+            Select a plan and complete payment securely with cryptocurrency through NOWPayments. Your license key will be emailed after blockchain confirmation.
           </p>
         </div>
 
@@ -303,6 +259,17 @@ function BuyContent() {
 
         {/* ── C H E C K O U T  B U T T O N ── */}
         <div ref={buttonRef} className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
+          <label className="w-full">
+            <span className="mb-2 block text-sm font-medium text-white/70">Email for license delivery</span>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
+            />
+          </label>
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
@@ -326,7 +293,7 @@ function BuyContent() {
                 {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
               </>
             ) : selectedPlanId ? (
-              <>Purchase {selectedPlanLabel} <ShoppingCart size={20} /></>
+              <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
             ) : (
               "Select a package to continue"
             )}
@@ -339,13 +306,13 @@ function BuyContent() {
           )}
           {isSlowCheckout && !checkoutError && (
             <div className="text-amber-400/80 text-sm -mt-2 text-center">
-              SellAuth is taking a little longer. Please wait...
+              NOWPayments is taking a little longer. Please wait...
             </div>
           )}
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
             <Lock size={14} className="text-[#ab9ff2]" />
-            <span>Secure Checkout with Pandabase & NOWPayments</span>
+            <span>Crypto-only checkout secured by NOWPayments</span>
           </div>
 
           <p className="text-center text-[12px] text-white/40 max-w-[400px]">
@@ -359,7 +326,7 @@ function BuyContent() {
         {/* ── S U P P O R T  &  Q U E R I E S ── */}
         <div className="w-full max-w-[500px] px-8 py-8 rounded-[2rem] border border-white/5 bg-white/[0.01] relative overflow-hidden text-center mb-10">
           <p className="text-white/40 text-[14px] leading-relaxed relative z-10">
-            Need help or want to pay with another crypto currency? Message{" "}
+            Need help or want to use a different cryptocurrency or network? Message{" "}
             <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="text-[#9c8df6] hover:text-[#aba0f7] transition-colors">
               @RPWallet_support_bot
             </a>{" "}
@@ -379,6 +346,17 @@ function BuyContent() {
             className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-[#0d0d0e]/80 backdrop-blur-xl border-t border-white/[0.05]"
           >
             <div className="max-w-[440px] mx-auto">
+              <label className="mb-3 block">
+                <span className="sr-only">Email for license delivery</span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Email for license delivery"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
+                />
+              </label>
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
@@ -400,7 +378,7 @@ function BuyContent() {
                     {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                   </>
                 ) : (
-                  <>Purchase {selectedPlanLabel} <ShoppingCart size={20} /></>
+                  <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
                 )}
               </button>
 
@@ -417,15 +395,13 @@ function BuyContent() {
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
                 <Lock size={12} className="text-[#ab9ff2]" />
-                <span>Secure Checkout with Pandabase & NOWPayments</span>
+                <span>Crypto-only checkout via NOWPayments</span>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {captcha}
-      {checkoutModal}
     </div>
   );
 }

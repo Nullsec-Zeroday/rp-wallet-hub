@@ -100,6 +100,16 @@ const SELLAUTH_PLANS: Record<string, SellAuthPlan> = {
   yearly: { id: "yearly", label: "Yearly Access", durationDays: 365, allowedDevices: 2 },
 };
 
+type PaymentPlan = SellAuthPlan & {
+  priceAmount: string;
+};
+
+const PAYMENT_PLANS: Record<string, PaymentPlan> = {
+  starter: { ...SELLAUTH_PLANS.starter, priceAmount: "9.00" },
+  popular: { ...SELLAUTH_PLANS.popular, priceAmount: "24.00" },
+  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "79.00" },
+};
+
 const app = new Hono<HonoEnv>();
 
 app.use("*", async (c, next) => {
@@ -511,6 +521,206 @@ app.post("/admin/licenses/reset-access", async (c) => {
   if (!result) return c.json({ error: "License not found" }, 404);
   return c.json(result);
 });
+
+app.post("/payments/nowpayments/checkout", async (c) => {
+  const requestId = crypto.randomUUID().slice(0, 8);
+  try {
+    if (!c.env.NOWPAYMENTS_API_KEY) {
+      console.error("[nowpayments-checkout] NOWPAYMENTS_API_KEY is not set", { requestId });
+      return c.json({ error: "Payment provider is not configured", requestId }, 503);
+    }
+
+    const body = await c.req.json<{
+      planId?: string;
+      email?: string;
+      affiliateCode?: string;
+    }>();
+    const planId = normalizePayloadString(body.planId)?.toLowerCase();
+    const email = normalizePayloadString(body.email)?.toLowerCase();
+    const plan = planId ? PAYMENT_PLANS[planId] : undefined;
+
+    console.log("[nowpayments-checkout] Request received", {
+      requestId,
+      planId: planId || null,
+      hasEmail: Boolean(email),
+      emailDomain: email?.split("@")[1] || null,
+      hasAffiliate: Boolean(body.affiliateCode),
+      storage: c.env.DATABASE_URL ? "neon" : "memory",
+    });
+
+    if (!plan) return c.json({ error: "Invalid plan", requestId }, 400);
+    if (!email || !isValidEmail(email)) return c.json({ error: "A valid email address is required", requestId }, 400);
+
+    const store = getPlatformStore(c.env.DATABASE_URL);
+    console.log("[nowpayments-checkout] Creating payment order", { requestId, planId: plan.id });
+    const order = await store.createPaymentOrder({
+      provider: "nowpayments",
+      email,
+      planId: plan.id,
+      planLabel: plan.label,
+      priceAmount: plan.priceAmount,
+      priceCurrency: "USD",
+      durationDays: plan.durationDays,
+      allowedDevices: plan.allowedDevices,
+      affiliateCode: normalizePayloadString(body.affiliateCode)?.toLowerCase(),
+    });
+    console.log("[nowpayments-checkout] Payment order created", { requestId, orderId: order.id });
+
+    const apiOrigin = new URL(c.req.url).origin;
+    const hubOrigin = c.env.HUB_ORIGIN || "http://localhost:3000";
+    console.log("[nowpayments-checkout] Creating NOWPayments invoice", {
+      requestId,
+      orderId: order.id,
+      amount: plan.priceAmount,
+      callbackOrigin: apiOrigin,
+    });
+    const response = await fetch("https://api.nowpayments.io/v1/invoice", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": c.env.NOWPAYMENTS_API_KEY,
+      },
+      body: JSON.stringify({
+        price_amount: Number(plan.priceAmount),
+        price_currency: "usd",
+        order_id: order.id,
+        order_description: `RPWallet ${plan.label}`,
+        ipn_callback_url: `${apiOrigin}/webhooks/nowpayments`,
+        success_url: `${hubOrigin.replace(/\/+$/, "")}/buy?payment=success`,
+        cancel_url: `${hubOrigin.replace(/\/+$/, "")}/buy?payment=cancelled`,
+        is_fixed_rate: true,
+        is_fee_paid_by_user: false,
+      }),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<string, any>;
+    const invoiceUrl = normalizePayloadString(payload.invoice_url);
+    const invoiceId = normalizePayloadString(payload.id);
+    console.log("[nowpayments-checkout] NOWPayments responded", {
+      requestId,
+      orderId: order.id,
+      status: response.status,
+      hasInvoiceId: Boolean(invoiceId),
+      hasInvoiceUrl: Boolean(invoiceUrl),
+    });
+    if (!response.ok || !invoiceUrl || !invoiceId) {
+      console.error("[nowpayments-checkout] Invoice creation failed", {
+        requestId,
+        orderId: order.id,
+        status: response.status,
+        error: normalizePayloadString(payload.message ?? payload.error),
+      });
+      await store.updatePaymentOrderStatus(order.id, "invoice_failed");
+      return c.json({ error: "Unable to create payment invoice", requestId }, 502);
+    }
+
+    await store.updatePaymentOrderProvider(order.id, invoiceId, "waiting");
+    console.log("[nowpayments-checkout] Checkout ready", { requestId, orderId: order.id, invoiceId });
+    return c.json({ checkoutUrl: invoiceUrl, orderId: order.id });
+  } catch (error) {
+    console.error("[nowpayments-checkout] Unhandled checkout failure", {
+      requestId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return c.json({ error: "Checkout initialization failed", requestId }, 500);
+  }
+});
+
+app.post("/webhooks/nowpayments", handleNowPaymentsWebhook);
+app.post("/api/webhooks/nowpayments", handleNowPaymentsWebhook);
+
+async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
+  const secret = c.env.NOWPAYMENTS_IPN_SECRET;
+  if (!secret) {
+    console.error("[nowpayments-webhook] NOWPAYMENTS_IPN_SECRET is not set");
+    return c.text("Server misconfiguration", 500);
+  }
+
+  const rawBody = await c.req.text();
+  const signature = c.req.header("x-nowpayments-sig") || "";
+  if (!signature) return c.text("Missing signature", 401);
+
+  let payload: Record<string, any>;
+  try {
+    payload = JSON.parse(rawBody) as Record<string, any>;
+  } catch {
+    return c.text("Invalid JSON", 400);
+  }
+
+  if (!(await verifyNowPaymentsSignature(payload, signature, secret))) {
+    console.warn("[nowpayments-webhook] Signature verification failed");
+    return c.text("Invalid signature", 403);
+  }
+
+  const orderId = normalizePayloadString(payload.order_id);
+  const paymentId = normalizePayloadString(payload.payment_id ?? payload.invoice_id);
+  const paymentStatus = normalizePayloadString(payload.payment_status)?.toLowerCase();
+  if (!orderId || !paymentId || !paymentStatus) return c.text("Missing payment fields", 400);
+
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const order = await store.getPaymentOrder(orderId);
+  if (!order || order.provider !== "nowpayments") return c.text("Unknown order", 404);
+
+  const priceAmount = Number(payload.price_amount);
+  const priceCurrency = normalizePayloadString(payload.price_currency)?.toUpperCase();
+  if (!Number.isFinite(priceAmount) || priceAmount !== Number(order.priceAmount) || priceCurrency !== order.priceCurrency) {
+    console.warn("[nowpayments-webhook] Order amount mismatch", {
+      orderId,
+      expectedAmount: order.priceAmount,
+      receivedAmount: payload.price_amount,
+      expectedCurrency: order.priceCurrency,
+      receivedCurrency: payload.price_currency,
+    });
+    return c.text("Order amount mismatch", 409);
+  }
+
+  if (paymentStatus !== "finished") {
+    await store.updatePaymentOrderStatus(order.id, paymentStatus);
+    return c.text("OK");
+  }
+
+  const licenseKey = await generateLicenseKeyForOrder(order.id, secret);
+  const expiresAt = new Date(Date.now() + order.durationDays * 24 * 60 * 60 * 1000);
+  const license = await store.createPurchasedLicense({
+    licenseKey,
+    email: order.email,
+    plan: order.planLabel,
+    expiresAt,
+    allowedDevices: order.allowedDevices,
+  });
+  const newlyCompleted = await store.completePaymentOrder(order.id, paymentId, license.id);
+  if (!newlyCompleted) return c.text("OK");
+
+  c.executionCtx.waitUntil(
+    Promise.all([
+      sendPurchaseEmail(c.env, {
+        expirationDate: expiresAt.toLocaleDateString("en-US", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }),
+        licenseKey,
+        planLabel: order.planLabel,
+        to: order.email,
+      }),
+      store.createAffiliateConversion({
+        affiliateCode: order.affiliateCode,
+        sellauthOrderId: `nowpayments:${paymentId}`,
+        licenseId: license.id,
+        buyerEmail: order.email,
+        plan: order.planLabel,
+        amount: order.priceAmount,
+        currency: order.priceCurrency,
+      }),
+    ]).catch((error) => {
+      console.error("[nowpayments-webhook] Post-fulfillment task failed", error);
+    }),
+  );
+
+  console.log(`[nowpayments-webhook] Created license for order ${order.id}`);
+  return c.text("OK");
+}
 
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
 app.post("/api/webhooks/sellauth", handleSellAuthWebhook);
@@ -1549,6 +1759,35 @@ async function hmacSha256Hex(secret: string, message: string) {
   return bytesToHex(new Uint8Array(signature));
 }
 
+async function hmacSha512Hex(secret: string, message: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-512" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return bytesToHex(new Uint8Array(signature));
+}
+
+async function verifyNowPaymentsSignature(payload: Record<string, any>, signature: string, secret: string) {
+  const canonicalPayload = JSON.stringify(sortObjectKeys(payload));
+  const computed = await hmacSha512Hex(secret, canonicalPayload);
+  return timingSafeHexEqual(computed, normalizeSignature(signature));
+}
+
+function sortObjectKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortObjectKeys);
+  if (!value || typeof value !== "object") return value;
+  return Object.keys(value as Record<string, unknown>)
+    .sort()
+    .reduce<Record<string, unknown>>((result, key) => {
+      result[key] = sortObjectKeys((value as Record<string, unknown>)[key]);
+      return result;
+    }, {});
+}
+
 function timingSafeHexEqual(leftHex: string, rightHex: string) {
   const left = hexToBytes(leftHex);
   const right = hexToBytes(rightHex);
@@ -1957,6 +2196,10 @@ function normalizePayloadString(value: unknown) {
   if (value === undefined || value === null) return undefined;
   const normalized = String(value).trim();
   return normalized ? normalized : undefined;
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
 function isAffiliateAdminRequest(c: Context<HonoEnv>) {

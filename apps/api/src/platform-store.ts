@@ -260,6 +260,37 @@ export interface PurchasedLicenseInput {
   allowedDevices: number;
 }
 
+export interface PaymentOrderSummary {
+  id: string;
+  provider: string;
+  providerPaymentId?: string;
+  email: string;
+  planId: string;
+  planLabel: string;
+  priceAmount: string;
+  priceCurrency: string;
+  durationDays: number;
+  allowedDevices: number;
+  affiliateCode?: string;
+  status: string;
+  licenseId?: string;
+  createdAt: string;
+  updatedAt: string;
+  fulfilledAt?: string;
+}
+
+export interface CreatePaymentOrderInput {
+  provider: string;
+  email: string;
+  planId: string;
+  planLabel: string;
+  priceAmount: string;
+  priceCurrency: string;
+  durationDays: number;
+  allowedDevices: number;
+  affiliateCode?: string;
+}
+
 export interface AdminLicenseSnapshot {
   license: LicenseSummary & {
     keyPlaintext?: string;
@@ -329,6 +360,11 @@ export interface WalletBootstrapResult {
 }
 
 export interface PlatformStore {
+  createPaymentOrder(input: CreatePaymentOrderInput): Promise<PaymentOrderSummary>;
+  getPaymentOrder(id: string): Promise<PaymentOrderSummary | null>;
+  updatePaymentOrderProvider(id: string, providerPaymentId: string, status: string): Promise<void>;
+  updatePaymentOrderStatus(id: string, status: string): Promise<void>;
+  completePaymentOrder(id: string, providerPaymentId: string, licenseId: string): Promise<boolean>;
   createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary>;
   getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null>;
   getAdminUnusedActiveLicenses(): Promise<AdminUnusedLicenseSummary[]>;
@@ -380,6 +416,7 @@ export function getPlatformStore(databaseUrl?: string): PlatformStore {
 }
 
 class InMemoryPlatformStore implements PlatformStore {
+  private readonly paymentOrders = new Map<string, PaymentOrderSummary>();
   private readonly users = new Map<string, UserSummary>();
   private readonly licenses = new Map<string, LicenseRecord>();
   private readonly sessions = new Map<string, SessionRecord>();
@@ -402,6 +439,58 @@ class InMemoryPlatformStore implements PlatformStore {
   private readonly affiliateConversions = new Map<string, AffiliateConversionSummary>();
   private readonly affiliateMagicLinks = new Map<string, { id: string; tokenHash: string; affiliateId: string; email: string; expiresAt: string; consumedAt?: string; createdAt: string }>();
   private readonly affiliateSessions = new Map<string, { id: string; affiliateId: string; expiresAt: string; revokedAt?: string; createdAt: string }>();
+
+  async createPaymentOrder(input: CreatePaymentOrderInput) {
+    const now = new Date().toISOString();
+    const order: PaymentOrderSummary = {
+      id: createId("pay"),
+      provider: input.provider,
+      email: input.email,
+      planId: input.planId,
+      planLabel: input.planLabel,
+      priceAmount: input.priceAmount,
+      priceCurrency: input.priceCurrency,
+      durationDays: input.durationDays,
+      allowedDevices: input.allowedDevices,
+      affiliateCode: normalizeOptionalString(input.affiliateCode),
+      status: "created",
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.paymentOrders.set(order.id, order);
+    return order;
+  }
+
+  async getPaymentOrder(id: string) {
+    return this.paymentOrders.get(id) || null;
+  }
+
+  async updatePaymentOrderProvider(id: string, providerPaymentId: string, status: string) {
+    const order = this.paymentOrders.get(id);
+    if (!order) return;
+    this.paymentOrders.set(id, { ...order, providerPaymentId, status, updatedAt: new Date().toISOString() });
+  }
+
+  async updatePaymentOrderStatus(id: string, status: string) {
+    const order = this.paymentOrders.get(id);
+    if (!order) return;
+    this.paymentOrders.set(id, { ...order, status, updatedAt: new Date().toISOString() });
+  }
+
+  async completePaymentOrder(id: string, providerPaymentId: string, licenseId: string) {
+    const order = this.paymentOrders.get(id);
+    if (!order || order.licenseId) return false;
+    const now = new Date().toISOString();
+    this.paymentOrders.set(id, {
+      ...order,
+      providerPaymentId,
+      licenseId,
+      status: "finished",
+      updatedAt: now,
+      fulfilledAt: now,
+    });
+    return true;
+  }
 
   async createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary> {
     const code = normalizeAffiliateCode(input.code);
@@ -1516,6 +1605,54 @@ class NeonPlatformStore implements PlatformStore {
 
   constructor(databaseUrl: string) {
     this.db = drizzle({ client: neon(databaseUrl), schema });
+  }
+
+  async createPaymentOrder(input: CreatePaymentOrderInput) {
+    const [order] = await this.db
+      .insert(schema.paymentOrders)
+      .values({
+        id: createId("pay"),
+        provider: input.provider,
+        email: input.email,
+        planId: input.planId,
+        planLabel: input.planLabel,
+        priceAmount: input.priceAmount,
+        priceCurrency: input.priceCurrency,
+        durationDays: input.durationDays,
+        allowedDevices: input.allowedDevices,
+        affiliateCode: normalizeOptionalString(input.affiliateCode),
+      })
+      .returning();
+    return toPaymentOrderSummary(order);
+  }
+
+  async getPaymentOrder(id: string) {
+    const [order] = await this.db.select().from(schema.paymentOrders).where(eq(schema.paymentOrders.id, id)).limit(1);
+    return order ? toPaymentOrderSummary(order) : null;
+  }
+
+  async updatePaymentOrderProvider(id: string, providerPaymentId: string, status: string) {
+    await this.db
+      .update(schema.paymentOrders)
+      .set({ providerPaymentId, status, updatedAt: new Date() })
+      .where(eq(schema.paymentOrders.id, id));
+  }
+
+  async updatePaymentOrderStatus(id: string, status: string) {
+    await this.db
+      .update(schema.paymentOrders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(schema.paymentOrders.id, id));
+  }
+
+  async completePaymentOrder(id: string, providerPaymentId: string, licenseId: string) {
+    const now = new Date();
+    const completed = await this.db
+      .update(schema.paymentOrders)
+      .set({ providerPaymentId, licenseId, status: "finished", updatedAt: now, fulfilledAt: now })
+      .where(and(eq(schema.paymentOrders.id, id), isNull(schema.paymentOrders.licenseId)))
+      .returning({ id: schema.paymentOrders.id });
+    return completed.length > 0;
   }
 
   async createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary> {
@@ -3110,6 +3247,7 @@ type DbAffiliate = typeof schema.affiliates.$inferSelect;
 type DbAffiliateClick = typeof schema.affiliateClicks.$inferSelect;
 type DbAffiliateCheckoutIntent = typeof schema.affiliateCheckoutIntents.$inferSelect;
 type DbAffiliateConversion = typeof schema.affiliateConversions.$inferSelect;
+type DbPaymentOrder = typeof schema.paymentOrders.$inferSelect;
 
 const DEFAULT_NOTIFICATION_COINS = [
   { symbol: "SOL", enabled: true, min: 5, max: 95 },
@@ -3209,6 +3347,27 @@ function toAffiliateClickSummary(click: DbAffiliateClick): AffiliateClickSummary
     referrer: click.referrer ?? undefined,
     source: click.source ?? undefined,
     createdAt: click.createdAt.toISOString(),
+  };
+}
+
+function toPaymentOrderSummary(order: DbPaymentOrder): PaymentOrderSummary {
+  return {
+    id: order.id,
+    provider: order.provider,
+    providerPaymentId: order.providerPaymentId ?? undefined,
+    email: order.email,
+    planId: order.planId,
+    planLabel: order.planLabel,
+    priceAmount: order.priceAmount,
+    priceCurrency: order.priceCurrency,
+    durationDays: order.durationDays,
+    allowedDevices: order.allowedDevices,
+    affiliateCode: order.affiliateCode ?? undefined,
+    status: order.status,
+    licenseId: order.licenseId ?? undefined,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+    fulfilledAt: order.fulfilledAt?.toISOString(),
   };
 }
 

@@ -7,12 +7,9 @@ export interface PricingPlan {
   durationDays: number;
   allowedRedemptions: number;
   features: { text: string; included: boolean }[];
-  buyUrl: string;
   badgeText: string;
   popular?: boolean;
   originalPrice?: string;
-  sellauthProductId?: number;
-  sellauthVariantId?: number;
 }
 
 export const PRICING_PLANS: Record<string, PricingPlan> = {
@@ -32,10 +29,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
       { text: "Priority Telegram support", included: false },
       { text: "Early access to new features", included: false },
     ],
-    buyUrl: process.env.NEXT_PUBLIC_SELLAUTH_STARTER_URL || "https://rp-wallet.sellauth.com/product/starter",
     badgeText: "STARTER",
-    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID || 0),
-    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_STARTER_VARIANT_ID || 0),
   },
   popular: {
     id: "popular",
@@ -53,12 +47,9 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
       { text: "Priority Telegram support", included: true },
       { text: "Early access to new features", included: false },
     ],
-    buyUrl: process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_URL || "https://rp-wallet.sellauth.com/product/monthly",
     badgeText: "MOST POPULAR",
     popular: true,
     // originalPrice: "$49",
-    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID || 0),
-    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_VARIANT_ID || 0),
   },
   yearly: {
     id: "yearly",
@@ -76,10 +67,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
       { text: "Priority Telegram support", included: true },
       { text: "Early access to new features", included: true },
     ],
-    buyUrl: process.env.NEXT_PUBLIC_SELLAUTH_YEARLY_URL || "https://rp-wallet.sellauth.com/product/yearly",
     badgeText: "BEST VALUE",
     originalPrice: "$99",
-    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID || 0),
-    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_YEARLY_VARIANT_ID || 0),
   },
 };
