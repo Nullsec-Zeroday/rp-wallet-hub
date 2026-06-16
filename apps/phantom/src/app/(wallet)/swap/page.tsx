@@ -275,16 +275,16 @@ function TokenPickerModal({
                         )}
                       </div>
                       <span className="text-[15px] font-semibold text-[#eeeeee] whitespace-nowrap pl-2">
-                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol}
+                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol.split('_')[0]}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-[2px]">
-                      <span className="text-[14px] font-normal text-[#b4b4b4] truncate max-w-[150px]">
-                        {token.symbol}
-                      </span>
-                      <span className="text-[14px] font-normal text-[#b4b4b4]">
-                        {formatCurrency(bal * price, "USD")}
-                      </span>
+                      <div className="flex flex-col items-end shrink-0">
+                        <div className="text-[15px] font-semibold text-white tracking-tight">
+                          {bal > 0 ? formatBalance(bal) : "0"} {token.symbol.split('_')[0]}
+                        </div>
+                        <div className="text-[13px] font-medium text-[#888888] mt-0.5">
+                          {formatCurrency(bal * price)}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </button>

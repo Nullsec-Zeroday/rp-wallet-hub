@@ -184,7 +184,7 @@ export default function TokensPage() {
           {/* 3 Overlapping circular token badges */}
           <div className="flex flex-row -space-x-[20px] items-center">
             {/* BONK Badge (Z-index 3) */}
-            <div className="w-[52px] h-[52px] rounded-full border-[3px] border-[#1c1c1e] z-30 overflow-hidden bg-[#111] shadow-md">
+            <div className="w-[52px] h-[52px] rounded-full z-30 overflow-hidden bg-[#111] shadow-md">
               <img
                 alt="Bonk"
                 src="https://assets.coingecko.com/coins/images/28600/large/bonk.jpg"
@@ -192,7 +192,7 @@ export default function TokensPage() {
               />
             </div>
             {/* USDT Badge (Z-index 2) */}
-            <div className="w-[52px] h-[52px] rounded-full border-[3px] border-[#1c1c1e] z-20 overflow-hidden bg-[#111] shadow-md">
+            <div className="w-[52px] h-[52px] rounded-full z-20 overflow-hidden bg-[#111] shadow-md">
                <img
                  alt="USDT"
                  src={"/tokens/usdt.webp"}
@@ -200,10 +200,10 @@ export default function TokensPage() {
                />
              </div>
             {/* Solana SOL Badge (Z-index 1) */}
-            <div className="w-[52px] h-[52px] rounded-full border-[3px] border-[#1c1c1e] z-10 overflow-hidden bg-[#111] shadow-md">
+            <div className="w-[52px] h-[52px] rounded-full z-10 overflow-hidden bg-[#111] shadow-md">
               <img
                 alt="SOL"
-                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+                src="/tokens/sol.webp"
                 className="w-full h-full object-cover"
               />
             </div>

@@ -196,6 +196,30 @@ export const TOKENS: TokenInfo[] = [
     icon: '◎',
     logoUrl: '/tokens/mon.webp',
   },
+  {
+    symbol: 'USDT_ETH',
+    name: 'USDT',
+    price: 1.00,
+    decimals: 6,
+    defaultBalance: 0,
+    color: '#26A17B',
+    icon: '$',
+    logoUrl: '/tokens/usdt.webp',
+    coingeckoId: 'tether',
+    chainId: 'ethereum',
+  },
+  {
+    symbol: 'USDC_ETH',
+    name: 'USDC',
+    price: 1,
+    decimals: 6,
+    defaultBalance: 0,
+    color: '#2775CA',
+    icon: '$',
+    logoUrl: '/tokens/usdc.webp',
+    coingeckoId: 'usd-coin',
+    chainId: 'ethereum',
+  },
 ];
 
 export const TOKEN_MAP = TOKENS.reduce(

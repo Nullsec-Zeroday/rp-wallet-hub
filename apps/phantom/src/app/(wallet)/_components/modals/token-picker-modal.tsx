@@ -141,7 +141,7 @@ export function TokenPickerModal({
                         )}
                       </div>
                       <span className="text-[15px] font-semibold text-[#eeeeee] whitespace-nowrap pl-2">
-                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol}
+                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol.split('_')[0]}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-[2px]">

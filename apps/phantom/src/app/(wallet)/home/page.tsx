@@ -279,7 +279,7 @@ export default function HomePage() {
                     )}
                   </div>
                   <div className="text-[15px] -mt-1" style={{ color: "#A0A0A0" }}>
-                    {formatBalance(balance)} {tokenInfo.symbol}
+                    {formatBalance(balance)} {tokenInfo.symbol.split('_')[0]}
                   </div>
                 </div>
 

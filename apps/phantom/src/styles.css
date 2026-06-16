@@ -788,13 +788,11 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #333;
   border-radius: 8px;
   background: #1a1a1a;
 }
 
 .chainBadge.solana {
-  border: 2px solid #111;
   border-radius: 8px;
   background: #fff;
 }

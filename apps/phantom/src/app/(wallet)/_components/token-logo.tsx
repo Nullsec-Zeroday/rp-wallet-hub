@@ -28,16 +28,16 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
     if (imgSrc && !imgErr) {
       return (
         <Image
-           src={imgSrc}
-           alt={token.name}
-           width={size}
-           height={size}
-           priority={priority}
-           className={`rounded-full object-cover w-full h-full ${token.symbol === 'USDC' ? 'scale-[0.82]' : ''}`}
-           onError={() => setImgErr(true)}
-           draggable={false}
-           style={{ userSelect: 'none', pointerEvents: 'none' }}
-         />
+          src={imgSrc}
+          alt={token.name}
+          width={size}
+          height={size}
+          priority={priority}
+          className={`rounded-full object-cover w-full h-full ${token.symbol === 'USDC' ? 'scale-[0.82]' : ''}`}
+          onError={() => setImgErr(true)}
+          draggable={false}
+          style={{ userSelect: 'none', pointerEvents: 'none' }}
+        />
       );
     }
 
@@ -53,32 +53,31 @@ export default function TokenLogo({ token, size = 44, liveImage, priority = fals
 
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <div 
+      <div
         className="w-full h-full rounded-full overflow-hidden flex items-center justify-center"
-        style={{ backgroundColor: token.color || 'transparent' }}
+        style={{ backgroundColor: (imgSrc && !imgErr) ? 'transparent' : (token.color || 'transparent') }}
       >
         {renderContent()}
       </div>
       {!hideChainIcon && token.chainId && CHAIN_ICONS[token.chainId] && (
         <div
-          className={`absolute flex items-center justify-center border ${token.chainId === 'solana'
-            ? 'bg-white border-[#111]'
-            : 'bg-[#1a1a1a] border-[#333]'
+          className={`absolute flex items-center justify-center border-[1.5px] border-[#1c1c1e] ${['solana', 'ethereum'].includes(token.chainId)
+            ? 'bg-[#f0f0f0]'
+            : 'bg-[#1a1a1a]'
             }`}
           style={{
             width: Math.max(18, size * 0.42),
             height: Math.max(18, size * 0.42),
             bottom: -1,
             right: -1,
-            padding: token.chainId === 'solana' ? '3.5px' : '2px',
-            borderRadius: 8,
-            borderWidth: '2px'
+            padding: token.chainId === 'solana' ? '3px' : token.chainId === 'ethereum' ? '1.5px' : '2px',
+            borderRadius: Math.max(4, size * 0.15),
           }}
         >
           <img
             src={CHAIN_ICONS[token.chainId]}
             alt={token.chainId}
-            className={`w-full h-full object-contain ${token.chainId === 'solana' ? 'grayscale brightness-0' : 'rounded-sm'}`}
+            className={`w-full h-full object-contain ${['solana', 'ethereum'].includes(token.chainId) ? 'grayscale brightness-0 scale-[1.05]' : 'rounded-sm'}`}
           />
         </div>
       )}

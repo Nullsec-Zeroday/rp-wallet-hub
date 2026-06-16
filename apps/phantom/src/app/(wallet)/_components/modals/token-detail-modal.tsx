@@ -80,7 +80,7 @@ function ActionButton({ Icon, label, onClick }: {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 bg-[#222222] rounded-[24px] py-[18px] active:scale-[0.93] transition-transform duration-[50ms]"
+      className="flex flex-col items-center justify-center gap-1.5 bg-[#222222] rounded-[24px] aspect-square active:scale-[0.93] transition-transform duration-[50ms]"
     >
       <Icon size={24} strokeWidth={2} className="text-[#ac9cf2]" />
       <span className="text-[13px] font-semibold text-[#888888]">{label}</span>
@@ -159,7 +159,7 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
       isHeaderDragging.current = true;
       headerDragStartY.current = e.touches[0].clientY;
       modal.style.transition = 'none';
-      modal.style.animation = 'none'; 
+      modal.style.animation = 'none';
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -167,10 +167,10 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
       if (e.cancelable) {
         e.preventDefault(); // Stops native jitter/pull-to-refresh
       }
-      
+
       const diff = e.touches[0].clientY - headerDragStartY.current;
       if (rafId) cancelAnimationFrame(rafId);
-      
+
       rafId = requestAnimationFrame(() => {
         if (diff > 0) {
           headerCurrentDragY.current = diff;
@@ -206,13 +206,13 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
       modal.style.transition = 'none';
       modal.style.animation = 'none';
     };
-    
+
     const onMouseMove = (e: MouseEvent) => {
       if (!isHeaderDragging.current) return;
-      
+
       const diff = e.clientY - headerDragStartY.current;
       if (rafId) cancelAnimationFrame(rafId);
-      
+
       rafId = requestAnimationFrame(() => {
         if (diff > 0) {
           headerCurrentDragY.current = diff;
@@ -648,23 +648,23 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
               <div className="flex items-center gap-3">
                 <TokenLogo
                   token={token}
-                  size={42}
+                  size={48}
                   liveImage={prices[token.symbol]?.image}
                   hideChainIcon={token.symbol === "USDC"}
                 />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-white font-bold text-[18px]">{token.name}</span>
-                    <img src="/icons/verified_highlighted.webp" alt="Verified" style={{ width: 16, height: 16, flexShrink: 0, objectFit: 'contain' }} />
+                    <span className="text-white font-bold text-[22px] tracking-tight">{token.name}</span>
+                    <img src="/icons/verified_highlighted.webp" alt="Verified" style={{ width: 18, height: 18, flexShrink: 0, objectFit: 'contain' }} />
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#4FE862]"></div>
-                    <span className="text-[#888888] text-[13px]">{peopleCount} people here</span>
+                    <span className="text-[#888888] text-[15px]">{peopleCount} people here</span>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-4 py-1.5 rounded-full font-bold text-[14px] text-white border border-[#333333] active:opacity-70 shrink-0">Follow</button>
+                <button className="px-4 py-2 rounded-[10px] font-bold text-[14px] text-white bg-[#1c1c1e] active:opacity-70 shrink-0">Follow</button>
                 <button className="w-9 h-9 rounded-full bg-[#1c1c1e] flex items-center justify-center text-white active:opacity-60 shrink-0">
                   <Share size={16} strokeWidth={2.5} />
                 </button>
@@ -703,13 +703,13 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
               <div ref={contentRef} className="h-full pt-2">
 
                 <div className="px-4 pt-1 pb-3" style={{ minHeight: "110px" }}>
-                  <div className="text-white font-medium" style={{ fontSize: 42, lineHeight: "48px", letterSpacing: "-0.03em", fontWeight: 600 }}>
+                  <div className="text-white font-medium" style={{ fontSize: 54, lineHeight: "54px", letterSpacing: "-0.03em", fontWeight: 700 }}>
                     {formatVal(currentPrice)}
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-3">
                     <span
                       className="font-medium"
-                      style={{ color: isPositiveChange ? "var(--color-phantom-green)" : "var(--color-phantom-red)", fontSize: 15, letterSpacing: "-0.01em" }}
+                      style={{ color: isPositiveChange ? "var(--color-phantom-green)" : "var(--color-phantom-red)", fontSize: 16, letterSpacing: "-0.01em" }}
                     >
                       {isPositiveChange ? "+" : "-"}{formatVal(Math.abs(absoluteChange))}
                     </span>
@@ -717,8 +717,8 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                       className="font-bold rounded-md"
                       style={{
                         backgroundColor: isPositiveChange ? "var(--color-phantom-green)" : "var(--color-phantom-red)",
-                        color: "#000000",
-                        fontSize: 13,
+                        color: isPositiveChange ? "#000000" : "#ffffff",
+                        fontSize: 14,
                         padding: "2px 8px",
                       }}
                     >
@@ -750,9 +750,9 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                     <button
                       key={tf}
                       onClick={() => setActiveTimeFrame(tf)}
-                      className="px-4 py-1.5 rounded-xl transition-colors"
+                      className="px-4 py-1 rounded-[10px] transition-colors"
                       style={{
-                        background: activeTimeFrame === tf ? "rgb(42, 42, 42)" : "transparent",
+                        background: activeTimeFrame === tf ? "#1c1c1e" : "transparent",
                         color: activeTimeFrame === tf ? "#ac9cf2" : "rgb(136, 136, 136)",
                         fontSize: 14,
                         fontWeight: 600,
