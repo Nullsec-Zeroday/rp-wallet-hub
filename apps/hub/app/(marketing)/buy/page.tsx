@@ -26,7 +26,6 @@ export default function BuyPage() {
 function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
-  const paymentResult = searchParams.get("payment");
   const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
 
   const initialPlan = searchParams.get("plan");
@@ -133,17 +132,23 @@ function BuyContent() {
   };
 
   React.useEffect(() => {
-    if (searchParams.get("checkout") !== "1" || autoCheckoutStartedRef.current || checkoutLocked || !selectedPlanId || !email.trim()) {
-      return;
+    if (searchParams.get("checkout") === "1" && !autoCheckoutStartedRef.current) {
+      autoCheckoutStartedRef.current = true;
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      url.searchParams.delete("source");
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+      
+      // Scroll to email input
+      setTimeout(() => {
+        const emailInput = document.getElementById("email-input");
+        if (emailInput) {
+          emailInput.focus();
+          emailInput.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 500);
     }
-
-    autoCheckoutStartedRef.current = true;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("checkout");
-    url.searchParams.delete("source");
-    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-    void handleCheckout();
-  }, [checkoutLocked, email, searchParams, selectedPlanId]);
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">
@@ -152,17 +157,6 @@ function BuyContent() {
           <p className="text-red-400 text-sm font-medium">Your license key has expired. Please choose a new plan to continue.</p>
         </div>
       )}
-      {paymentResult === "success" && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-emerald-500/10 border-b border-emerald-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
-          <p className="text-emerald-300 text-sm font-medium">Payment submitted. Your license key will be emailed after blockchain confirmation.</p>
-        </div>
-      )}
-      {paymentResult === "cancelled" && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/10 border-b border-amber-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
-          <p className="text-amber-300 text-sm font-medium">Checkout was cancelled. No license has been issued.</p>
-        </div>
-      )}
-
       <main className="relative z-10 w-full max-w-[1200px] mx-auto px-6 pt-6 flex flex-col items-center">
         {/* ── H E A D E R ── */}
         <div className="flex flex-col items-center text-center mb-16 relative">
@@ -262,6 +256,7 @@ function BuyContent() {
           <label className="w-full">
             <span className="mb-2 block text-sm font-medium text-white/70">Email for license delivery</span>
             <input
+              id="email-input"
               type="email"
               autoComplete="email"
               value={email}
@@ -349,6 +344,7 @@ function BuyContent() {
               <label className="mb-3 block">
                 <span className="sr-only">Email for license delivery</span>
                 <input
+                  id="sticky-email-input"
                   type="email"
                   autoComplete="email"
                   value={email}
