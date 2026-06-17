@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useState } from "react";
-import { Check, ShoppingCart, X, Lock } from "lucide-react";
+import { Check, ShoppingCart, X, Lock, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { getStoredAttribution } from "@/lib/affiliate-attribution";
@@ -33,6 +33,7 @@ function BuyContent() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(validPlanId);
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const [email, setEmail] = useState("");
   const autoCheckoutStartedRef = useRef(false);
@@ -43,6 +44,8 @@ function BuyContent() {
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
   const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
+
+  const normalizedEmail = email.trim().toLowerCase();
 
   React.useEffect(() => {
     trackEvent("buy_page_viewed", {
@@ -87,8 +90,12 @@ function BuyContent() {
     });
     const normalizedEmail = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setCheckoutError("Enter a valid email address for license delivery.");
-      setCheckoutPhase("error");
+      setEmailError("Please enter a valid email for license delivery.");
+      const emailInput = document.getElementById("email-input");
+      if (emailInput) {
+        emailInput.focus();
+        emailInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
@@ -138,15 +145,6 @@ function BuyContent() {
       url.searchParams.delete("checkout");
       url.searchParams.delete("source");
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
-      
-      // Scroll to email input
-      setTimeout(() => {
-        const emailInput = document.getElementById("email-input");
-        if (emailInput) {
-          emailInput.focus();
-          emailInput.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 500);
     }
   }, [searchParams]);
 
@@ -165,10 +163,10 @@ function BuyContent() {
             Instant key delivery
           </div> */}
           <h1 className="font-display text-4xl md:text-5xl tracking-tight font-medium text-white mb-3">
-            Choose Your Plan & Pay with Crypto
+            Choose Your Plan
           </h1>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
-            Select a plan and complete payment securely with cryptocurrency through NOWPayments. Your license key will be emailed after blockchain confirmation.
+            You&apos;re just a few steps away from owning the #1 fake crypto wallet on the market.
           </p>
         </div>
 
@@ -194,7 +192,7 @@ function BuyContent() {
                     });
                   }
                 }}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${isSelected
+                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none" : "cursor-pointer"} ${isSelected
                   ? isYearly
                     ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_40px_rgba(212,175,55,0.25)] scale-[1.02] ring-1 ring-[#fde047] z-10"
                     : "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_50px_rgba(139,92,246,0.3)] scale-[1.02] ring-1 ring-[#8b5cf6] z-10"
@@ -260,37 +258,42 @@ function BuyContent() {
               type="email"
               autoComplete="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                if (emailError) setEmailError("");
+              }}
               placeholder="you@example.com"
               className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
             />
           </label>
+          {emailError && (
+            <div className="text-amber-400 text-sm -mt-2 mb-1 w-full text-center animate-pulse font-medium">
+              {emailError}
+            </div>
+          )}
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
-            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${selectedPlanId
-              ? checkoutPhase === "error"
+            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${!selectedPlanId
+              ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
+              : checkoutPhase === "error"
                 ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                 : selectedPlanId === "yearly"
-                ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
-                : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
-              : "bg-white/5 text-white/40 border border-white/10 pointer-events-none"
+                  ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
+                  : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
               }`}
           >
             {checkoutPhase === "error" ? (
               <>Checkout Failed - Try Again <X size={20} /></>
             ) : checkoutLocked ? (
               <>
-                <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
+                <Loader2 className="w-5 h-5 animate-spin" />
                 {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
               </>
-            ) : selectedPlanId ? (
-              <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
-            ) : (
+            ) : !selectedPlanId ? (
               "Select a package to continue"
+            ) : (
+              <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
             )}
           </button>
 
@@ -307,7 +310,7 @@ function BuyContent() {
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
             <Lock size={14} className="text-[#ab9ff2]" />
-            <span>Crypto-only checkout secured by NOWPayments</span>
+            <span>Secure checkout secured by NOWPayments</span>
           </div>
 
           <p className="text-center text-[12px] text-white/40 max-w-[400px]">
@@ -348,31 +351,40 @@ function BuyContent() {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (emailError) setEmailError("");
+                  }}
                   placeholder="Email for license delivery"
                   className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
                 />
               </label>
+              {emailError && (
+                <div className="text-amber-400 text-sm mb-3 w-full text-center animate-pulse font-medium">
+                  {emailError}
+                </div>
+              )}
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${checkoutPhase === "error"
-                  ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
-                  : selectedPlanId === "yearly"
-                  ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
-                  : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white"
+                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${!selectedPlanId
+                  ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
+                  : checkoutPhase === "error"
+                    ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                    : selectedPlanId === "yearly"
+                      ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
+                      : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white"
                   }`}
               >
                 {checkoutPhase === "error" ? (
                   <>Checkout Failed - Try Again <X size={20} /></>
                 ) : checkoutLocked ? (
                   <>
-                    <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                   </>
+                ) : !selectedPlanId ? (
+                  "Select a package to continue"
                 ) : (
                   <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
                 )}
@@ -391,7 +403,7 @@ function BuyContent() {
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
                 <Lock size={12} className="text-[#ab9ff2]" />
-                <span>Crypto-only checkout via NOWPayments</span>
+                <span>Secure checkout via NOWPayments</span>
               </div>
             </div>
           </motion.div>

@@ -14,7 +14,6 @@ const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
 import { trackEvent } from "@/lib/track";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { isDemoFeatureEnabled } from "@/lib/demo-config";
-import { useLandingCopyExperiment } from "@/hooks/useLandingCopyExperiment";
 
 const PRODUCT_IMAGES = [
   { src: "/product/new-product-1.webp", alt: "RPWallet product screenshot 1" },
@@ -66,8 +65,6 @@ function ProductImageSwiper() {
 
 
 export default function LandingContent() {
-  const landingCopyVariant = useLandingCopyExperiment();
-  const isMakeMoneyVariant = landingCopyVariant === "make-money";
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") return window.innerWidth < 768;
     return true;
@@ -128,14 +125,14 @@ export default function LandingContent() {
       plan: plan.id,
       price: plan.price,
       source: "landing_pricing",
-      landing_copy_variant: landingCopyVariant,
+      landing_copy_variant: "control",
     });
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
     trackEvent("checkout_started", {
       plan: plan.id,
       price: plan.price,
       source: "landing_pricing",
-      landing_copy_variant: landingCopyVariant,
+      landing_copy_variant: "control",
       provider: "nowpayments",
     });
     setCheckoutError("");
@@ -162,7 +159,7 @@ export default function LandingContent() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
           </div>
-          {isMakeMoneyVariant ? "The #1 Premium Simulator" : "Now with latest Phantom UI"}
+          Available for iOS & Android
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
@@ -170,31 +167,23 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-bold tracking-tight text-center max-w-5xl leading-none"
           >
-            {isMakeMoneyVariant ? (
-              <>
-                The perfect crypto <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">illusion.</span>
-              </>
-            ) : (
-              <>
-                Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
-              </>
-            )}
+            <>
+              Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
+            </>
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-base leading-relaxed flex flex-col gap-2"
+            className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-semibold">
-              {isMakeMoneyVariant ? "Reality is whatever you type." : "The #1 Fake Crypto Wallet App 🥇"}
+            <span className="text-white/90 font-bold">
+              The #1 Fake Crypto Wallet 🥇
             </span>
             <p>
-              {isMakeMoneyVariant
-                ? "Instantly generate live, interactive Phantom and Trust simulations. Set any balance, simulate any token, and craft the perfect scene—no real funds required."
-                : "RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved."}
+              RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.
             </p>
           </motion.div>
         </div>
@@ -205,7 +194,7 @@ export default function LandingContent() {
           transition={{ duration: 0.4 }}
           className="relative z-10 w-full flex flex-col items-center justify-center mt-2 md:mt-0"
         >
-          <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} copyVariant={landingCopyVariant} />
+          <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} />
         </motion.div>
 
 
@@ -410,11 +399,7 @@ export default function LandingContent() {
             <>
               <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.28em] text-[#ab9ff2]">Pricing</p>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3 leading-tight">
-                {isMakeMoneyVariant ? (
-                  <>Perfect realism.<br />Zero risk.</>
-                ) : (
-                  <>Try it for free.<br />Pay when you&apos;re ready.</>
-                )}
+                <>Try it for free.<br />Pay when you&apos;re ready.</>
               </h2>
               {/* <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
                 Open a timed demo session first. Upgrade only when you want unlimited wallet access.
@@ -424,9 +409,7 @@ export default function LandingContent() {
             <>
               <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
               <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
-                {isMakeMoneyVariant
-                  ? "The premium simulator for flawless screenshots, videos, and custom scenarios."
-                  : "Crypto-only payments with secure checkout powered by NOWPayments."}
+                Crypto-only payments with secure checkout powered by NOWPayments.
               </p>
             </>
           )}
@@ -540,7 +523,7 @@ export default function LandingContent() {
                       {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
                     </>
                   ) : (
-                    <>{isMakeMoneyVariant ? "Unlock Full Access" : "Buy"} <ArrowRight size={18} /></>
+                    <>Buy <ArrowRight size={18} /></>
                   )}
                 </button>
 

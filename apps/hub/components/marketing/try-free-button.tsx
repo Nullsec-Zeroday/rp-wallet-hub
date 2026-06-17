@@ -5,18 +5,14 @@ import { ArrowDown, ArrowRight, ArrowUpRight, Wallet2, WalletCards } from "lucid
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/lib/track";
-import type { LandingCopyVariant } from "@/hooks/useLandingCopyExperiment";
-
 export default function TryFreeButton({
   className,
   wrapperClassName,
   label: labelOverride,
-  copyVariant = "control",
 }: {
   className?: string;
   wrapperClassName?: string;
   label?: string;
-  copyVariant?: LandingCopyVariant;
 }) {
   const demoEnabled = process.env.NEXT_PUBLIC_FREE_DEMO_ENABLED === "true";
   const href = demoEnabled ? "/dashboard" : "/#installation";
@@ -27,7 +23,7 @@ export default function TryFreeButton({
       path: window.location.pathname,
       target: href,
       demoEnabled,
-      landing_copy_variant: copyVariant,
+      landing_copy_variant: "control",
     });
 
     if (demoEnabled) return;

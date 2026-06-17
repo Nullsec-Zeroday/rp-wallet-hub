@@ -30,7 +30,7 @@ export default function Navigation() {
                 className="h-full w-full object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <span className="text-[18px] font-semibold tracking-tight text-white md:text-2xl">
+            <span className="text-[20px] font-bold tracking-tight text-white md:text-2xl">
               RP<span className="text-[#ab9ff2]">Wallet</span>
             </span>
           </Link>
@@ -46,11 +46,10 @@ export default function Navigation() {
               Pricing
             </Link>
             <Link
-              href="/#pricing"
-              className="relative overflow-hidden rounded-xl border border-white/20 bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] px-6 py-2.5 text-[14px] font-bold text-white shadow-lg shadow-[#ab9ff2]/20 transition-all hover:scale-[1.02] hover:-translate-y-0.5 active:scale-[0.98]"
+              href="/dashboard"
+              className="group relative overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-6 py-2 text-[14px] font-medium text-white backdrop-blur-md transition-all hover:bg-white/[0.08] hover:border-[#ab9ff2]/40 hover:shadow-[0_0_20px_rgba(171,159,242,0.15)] hover:-translate-y-0.5 active:scale-95"
             >
-              <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              <span className="relative z-10 tracking-tight">Get Started</span>
+              <span className="relative z-10 tracking-wide">Log In</span>
             </Link>
           </div>
 
@@ -81,11 +80,10 @@ export default function Navigation() {
             Pricing
           </Link>
           <Link
-            href="/#pricing"
-            className="relative mt-4 flex w-full max-w-[280px] items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] px-10 py-4 text-xl font-bold text-white shadow-lg shadow-[#ab9ff2]/20"
+            href="/dashboard"
+            className="group relative mt-4 flex w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-10 py-4 text-xl font-medium text-white backdrop-blur-md transition-all hover:bg-white/[0.08] hover:border-[#ab9ff2]/40 hover:shadow-[0_0_20px_rgba(171,159,242,0.15)] active:scale-95"
           >
-            <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-            <span className="relative z-10 tracking-tight">Get Started</span>
+            <span className="relative z-10 tracking-wide">Log In</span>
           </Link>
         </div>
       </div>
