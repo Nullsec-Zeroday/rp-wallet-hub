@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { WalletTransaction } from "@rp-wallet/types";
 import { formatTrustBalance, formatTrustCurrency, getTrustToken } from "@/lib/trust-token-data";
@@ -32,6 +32,8 @@ function truncateAddress(value: string) {
   return `${trimmed.slice(0, 6)}...${trimmed.slice(-5)}`;
 }
 
+const getOptimisticConfirmationDelay = () => 1000 + Math.random() * 500;
+
 export default function SendModal({ isOpen, onClose }: SendModalProps) {
   const [show, setShow] = useState(false);
   const [isRendered, setIsRendered] = useState(isOpen);
@@ -45,6 +47,7 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
   const [amount, setAmount] = useState("");
   const [activeInput, setActiveInput] = useState<"address" | "amount" | null>(null);
   const [createdTransaction, setCreatedTransaction] = useState<WalletTransaction | null>(null);
+  const submissionIdRef = useRef(0);
   const { account, balanceMap, baseCurrency, createTransaction, prices, tokenSymbols, transactionError, transactionPending, walletAddress } = useTrustWallet();
 
   const availableTokens = tokenSymbols
@@ -72,9 +75,11 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
       setAmount("");
       setActiveInput(null);
       setCreatedTransaction(null);
+      submissionIdRef.current += 1;
       showTimer = window.setTimeout(() => setShow(true), 10);
     } else {
       setShow(false);
+      submissionIdRef.current += 1;
       timer = window.setTimeout(() => setIsRendered(false), 300);
     }
     return () => {
@@ -105,7 +110,30 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
 
   const submitTransaction = async () => {
     if (!selectedToken || transactionPending) return;
+    const submissionId = submissionIdRef.current + 1;
+    submissionIdRef.current = submissionId;
+    const now = new Date().toISOString();
+
+    setCreatedTransaction({
+      id: `optimistic-trust-tx-${Date.now()}`,
+      walletAppId: "trust",
+      accountId: account?.id || "trust-account",
+      type: "send",
+      status: "confirmed",
+      tokenSymbol: selectedToken.trim().toUpperCase(),
+      amount: String(parseFloat(amount) || 0),
+      fromAddress: account?.address || walletAddress,
+      toAddress: address.trim(),
+      createdAt: now,
+    });
     setStep("PROCESSING");
+
+    window.setTimeout(() => {
+      if (submissionIdRef.current === submissionId) {
+        setStep("DETAILS");
+      }
+    }, getOptimisticConfirmationDelay());
+
     const transaction = await createTransaction({
       amount,
       fromAddress: account?.address || walletAddress,
@@ -113,11 +141,8 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
       tokenSymbol: selectedToken,
       type: "send",
     });
-    if (transaction) {
+    if (transaction && submissionIdRef.current === submissionId) {
       setCreatedTransaction(transaction);
-      window.setTimeout(() => setStep("DETAILS"), 700);
-    } else {
-      setStep("CONFIRM");
     }
   };
 

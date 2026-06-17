@@ -106,6 +106,7 @@ interface SendModalProps {
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
 const DEMO_WALLET_ADDRESS_PATTERN = /^(?:Ph|Tw)[a-f0-9]{30}$/;
 const GENERIC_WALLET_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,64}$/;
+const getOptimisticConfirmationDelay = () => 1000 + Math.random() * 500;
 
 function getRecipientAddressError(value: string, ownAddress: string) {
   const trimmed = value.trim();
@@ -134,6 +135,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const hasPlayedConfetti = useRef(false);
+  const optimisticSuccessTimerRef = useRef<number | null>(null);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const getSendAudio = () => {
@@ -158,6 +160,10 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   // Handle initial token
   useEffect(() => {
     if (visible) {
+      if (optimisticSuccessTimerRef.current !== null) {
+        window.clearTimeout(optimisticSuccessTimerRef.current);
+        optimisticSuccessTimerRef.current = null;
+      }
       setIsClosing(false);
       if (initialTokenSymbol) {
         const token = [...TOKENS, ...customTokens].find(t => t.symbol === initialTokenSymbol);
@@ -180,6 +186,10 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
 
   const handleClose = () => {
     if (isClosing) return;
+    if (optimisticSuccessTimerRef.current !== null) {
+      window.clearTimeout(optimisticSuccessTimerRef.current);
+      optimisticSuccessTimerRef.current = null;
+    }
     setIsClosing(true);
     onCloseStart?.();
     setTimeout(() => {
@@ -270,8 +280,19 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     }
 
     setStep("SENDING");
+    addRecentAddress(normalizedRecipientAddress);
 
-    const minimumAnimation = new Promise((resolve) => window.setTimeout(resolve, 1800));
+    if (optimisticSuccessTimerRef.current !== null) {
+      window.clearTimeout(optimisticSuccessTimerRef.current);
+    }
+    optimisticSuccessTimerRef.current = window.setTimeout(() => {
+      logWalletDebug("send:ui-optimistic-success", {
+        toAddress: normalizedRecipientAddress,
+        tokenSymbol: selectedToken.symbol,
+      });
+      setStep("SUCCESS");
+      optimisticSuccessTimerRef.current = null;
+    }, getOptimisticConfirmationDelay());
 
     try {
       const latestState = useWalletStore.getState();
@@ -288,26 +309,20 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         },
       });
 
-      const [result] = await Promise.all([
-        createBackendWalletTransaction({
-          type: "send",
-          tokenSymbol: selectedToken.symbol,
-          amount: String(numAmount),
-          fromAddress: profile.walletAddress,
-          toAddress: normalizedRecipientAddress,
-        }),
-        minimumAnimation,
-      ]);
+      const result = await createBackendWalletTransaction({
+        type: "send",
+        tokenSymbol: selectedToken.symbol,
+        amount: String(numAmount),
+        fromAddress: profile.walletAddress,
+        toAddress: normalizedRecipientAddress,
+      });
 
-      addRecentAddress(normalizedRecipientAddress);
       logWalletDebug("send:ui-success", {
         delivery: result.delivery,
         recipientFound: result.recipientFound,
         transactionId: result.transaction.id,
       });
-      setStep("SUCCESS");
     } catch (error) {
-      await minimumAnimation;
       const message = error instanceof Error
         ? error.message.replace(/^RPWallet API request failed:\s*\d+:?\s*/i, "")
         : "Transaction failed. Check your balance and try again.";
@@ -316,8 +331,6 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         toAddress: normalizedRecipientAddress,
         tokenSymbol: selectedToken.symbol,
       });
-      toast.error(message);
-      setStep("CONFIRM");
     }
   };
 
