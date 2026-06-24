@@ -30,9 +30,9 @@ export default function TryFreeButton({
 
     if (window.location.pathname === "/") {
       e.preventDefault();
-      const installationSection = document.getElementById("installation");
-      if (installationSection) {
-        installationSection.scrollIntoView({ behavior: "smooth" });
+      const pricingSection = document.getElementById("pricing");
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: "smooth" });
       } else {
         window.location.href = "/#installation";
       }
