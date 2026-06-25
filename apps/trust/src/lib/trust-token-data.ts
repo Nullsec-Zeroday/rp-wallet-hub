@@ -59,12 +59,10 @@ export function getStaticTrustPrices(): TrustLivePrices {
 }
 
 export function formatTrustCurrency(value: number, currency = "USD") {
-  const useCompactCents = Math.abs(value) < 1000;
-
   return new Intl.NumberFormat("en-US", {
     currency: currency.toUpperCase(),
-    maximumFractionDigits: useCompactCents ? 2 : 0,
-    minimumFractionDigits: useCompactCents ? 2 : 0,
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
     style: "currency",
   }).format(Number.isFinite(value) ? value : 0);
 }
