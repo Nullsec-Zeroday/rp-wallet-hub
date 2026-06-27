@@ -34,7 +34,7 @@ const DEV_PAYWALL_PREVIEW = import.meta.env.DEV && typeof window !== "undefined"
   ? new URLSearchParams(window.location.search).get("paywall")
   : null;
 const PAYWALL_PLANS = [
-  { id: "starter", label: "7 Days", price: "$14", detail: "1 active device", badge: undefined },
+  { id: "starter", label: "7 Days", price: "$12", detail: "1 active device", badge: undefined },
   { id: "popular", label: "1 Month", price: "$39", detail: "1 active device", badge: "Most Popular" },
   { id: "yearly", label: "1 Year", price: "$99", detail: "2 active devices", badge: "Best Value" },
 ] as const;

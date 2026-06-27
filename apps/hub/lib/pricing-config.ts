@@ -16,8 +16,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
   starter: {
     id: "starter",
     name: "Starter",
-    price: "$9",
-    priceNum: 9,
+    price: "$12",
+    priceNum: 12,
     duration: "1 week access",
     durationDays: 7,
     allowedRedemptions: 1,
