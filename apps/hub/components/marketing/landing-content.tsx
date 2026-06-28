@@ -149,17 +149,62 @@ export default function LandingContent() {
         transition={{ duration: 0.4 }}
         className="py-2 md:py-6 flex flex-col items-center px-4 relative"
       >
+        {/* 3D Badge with spinning border shine */}
         <motion.div
           initial={isMobile ? false : { opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center gap-1 md:gap-2 rounded-full border border-white/10 bg-white/5 py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-ph4ntom-light relative z-10"
+          className="relative z-10 group/badge"
         >
-          <div className="relative flex h-2 w-2 mx-1">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
+          {/* Spinning border shine */}
+          <div
+            className="absolute inset-[-1px] rounded-full z-0 opacity-50 group-hover/badge:opacity-90 transition-opacity duration-500"
+            style={{
+              background: "conic-gradient(from var(--badge-shine-angle, 0deg), transparent 0%, transparent 25%, rgba(255,255,255,0.5) 40%, rgba(171,159,242,0.8) 50%, rgba(255,255,255,0.5) 60%, transparent 75%, transparent 100%)",
+              animation: "badge-border-spin 4s linear infinite",
+            }}
+          />
+          {/* Glow behind badge */}
+          {/* <div className="absolute inset-0 rounded-full z-0 blur-lg opacity-20 group-hover/badge:opacity-40 transition-opacity duration-500 bg-ph4ntom-purple" /> */}
+
+          <div
+            className="relative z-10 flex items-center gap-1 md:gap-2 rounded-full py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-ph4ntom-light"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.05) 100%)",
+              boxShadow: [
+                "inset 0 1px 0 rgba(255,255,255,0.15)",
+                "inset 0 -1px 2px rgba(0,0,0,0.25)",
+                "0 1px 0 0 rgba(0,0,0,0.4)",
+                "0 2px 0 0 rgba(0,0,0,0.2)",
+                "0 4px 12px rgba(0,0,0,0.3)",
+                "0 1px 8px rgba(124,58,237,0.15)",
+              ].join(", "),
+            }}
+          >
+            {/* Top highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] rounded-full bg-black/20" />
+
+            <div className="relative flex h-2 w-2 mx-1">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
+            </div>
+            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 70+ LARPers</span>
           </div>
-          Available for iOS & Android
+
+          {/* <style jsx global>{`
+            @property --badge-shine-angle {
+              syntax: "<angle>";
+              initial-value: 0deg;
+              inherits: false;
+            }
+            @keyframes badge-border-spin {
+              to {
+                --badge-shine-angle: 360deg;
+              }
+            }
+          `}</style> */}
         </motion.div>
 
         <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
@@ -167,10 +212,10 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-bold tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
-              Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">the flex.</span>
+              Fake crypto wallets that <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">look and feel real.</span>
             </>
           </motion.h1>
           <motion.div
@@ -179,11 +224,11 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90 font-bold">
-              The #1 Fake Crypto Wallet 🥇
+            <span className="text-white/90">
+              No real crypto involved. Works on iOS & Android.
             </span>
             <p>
-              RPWallet is a fake crypto wallet for entertainment. Display any balance, any token on a pixel-perfect Phantom and Trust wallet interface - no real crypto involved.
+              Set any balance, token, transaction or notification inside a 1:1 Phantom & Trust Wallet. Built with updated UI, smooth animations for flex content, pranks and viral crypto posts.
             </p>
           </motion.div>
         </div>
@@ -260,49 +305,27 @@ export default function LandingContent() {
 
         <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto relative">
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <path d="m9 12 2 2 4-4" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/11.webp")} alt="Pixel-perfect icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">Pixel-Perfect 1:1 Copy</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/live token.webp")} alt="Live token prices icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">Live Token Prices</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <path d="M5 12h14" />
-              <path d="m15 7 5 5-5 5" />
-              <path d="M19 12H5" />
-              <path d="m9 7-5 5 5 5" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/p2p.webp")} alt="P2P transaction icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">P2P Transaction Simulation</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <line x1="12" y1="1" x2="12" y2="23" />
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/dollar.webp")} alt="Set any balance icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">Set Any Balance</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/user.webp")} alt="No sign up icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">No Sign Up</h3>
           </motion.div>
           <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#ab9ff2]">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <Image src={getAssetUrl("/3d-icons/download.webp")} alt="Nothing to download icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
             <h3 className="font-medium text-white/90 text-sm md:text-base">Nothing to Download</h3>
           </motion.div>
         </motion.div>
@@ -337,30 +360,30 @@ export default function LandingContent() {
                 <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
 
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                    <ShoppingCart size={16} className="text-white/80" />
+                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
+                    <Image src={getAssetUrl("/3d-icons/Shopping Cart Icon.webp")} alt="Purchase" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
                   </div>
-                  <div className="flex flex-col pt-2 md:pt-0">
+                  <div className="flex flex-col md:pt-0">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
                     <p className="text-white/50 text-[14px] leading-snug">Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                   </div>
                 </div>
 
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                    <Key size={16} className="text-white/80" />
+                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
+                    <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
                   </div>
-                  <div className="flex flex-col pt-2 md:pt-0">
+                  <div className="flex flex-col md:pt-0">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
                     <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
                   </div>
                 </div>
 
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 rounded-full border border-white/10 bg-[#161618] flex items-center justify-center shrink-0 shadow-lg">
-                    <Smartphone size={16} className="text-white/80" />
+                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
+                    <Image src={getAssetUrl("/3d-icons/iPhone Icon.webp")} alt="Install" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
                   </div>
-                  <div className="flex flex-col pt-2 md:pt-0">
+                  <div className="flex flex-col md:pt-0">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
                     <p className="text-white/50 text-[14px] leading-snug">
                       Enter your license key,{" "}
@@ -473,7 +496,16 @@ export default function LandingContent() {
                   </div>
                 )}
 
-                <div className="text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
+                <div className="flex flex-col items-center text-center mb-4">
+                  <Image
+                    src={getAssetUrl(isStarter ? "/3d-icons/7 d.webp" : isPopular ? "/3d-icons/30 d.webp" : "/3d-icons/1 y.webp")}
+                    alt={isStarter ? "7 days" : isPopular ? "30 days" : "1 year"}
+                    width={72}
+                    height={72}
+                    className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain mb-3"
+                  />
+                  <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
+                </div>
 
                 <div className="flex items-baseline justify-center gap-1 mb-10">
                   {plan.originalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}

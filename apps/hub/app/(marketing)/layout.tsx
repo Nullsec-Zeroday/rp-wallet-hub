@@ -27,7 +27,6 @@ export default function MarketingLayout({ children }: Readonly<{ children: React
       <Navigation />
       {children}
       <Footer />
-      <SocialProofToasts />
     </div>
   );
 }
