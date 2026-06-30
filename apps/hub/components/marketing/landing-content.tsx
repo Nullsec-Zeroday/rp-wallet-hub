@@ -182,7 +182,7 @@ export default function LandingContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
             </div>
-            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Trusted by 500+ LARPers and Creators</span>
+            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Trusted by 800+ LARPers and Creators</span>
           </div>
 
           {/* <style jsx global>{`
