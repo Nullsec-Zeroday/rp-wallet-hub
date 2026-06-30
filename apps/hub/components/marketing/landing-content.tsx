@@ -182,7 +182,7 @@ export default function LandingContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
             </div>
-            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 200+ LARPers and Creators</span>
+            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Trusted by 500+ LARPers and Creators</span>
           </div>
 
           {/* <style jsx global>{`
@@ -207,7 +207,7 @@ export default function LandingContent() {
             className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
-              Fake crypto wallet that <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">look and feel real.</span>
+              The most realistic <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">crypto wallet simulator.</span>
             </>
           </motion.h1>
           <motion.div
