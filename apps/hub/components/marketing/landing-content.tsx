@@ -156,14 +156,6 @@ export default function LandingContent() {
           transition={{ duration: 0.3 }}
           className="relative z-10 group/badge"
         >
-          {/* Spinning border shine */}
-          <div
-            className="absolute inset-[-1px] rounded-full z-0 opacity-50 group-hover/badge:opacity-90 transition-opacity duration-500"
-            style={{
-              background: "conic-gradient(from var(--badge-shine-angle, 0deg), transparent 0%, transparent 25%, rgba(255,255,255,0.5) 40%, rgba(171,159,242,0.8) 50%, rgba(255,255,255,0.5) 60%, transparent 75%, transparent 100%)",
-              animation: "badge-border-spin 4s linear infinite",
-            }}
-          />
           {/* Glow behind badge */}
           {/* <div className="absolute inset-0 rounded-full z-0 blur-lg opacity-20 group-hover/badge:opacity-40 transition-opacity duration-500 bg-ph4ntom-purple" /> */}
 
@@ -172,7 +164,7 @@ export default function LandingContent() {
             style={{
               background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.05) 100%)",
               boxShadow: [
-                "inset 0 1px 0 rgba(255,255,255,0.15)",
+                // "inset 0 1px 0 rgba(255,255,255,0.15)",
                 "inset 0 -1px 2px rgba(0,0,0,0.25)",
                 "0 1px 0 0 rgba(0,0,0,0.4)",
                 "0 2px 0 0 rgba(0,0,0,0.2)",
@@ -190,7 +182,7 @@ export default function LandingContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
             </div>
-            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 70+ LARPers</span>
+            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 150+ LARPers and Creators</span>
           </div>
 
           {/* <style jsx global>{`
@@ -225,10 +217,10 @@ export default function LandingContent() {
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90">
-              No real crypto involved. Works on iOS & Android.
+              Now available on iOS & Android.
             </span>
             <p>
-              Set any balance, token, transaction or notification inside a 1:1 Phantom & Trust Wallet. Built with updated UI, smooth animations for flex content, pranks and viral crypto posts.
+              Set any balance, import any token, simulate transaction & much more in a pixel-perfect clone of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
             </p>
           </motion.div>
         </div>
