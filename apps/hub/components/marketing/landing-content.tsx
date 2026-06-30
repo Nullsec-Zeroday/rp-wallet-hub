@@ -217,7 +217,7 @@ export default function LandingContent() {
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
           >
             <span className="text-white/90">
-              Now available on iOS & Android.
+              Available on iOS & Android.
             </span>
             <p>
               Set any balance, import any token, simulate transaction & much more in a pixel-perfect clone of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
@@ -787,14 +787,14 @@ export default function LandingContent() {
                         }
                         : isYearly
                           ? {
-                              background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
-                              boxShadow: [
-                                "inset 0 1px 1px rgba(255,255,255,0.4)",
-                                "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                                "0 4px 15px rgba(253,224,71,0.35)",
-                                "0 0 0 0.5px rgba(255,255,255,0.2)",
-                              ].join(", "),
-                            }
+                            background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
+                            boxShadow: [
+                              "inset 0 1px 1px rgba(255,255,255,0.4)",
+                              "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                              "0 4px 15px rgba(253,224,71,0.35)",
+                              "0 0 0 0.5px rgba(255,255,255,0.2)",
+                            ].join(", "),
+                          }
                           : {
                             background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
                             border: "1px solid rgba(255,255,255,0.12)",
@@ -853,7 +853,27 @@ export default function LandingContent() {
           </p>
         </div>
 
-        <div className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 shadow-xl">
+        <div
+          className="backdrop-blur-xl p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 overflow-hidden shadow-xl"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: [
+              "inset 0 1px 1px rgba(255,255,255,0.15)",
+              "inset 0 -1px 1px rgba(0,0,0,0.1)",
+              "0 8px 40px rgba(0,0,0,0.3)",
+              "0 2px 6px rgba(0,0,0,0.15)",
+              "0 0 0 0.5px rgba(255,255,255,0.08)",
+            ].join(", "),
+          }}
+        >
+          {/* Top specular highlight edge */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+          {/* Bottom subtle dark edge */}
+          <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent pointer-events-none" />
+          {/* Inner refraction glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2.5rem]" />
+
           {[
             ...homepageFaq.map((item) => ({ q: item.question, a: item.answer })),
             {
@@ -893,10 +913,10 @@ export default function LandingContent() {
                 className="py-5 border-b border-white/5 last:border-b-0 text-left cursor-pointer transition-all duration-300 relative group select-none"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className={`font-medium text-base md:text-[17px] transition-colors duration-300 ${isOpen ? "text-[#ab9ff2]" : "text-white group-hover:text-[#ab9ff2]/80"}`}>
+                  <h3 className={`font-medium text-base md:text-[17px] transition-colors duration-300 relative z-10 ${isOpen ? "text-[#ab9ff2]" : "text-white group-hover:text-[#ab9ff2]/80"}`}>
                     {item.q}
                   </h3>
-                  <div className={`size-8 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center shrink-0 transition-all duration-300 group-hover:bg-white/[0.06] ${isOpen ? "rotate-180 bg-[#ab9ff2]/10 border-[#ab9ff2]/30" : ""}`}>
+                  <div className={`size-8 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center shrink-0 transition-all duration-300 relative z-10 group-hover:bg-white/[0.06] ${isOpen ? "rotate-180 bg-[#ab9ff2]/10 border-[#ab9ff2]/30" : ""}`}>
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-300 ${isOpen ? "text-[#ab9ff2]" : "text-white/40"}`}>
                       <path d="m1 1 4 4 4-4" />
                     </svg>
@@ -904,7 +924,7 @@ export default function LandingContent() {
                 </div>
 
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"}`}>
-                  <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1">{item.a}</div>
+                  <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1 relative z-10">{item.a}</div>
                 </div>
               </div>
             );
@@ -913,11 +933,26 @@ export default function LandingContent() {
       </section>
 
       <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
-        <div className="rounded-[2rem] border border-white/5 bg-white/[0.015] p-6 md:p-8 text-center">
-          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
+        <div
+          className="rounded-[2rem] p-6 md:p-8 text-center backdrop-blur-xl relative overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: [
+              "inset 0 1px 1px rgba(255,255,255,0.08)",
+              "0 4px 20px rgba(0,0,0,0.15)",
+              "0 0 0 0.5px rgba(255,255,255,0.05)",
+            ].join(", "),
+          }}
+        >
+          {/* Top specular highlight edge */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+          {/* Inner refraction glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-transparent to-transparent pointer-events-none rounded-[2rem]" />
+          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35 relative z-10">
             RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <div className="mt-5 flex flex-wrap justify-center gap-2 relative z-10">
             {[
               "fake crypto wallet app",
               "crypto wallet simulator",
@@ -930,8 +965,15 @@ export default function LandingContent() {
             ].map((term) => (
               <span
                 key={term}
-                className="rounded-full border border-white/5 bg-white/[0.02] px-3 py-1.5 text-[12px] font-medium text-white/35"
+                className="relative rounded-full px-3 py-1.5 text-[12px] font-medium text-white/40 backdrop-blur-md overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05)",
+                }}
               >
+                {/* Top shine reflection */}
+                <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
                 {term}
               </span>
             ))}
