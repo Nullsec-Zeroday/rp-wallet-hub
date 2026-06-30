@@ -207,7 +207,7 @@ export default function LandingContent() {
             className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
-              Fake crypto wallets that <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">look and feel real.</span>
+              Fake crypto wallet that <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">look and feel real.</span>
             </>
           </motion.h1>
           <motion.div
@@ -220,7 +220,7 @@ export default function LandingContent() {
               Available on iOS & Android.
             </span>
             <p>
-              Set any balance, import any token, simulate transaction & much more in a pixel-perfect clone of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
+              Set any balance, import any token, simulate transactions & much more in a pixel-perfect clone of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
             </p>
           </motion.div>
         </div>
@@ -539,7 +539,7 @@ export default function LandingContent() {
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
                   <div className="absolute left-[10px] top-[32px] h-[calc(100%-8px)] w-[4px] md:hidden z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
                   <div className="hidden md:block absolute top-[10px] left-[calc(50%+20px)] w-[calc(100%-40px)] h-[4px] z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
-                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
+                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl saturate-[2] brightness-[0.7]">
                     <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={48} height={48} className="w-full h-full object-contain" />
                   </div>
                   <div className="flex flex-col md:pt-4">
@@ -559,7 +559,7 @@ export default function LandingContent() {
                       <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
                         install the app
                       </Link>
-                      , follow the steps. Time to flex.
+                      , follow the steps. Time to larp.
                     </p>
                   </div>
                 </div>
@@ -691,7 +691,7 @@ export default function LandingContent() {
             return (
               <div
                 key={plan.id}
-                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer hover:scale-[1.02]"}`}
+                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"}`}
                 onClick={() => {
                   if (!checkoutLocked) {
                     handleCheckout(plan);
@@ -716,10 +716,6 @@ export default function LandingContent() {
                 <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
                 {/* Inner refraction glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
-                {/* Hover shine sweep effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-                {/* Hover ambient highlight overlay */}
-                <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                 {isPopular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#8b5cf6] text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] whitespace-nowrap z-20">
@@ -764,7 +760,7 @@ export default function LandingContent() {
                     e.stopPropagation();
                     handleCheckout(plan);
                   }}
-                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] ${selectedPlanId === plan.id && checkoutPhase === "error"
+                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] ${checkoutLocked ? "cursor-wait" : "cursor-pointer"} ${selectedPlanId === plan.id && checkoutPhase === "error"
                     ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                     : isPopular
                       ? "text-white"

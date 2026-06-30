@@ -42,7 +42,7 @@ export default function TryFreeButton({
   return (
     <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97, y: 1 }} className={wrapperClassName}>
       {/* Outer glow wrapper for the spinning border shine */}
-      <div className="relative w-full sm:w-[260px] rounded-[28px] p-[2px] group/btn">
+      <div className="relative w-full rounded-[28px] p-[2px] group/btn">
         {/* Animated spinning border shine */}
         {/* <div
           className="absolute inset-[-1px] rounded-[28px] z-0 opacity-60 group-hover/btn:opacity-100 transition-opacity duration-500"

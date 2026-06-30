@@ -210,7 +210,7 @@ function BuyContent() {
                     });
                   }
                 }}
-                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer hover:scale-[1.02]"} ${!isSelected && "opacity-70 hover:opacity-100"}`}
+                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${!isSelected && "opacity-70"}`}
                 style={{
                   background: bgGradient,
                   border: `1px solid ${borderColor}`,
@@ -230,10 +230,6 @@ function BuyContent() {
                 <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
                 {/* Inner refraction glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
-                {/* Hover shine sweep effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-                {/* Hover ambient highlight overlay */}
-                <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                 {/* Mobile-friendly selection indicator */}
                 <div className="absolute top-5 right-5 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 z-10">
@@ -242,7 +238,7 @@ function BuyContent() {
                       <Check size={14} strokeWidth={4} className={isYearly ? "text-black" : "text-white"} />
                     </div>
                   ) : (
-                    <div className="h-full w-full rounded-full border-2 border-white/20 group-hover/glass-card:border-white/40"></div>
+                    <div className="h-full w-full rounded-full border-2 border-white/20"></div>
                   )}
                 </div>
 
@@ -324,7 +320,7 @@ function BuyContent() {
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
-            className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden hover:scale-[1.02] ${!selectedPlanId
+            className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden cursor-pointer hover:scale-[1.02] ${!selectedPlanId
               ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
               : checkoutPhase === "error"
                 ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
@@ -483,7 +479,7 @@ function BuyContent() {
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden hover:scale-[1.02] ${!selectedPlanId
+                className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden cursor-pointer hover:scale-[1.02] ${!selectedPlanId
                   ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
                   : checkoutPhase === "error"
                     ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
