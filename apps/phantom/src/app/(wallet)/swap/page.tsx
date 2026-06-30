@@ -14,6 +14,7 @@ import TokenLogo from "../_components/token-logo";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../_components/rive-asset-provider";
+import { createBackendWalletTransaction } from "@/lib/backend-wallet";
 
 // ── Helpers ──
 function formatMarketCap(value: number, currency: string): string {
@@ -275,7 +276,7 @@ function TokenPickerModal({
                         )}
                       </div>
                       <span className="text-[15px] font-semibold text-[#eeeeee] whitespace-nowrap pl-2">
-                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol.split('_')[0]}
+                        {bal > 0 ? formatBalance(bal) : "0"} {token.symbol}
                       </span>
                       <div className="flex flex-col items-end shrink-0">
                         <div className="text-[15px] font-semibold text-white tracking-tight">
@@ -307,7 +308,7 @@ function TokenPickerModal({
 import { SwapToast } from "../_components/swap-toast";
 
 export default function SwapPage() {
-  const { baseCurrency, tokenBalances, addTransaction, updateBalance, customTokens, setTokenPickerVisible } = useWalletStore();
+  const { baseCurrency, tokenBalances, customTokens, setTokenPickerVisible } = useWalletStore();
   const { prices } = useLivePrices();
 
   const allTokens = useMemo(() => [...TOKENS, ...customTokens], [customTokens]);
@@ -437,35 +438,30 @@ export default function SwapPage() {
     // Simulate processing delay
     const delay = Math.floor(Math.random() * 2001) + 3000;
     setTimeout(() => {
-      // Update balances explicitly
-      const currentPayBal = tokenBalances.find(b => b.symbol === sourceToken)?.balance ?? 0;
-      const currentReceiveBal = tokenBalances.find(b => b.symbol === destToken)?.balance ?? 0;
+      createBackendWalletTransaction({
+        type: "swap",
+        tokenSymbol: sourceToken,
+        amount: String(amtPayToken),
+        toTokenSymbol: destToken,
+        toAmount: String(amtReceive),
+        fromAddress: "Self",
+        toAddress: "Self",
+      }).then(() => {
+        const audio = new Audio("/sound-effect/confetti.mp3");
+        audio.play().catch(e => console.log("Audio play failed:", e));
 
-      updateBalance(sourceToken, Math.max(0, currentPayBal - amtPayToken));
-      updateBalance(destToken, currentReceiveBal + amtReceive);
+        setToastState("swapped");
 
-      addTransaction({
-        type: 'swap',
-        token: sourceToken,
-        amount: amtPayToken,
-        toToken: destToken,
-        toAmount: amtReceive,
-        status: 'confirmed',
-        from: 'Self',
-        to: 'Self',
-      });
-
-      // Play sound
-      const audio = new Audio("/sound-effect/confetti.mp3");
-      audio.play().catch(e => console.log("Audio play failed:", e));
-
-      setToastState("swapped");
-
-      setTimeout(() => {
+        setTimeout(() => {
+          setToastState(null);
+        }, 2500);
+      }).catch((error) => {
+        console.error("Swap persist failed:", error);
+        toast.error("Unable to save swap. Check your session and balance.");
         setToastState(null);
-      }, 2500);
+      });
     }, delay);
-  }, [canSwap, payToken, receiveToken, payAmountInToken, receiveAmount, tokenBalances, updateBalance, addTransaction]);
+  }, [canSwap, payToken, receiveToken, payAmountInToken, receiveAmount]);
 
   // Quick amount buttons
   const handleQuickAmount = (fraction: number) => {
@@ -691,7 +687,7 @@ export default function SwapPage() {
 
             {/* Footnote statement */}
             <div className="flex items-center gap-1 mt-6 text-white/60 text-[13px] font-medium leading-none">
-              <span>Quote includes a 0.85% Ph4ntom fee</span>
+              <span>Quote includes a 0.85% Phantom fee</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-35 align-middle ml-0.5">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4" />

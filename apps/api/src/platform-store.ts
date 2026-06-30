@@ -32,7 +32,7 @@ const AFFILIATE_ATTRIBUTION_TTL_MS = 45 * 24 * 60 * 60 * 1000;
 const AFFILIATE_CHECKOUT_MATCH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const AFFILIATE_MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const AFFILIATE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-const DEFAULT_WALLET_USERNAME = "rpwallet";
+const DEFAULT_WALLET_USERNAME = "larperwallet";
 const DEMO_KEY_LABEL = "Free Demo";
 const DEMO_LICENSE_PLAN = "Demo Preview";
 
@@ -1000,6 +1000,11 @@ class InMemoryPlatformStore implements PlatformStore {
 
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
+    const toAmount = input.toAmount ? Number(input.toAmount) : undefined;
+    const toTokenSymbol = input.toTokenSymbol?.trim().toUpperCase();
+    if (input.type === "swap" && (!toTokenSymbol || !Number.isFinite(toAmount) || (toAmount ?? 0) <= 0)) {
+      throw new Error("Enter a valid swap destination token and amount.");
+    }
 
     const counterpartAccount = input.type === "send"
       ? this.findCounterpartAccount(user.id, input)
@@ -1010,6 +1015,9 @@ class InMemoryPlatformStore implements PlatformStore {
     }
     if (!this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType))) {
       throw new Error("Insufficient balance for this transfer.");
+    }
+    if (effectiveType === "swap" && toTokenSymbol && toAmount) {
+      this.applyBalanceMutation(input.accountId, toTokenSymbol, toAmount, "credit");
     }
 
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
@@ -1025,6 +1033,8 @@ class InMemoryPlatformStore implements PlatformStore {
       status: "confirmed",
       tokenSymbol: input.tokenSymbol.toUpperCase(),
       amount: formatAmount(amount),
+      toTokenSymbol: effectiveType === "swap" ? toTokenSymbol : undefined,
+      toAmount: effectiveType === "swap" && toAmount ? formatAmount(toAmount) : undefined,
       fromAddress: input.fromAddress,
       toAddress: input.toAddress,
       counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId,
@@ -2311,6 +2321,11 @@ class NeonPlatformStore implements PlatformStore {
 
     const amount = Number(input.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Enter a valid amount greater than zero.");
+    const toAmount = input.toAmount ? Number(input.toAmount) : undefined;
+    const toTokenSymbol = input.toTokenSymbol?.trim().toUpperCase();
+    if (input.type === "swap" && (!toTokenSymbol || !Number.isFinite(toAmount) || (toAmount ?? 0) <= 0)) {
+      throw new Error("Enter a valid swap destination token and amount.");
+    }
 
     const counterpartAccount = input.type === "send"
       ? await this.findCounterpartAccount(user.id, input)
@@ -2321,6 +2336,9 @@ class NeonPlatformStore implements PlatformStore {
     }
     if (!(await this.applyBalanceMutation(input.accountId, input.tokenSymbol, amount, getBalanceDirection(effectiveType)))) {
       throw new Error("Insufficient balance for this transfer.");
+    }
+    if (effectiveType === "swap" && toTokenSymbol && toAmount) {
+      await this.applyBalanceMutation(input.accountId, toTokenSymbol, toAmount, "credit");
     }
 
     if ((effectiveType === "same_wallet_transfer" || effectiveType === "cross_wallet_transfer") && counterpartAccount) {
@@ -2337,6 +2355,8 @@ class NeonPlatformStore implements PlatformStore {
       status: "confirmed",
       tokenSymbol: input.tokenSymbol.toUpperCase(),
       amount: formatAmount(amount),
+      toTokenSymbol: effectiveType === "swap" ? toTokenSymbol : undefined,
+      toAmount: effectiveType === "swap" && toAmount ? formatAmount(toAmount) : undefined,
       fromAddress: input.fromAddress,
       toAddress: input.toAddress,
       counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId,
@@ -2350,6 +2370,8 @@ class NeonPlatformStore implements PlatformStore {
       status: "confirmed",
       tokenSymbol: input.tokenSymbol.toUpperCase(),
       amount: formatAmount(amount),
+      toTokenSymbol: effectiveType === "swap" ? toTokenSymbol ?? null : null,
+      toAmount: effectiveType === "swap" && toAmount ? formatAmount(toAmount) : null,
       fromAddress: input.fromAddress ?? null,
       toAddress: input.toAddress ?? null,
       counterpartWalletAppId: counterpartAccount?.walletAppId || input.counterpartWalletAppId || null,
@@ -2370,6 +2392,8 @@ class NeonPlatformStore implements PlatformStore {
           status: "confirmed" as const,
           tokenSymbol: input.tokenSymbol.toUpperCase(),
           amount: formatAmount(amount),
+          toTokenSymbol: null,
+          toAmount: null,
           fromAddress: account.address,
           toAddress: counterpartAccount.address,
           counterpartWalletAppId: input.walletAppId,
@@ -3505,6 +3529,8 @@ function toWalletTransaction(tx: typeof schema.walletTransactions.$inferSelect):
     status: tx.status,
     tokenSymbol: tx.tokenSymbol,
     amount: tx.amount,
+    toTokenSymbol: tx.toTokenSymbol ?? undefined,
+    toAmount: tx.toAmount ?? undefined,
     fromAddress: tx.fromAddress ?? undefined,
     toAddress: tx.toAddress ?? undefined,
     counterpartWalletAppId: tx.counterpartWalletAppId ?? undefined,

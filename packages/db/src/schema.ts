@@ -200,6 +200,8 @@ export const walletTransactions = pgTable("wallet_transactions", {
   status: transactionStatus("status").default("confirmed").notNull(),
   tokenSymbol: text("token_symbol").notNull(),
   amount: numeric("amount", { precision: 32, scale: 12 }).notNull(),
+  toTokenSymbol: text("to_token_symbol"),
+  toAmount: numeric("to_amount", { precision: 32, scale: 12 }),
   fromAddress: text("from_address"),
   toAddress: text("to_address"),
   counterpartWalletAppId: walletAppId("counterpart_wallet_app_id"),

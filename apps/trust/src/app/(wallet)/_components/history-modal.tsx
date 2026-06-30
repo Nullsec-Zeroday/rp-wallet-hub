@@ -46,10 +46,14 @@ function groupTransactions(transactions: WalletTransaction[], prices: Record<str
 
   transactions.forEach((transaction) => {
     const type = getTransactionTypeLabel(transaction);
-    const isPositive = transaction.type === "receive" || transaction.type === "buy";
+    const isSwap = transaction.type === "swap";
+    const isPositive = transaction.type === "receive" || transaction.type === "buy" || isSwap;
     const amountNumber = Number(transaction.amount) || 0;
     const symbol = transaction.tokenSymbol.toUpperCase();
+    const toSymbol = transaction.toTokenSymbol?.toUpperCase();
+    const toAmount = Number(transaction.toAmount) || 0;
     const price = prices[symbol]?.usd ?? getTrustToken(symbol).price;
+    const toPrice = toSymbol ? prices[toSymbol]?.usd ?? getTrustToken(toSymbol).price : 0;
     const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(new Date(transaction.createdAt));
     const address = transaction.type === "receive" ? transaction.fromAddress : transaction.toAddress;
     const item: TransactionItem = {
@@ -57,10 +61,11 @@ function groupTransactions(transactions: WalletTransaction[], prices: Record<str
       raw: transaction,
       type,
       address: truncateAddress(address),
-      amount: `${isPositive ? "+" : "-"}${formatTrustBalance(amountNumber)}`,
-      symbol,
-      fiat: formatTrustCurrency(amountNumber * price, currency),
+      amount: isSwap && toSymbol ? `${formatTrustBalance(amountNumber)} ${symbol} -> ${formatTrustBalance(toAmount)}` : `${isPositive ? "+" : "-"}${formatTrustBalance(amountNumber)}`,
+      symbol: isSwap && toSymbol ? toSymbol : symbol,
+      fiat: formatTrustCurrency((isSwap && toAmount && toPrice ? toAmount * toPrice : amountNumber * price), currency),
       isPositive,
+      swapFrom: isSwap ? symbol : undefined,
     };
     groups.set(date, [...(groups.get(date) || []), item]);
   });

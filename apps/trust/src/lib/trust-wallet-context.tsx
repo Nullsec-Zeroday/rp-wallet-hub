@@ -39,6 +39,8 @@ export interface TrustTransactionInput {
   createdAt?: string;
   fromAddress?: string;
   toAddress?: string;
+  toAmount?: string;
+  toTokenSymbol?: string;
   tokenSymbol: string;
   type: WalletMutationType;
 }
@@ -132,7 +134,7 @@ function buildLocalPayload(payload: WalletBootstrapPayload, input: TrustSettings
 
 function buildLocalTransactionPayload(payload: WalletBootstrapPayload, input: TrustTransactionInput) {
   const account = getAccount(payload);
-  if (!account) throw new Error("No Tru5t account is available.");
+  if (!account) throw new Error("No Trust account is available.");
 
   const amount = parseAmount(input.amount);
   if (amount <= 0) throw new Error("Enter a valid amount greater than zero.");
@@ -141,16 +143,29 @@ function buildLocalTransactionPayload(payload: WalletBootstrapPayload, input: Tr
   const createdAt = input.createdAt ? new Date(input.createdAt).toISOString() : new Date().toISOString();
   const balanceMap = getPayloadBalanceMap(payload);
   const currentBalance = balanceMap[tokenSymbol] || 0;
+  const toTokenSymbol = input.toTokenSymbol?.trim().toUpperCase();
+  const toAmount = parseAmount(input.toAmount);
   const shouldDebit = input.type === "send" || input.type === "same_wallet_transfer" || input.type === "cross_wallet_transfer";
   const shouldCredit = input.type === "receive";
-  const nextAmount = shouldDebit ? currentBalance - amount : shouldCredit ? currentBalance + amount : currentBalance;
+  const shouldSwap = input.type === "swap";
+  const nextAmount = shouldDebit || shouldSwap ? currentBalance - amount : shouldCredit ? currentBalance + amount : currentBalance;
 
-  if (shouldDebit && nextAmount < -0.00000001) {
+  if ((shouldDebit || shouldSwap) && nextAmount < -0.00000001) {
     throw new Error("Insufficient balance for this transfer.");
+  }
+  if (shouldSwap && (!toTokenSymbol || toAmount <= 0)) {
+    throw new Error("Enter a valid swap destination token and amount.");
   }
 
   const existingBalance = payload.balances.find((balance) => balance.accountId === account.id && balance.tokenSymbol.toUpperCase() === tokenSymbol);
-  const otherBalances = payload.balances.filter((balance) => !(balance.accountId === account.id && balance.tokenSymbol.toUpperCase() === tokenSymbol));
+  const existingToBalance = shouldSwap
+    ? payload.balances.find((balance) => balance.accountId === account.id && balance.tokenSymbol.toUpperCase() === toTokenSymbol)
+    : undefined;
+  const otherBalances = payload.balances.filter((balance) => {
+    if (balance.accountId !== account.id) return true;
+    const symbol = balance.tokenSymbol.toUpperCase();
+    return symbol !== tokenSymbol && (!shouldSwap || symbol !== toTokenSymbol);
+  });
   const transaction: WalletTransaction = {
     id: `local-trust-tx-${Date.now()}`,
     walletAppId: "trust",
@@ -159,22 +174,38 @@ function buildLocalTransactionPayload(payload: WalletBootstrapPayload, input: Tr
     status: "confirmed",
     tokenSymbol,
     amount: formatAmount(amount),
+    toTokenSymbol: shouldSwap ? toTokenSymbol : undefined,
+    toAmount: shouldSwap ? formatAmount(toAmount) : undefined,
     fromAddress: input.fromAddress || (input.type === "receive" ? input.fromAddress : account.address),
     toAddress: input.toAddress || (input.type === "receive" ? account.address : input.toAddress),
     createdAt,
   };
+
+  const nextBalanceRows = [
+    {
+      accountId: account.id,
+      tokenSymbol,
+      amount: formatAmount(Math.max(0, nextAmount)),
+      updatedAt: existingBalance?.updatedAt || createdAt,
+    },
+  ];
+
+  if (shouldSwap && toTokenSymbol) {
+    const currentToBalance = balanceMap[toTokenSymbol] || 0;
+    nextBalanceRows.push({
+      accountId: account.id,
+      tokenSymbol: toTokenSymbol,
+      amount: formatAmount(currentToBalance + toAmount),
+      updatedAt: existingToBalance?.updatedAt || createdAt,
+    });
+  }
 
   return {
     nextPayload: {
       ...payload,
       balances: [
         ...otherBalances,
-        {
-          accountId: account.id,
-          tokenSymbol,
-          amount: formatAmount(Math.max(0, nextAmount)),
-          updatedAt: existingBalance?.updatedAt || createdAt,
-        },
+        ...nextBalanceRows,
       ],
       recentTransactions: [transaction, ...payload.recentTransactions].slice(0, 50),
     },
@@ -245,7 +276,7 @@ export function TrustWalletProvider({
   const { error: priceError, isLoading: priceLoading, prices, refetch: refetchPrices } = useTrustLivePrices(tokenSymbols, coingeckoApiKey, baseCurrency);
   const portfolio = useMemo(() => computePortfolio(balanceMap, { ...getStaticTrustPrices(), ...prices }), [balanceMap, prices]);
   const notificationSettings = payload.notificationSettings || DEFAULT_TRUST_NOTIFICATION_SETTINGS;
-  const walletName = payload.profile.displayName || account?.name || "RPWallet";
+  const walletName = payload.profile.displayName || account?.name || "Larper Wallet";
   const walletAddress = account?.address || "";
 
   const settingsInitialValues = useMemo<TrustSettingsInput>(() => {
@@ -282,7 +313,7 @@ export function TrustWalletProvider({
     const localPayload = buildLocalPayload(payload, input);
 
     try {
-      if (!account) throw new Error("No Tru5t account is available.");
+      if (!account) throw new Error("No Trust account is available.");
 
       const body: UpdateWalletStateRequest = {
         accountId: account.id,
@@ -323,7 +354,7 @@ export function TrustWalletProvider({
     setTransactionPending(true);
 
     try {
-      if (!account) throw new Error("No Tru5t account is available.");
+      if (!account) throw new Error("No Trust account is available.");
 
       const request: CreateWalletTransactionRequest = {
         walletAppId: "trust",
@@ -331,6 +362,8 @@ export function TrustWalletProvider({
         type: input.type,
         tokenSymbol: input.tokenSymbol.trim().toUpperCase(),
         amount: String(parseAmount(input.amount)),
+        toTokenSymbol: input.toTokenSymbol?.trim().toUpperCase(),
+        toAmount: input.toAmount ? String(parseAmount(input.toAmount)) : undefined,
         createdAt: input.createdAt,
         fromAddress: input.fromAddress || (input.type === "receive" ? undefined : account.address),
         toAddress: input.toAddress || (input.type === "receive" ? account.address : undefined),
@@ -368,7 +401,7 @@ export function TrustWalletProvider({
     setSaveError("");
 
     try {
-      if (!account) throw new Error("No Tru5t account is available.");
+      if (!account) throw new Error("No Trust account is available.");
 
       const localPayload = withNotificationSettings(payload, settings);
       if (demoMode) {

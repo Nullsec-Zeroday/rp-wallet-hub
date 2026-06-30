@@ -510,8 +510,12 @@ export default function HomePage() {
           ) : recentTransactions.map((transaction) => {
             const display = getTransactionDisplay(transaction);
             const symbol = transaction.tokenSymbol.toUpperCase();
+            const toSymbol = transaction.toTokenSymbol?.toUpperCase();
             const amount = Number(transaction.amount) || 0;
-            const price = prices[symbol]?.usd ?? getTrustToken(symbol).price;
+            const toAmount = Number(transaction.toAmount) || 0;
+            const displayAmount = transaction.type === "swap" && toSymbol ? toAmount : amount;
+            const displaySymbol = transaction.type === "swap" && toSymbol ? toSymbol : symbol;
+            const price = prices[displaySymbol]?.usd ?? getTrustToken(displaySymbol).price;
             const sign = display.isPositive ? "+" : "-";
 
             return (
@@ -526,8 +530,8 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end shrink-0 pl-3">
-                  <span className="text-[16px] font-semibold" style={{ color: display.isPositive ? "#48FF91" : "#fff" }}>{sign}{formatTrustBalance(amount)} {symbol}</span>
-                  <span className="text-[14px] text-[#888]">≈ {formatTrustCurrency(amount * price, baseCurrency)}</span>
+                  <span className="text-[16px] font-semibold" style={{ color: display.isPositive ? "#48FF91" : "#fff" }}>{sign}{formatTrustBalance(displayAmount)} {displaySymbol}</span>
+                  <span className="text-[14px] text-[#888]">≈ {formatTrustCurrency(displayAmount * price, baseCurrency)}</span>
                 </div>
               </div>
             );

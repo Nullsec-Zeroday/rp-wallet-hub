@@ -68,6 +68,8 @@ export interface WalletTransaction {
   status: TransactionStatus;
   tokenSymbol: string;
   amount: string;
+  toTokenSymbol?: string;
+  toAmount?: string;
   fromAddress?: string;
   toAddress?: string;
   counterpartWalletAppId?: WalletAppId;
@@ -157,7 +159,7 @@ export interface CreateWalletAccountRequest {
   name?: string;
 }
 
-export type WalletMutationType = "send" | "receive" | "same_wallet_transfer" | "cross_wallet_transfer" | "manual_adjustment";
+export type WalletMutationType = "send" | "receive" | "swap" | "same_wallet_transfer" | "cross_wallet_transfer" | "manual_adjustment";
 
 export interface CreateWalletTransactionRequest {
   walletAppId: WalletAppId;
@@ -165,6 +167,8 @@ export interface CreateWalletTransactionRequest {
   type: WalletMutationType;
   tokenSymbol: string;
   amount: string;
+  toTokenSymbol?: string;
+  toAmount?: string;
   fromAddress?: string;
   toAddress?: string;
   counterpartWalletAppId?: WalletAppId;

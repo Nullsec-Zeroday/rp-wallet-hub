@@ -20,7 +20,7 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const [pickerSearch, setPickerSearch] = useState("");
   const [swapStatus, setSwapStatus] = useState<"idle" | "swapping" | "success">("idle");
   const [toSymbol, setToSymbol] = useState("USDT");
-  const { balanceMap, baseCurrency, prices, tokenSymbols } = useTrustWallet();
+  const { balanceMap, baseCurrency, createTransaction, prices, tokenSymbols, transactionError } = useTrustWallet();
 
   // Slider state
   const trackRef = useRef<HTMLDivElement>(null);
@@ -197,7 +197,23 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
   const completeVisualSwap = () => {
     if (!numericAmount || insufficient || swapStatus === "swapping") return;
     setSwapStatus("swapping");
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
+      const transaction = await createTransaction({
+        amount: String(numericAmount),
+        fromAddress: "Self",
+        toAddress: "Self",
+        toAmount: String(toAmount),
+        toTokenSymbol: toSymbol,
+        tokenSymbol: fromSymbol,
+        type: "swap",
+      });
+
+      if (!transaction) {
+        setSwapStatus("idle");
+        setSliderX(0);
+        return;
+      }
+
       setSwapStatus("success");
       onClose();
       window.setTimeout(() => {
@@ -519,6 +535,11 @@ export default function SwapModal({ isOpen, onClose }: SwapModalProps) {
             </svg>
             <span style={{ color: "#FE5D5D", fontSize: "13px", fontWeight: 500 }}>Insufficient balance</span>
           </div>
+          {transactionError && !insufficient && (
+            <div style={{ alignItems: "center", background: "#3F2526", borderRadius: "12px", color: "#FE5D5D", display: "flex", fontSize: "13px", fontWeight: 500, gap: "8px", marginTop: "4px", padding: "12px 16px" }}>
+              {transactionError}
+            </div>
+          )}
         </div>
 
         {/* Custom Keyboard */}

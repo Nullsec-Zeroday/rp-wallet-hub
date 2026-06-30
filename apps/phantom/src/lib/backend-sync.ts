@@ -25,10 +25,14 @@ function mapTransactions(payload: WalletBootstrapPayload, accountId?: string): T
       timestamp: new Date(tx.createdAt).getTime(),
       to: tx.toAddress || "Your Wallet",
       token: tx.tokenSymbol,
+      toToken: tx.toTokenSymbol,
+      toAmount: tx.toAmount ? Number(tx.toAmount) : undefined,
       type: (
         tx.type === "send" || tx.type === "cross_wallet_transfer"
           || tx.type === "same_wallet_transfer"
           ? "send"
+          : tx.type === "swap"
+            ? "swap"
           : tx.type === "manual_adjustment"
             ? "buy"
             : "receive"
