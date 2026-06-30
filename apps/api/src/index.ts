@@ -105,9 +105,9 @@ type PaymentPlan = SellAuthPlan & {
 };
 
 const PAYMENT_PLANS: Record<string, PaymentPlan> = {
-  starter: { ...SELLAUTH_PLANS.starter, priceAmount: "12.00" },
-  popular: { ...SELLAUTH_PLANS.popular, priceAmount: "24.00" },
-  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "79.00" },
+  starter: { ...SELLAUTH_PLANS.starter, priceAmount: "14.00" },
+  popular: { ...SELLAUTH_PLANS.popular, priceAmount: "39.00" },
+  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00" },
 };
 
 const app = new Hono<HonoEnv>();

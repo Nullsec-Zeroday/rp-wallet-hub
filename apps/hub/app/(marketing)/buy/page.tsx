@@ -166,7 +166,7 @@ function BuyContent() {
             Choose Your Plan
           </h1>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
-            You&apos;re just a few steps away from owning the #1 fake crypto wallet on the market.
+            Complete checkout, receive unique key and unlock instant access - no subscriptions.
           </p>
         </div>
 
@@ -177,6 +177,24 @@ function BuyContent() {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
             const isYearly = plan.id === "yearly";
+
+            const bgGradient = isSelected
+              ? isYearly
+                ? "linear-gradient(135deg, rgba(253,224,71,0.12) 0%, rgba(255,255,255,0.03) 50%, rgba(253,224,71,0.08) 100%)"
+                : "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(255,255,255,0.03) 50%, rgba(139,92,246,0.08) 100%)"
+              : "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)";
+
+            const borderColor = isSelected
+              ? isYearly
+                ? "rgba(253,224,71,0.45)"
+                : "rgba(139,92,246,0.45)"
+              : "rgba(255,255,255,0.12)";
+
+            const glowShadow = isSelected
+              ? isYearly
+                ? "0 0 50px rgba(253,224,71,0.25)"
+                : "0 0 50px rgba(139,92,246,0.3)"
+              : "0 4px 24px rgba(0,0,0,0.25)";
 
             return (
               <div
@@ -192,13 +210,31 @@ function BuyContent() {
                     });
                   }
                 }}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none" : "cursor-pointer"} ${isSelected
-                  ? isYearly
-                    ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#fde047,transparent)_border-box] shadow-[0_0_40px_rgba(212,175,55,0.25)] scale-[1.02] ring-1 ring-[#fde047] z-10"
-                    : "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_50px_rgba(139,92,246,0.3)] scale-[1.02] ring-1 ring-[#8b5cf6] z-10"
-                  : "bg-[#121212]/80 border border-white/[0.04] hover:bg-[#151515] hover:border-white/[0.08] hover:scale-[1.01] opacity-70 hover:opacity-100"
-                  }`}
+                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer hover:scale-[1.02]"} ${!isSelected && "opacity-70 hover:opacity-100"}`}
+                style={{
+                  background: bgGradient,
+                  border: `1px solid ${borderColor}`,
+                  boxShadow: [
+                    "inset 0 1px 1px rgba(255,255,255,0.15)",
+                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "0 4px 24px rgba(0,0,0,0.25)",
+                    "0 1px 3px rgba(0,0,0,0.15)",
+                    "0 0 0 0.5px rgba(255,255,255,0.08)",
+                    glowShadow,
+                  ].join(", "),
+                }}
               >
+                {/* Top specular highlight edge */}
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                {/* Bottom subtle dark edge */}
+                <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                {/* Inner refraction glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
+                {/* Hover shine sweep effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+                {/* Hover ambient highlight overlay */}
+                <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
                 {/* Mobile-friendly selection indicator */}
                 <div className="absolute top-5 right-5 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 z-10">
                   {isSelected ? (
@@ -206,29 +242,29 @@ function BuyContent() {
                       <Check size={14} strokeWidth={4} className={isYearly ? "text-black" : "text-white"} />
                     </div>
                   ) : (
-                    <div className="h-full w-full rounded-full border-2 border-white/20 group-hover:border-white/40"></div>
+                    <div className="h-full w-full rounded-full border-2 border-white/20 group-hover/glass-card:border-white/40"></div>
                   )}
                 </div>
 
                 {isPopular && (
-                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded-full whitespace-nowrap transition-all duration-300 ${isSelected ? "bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]" : "bg-white/10 text-white/60"}`}>
+                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded-full whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]" : "bg-white/10 text-white/60"}`}>
                     Most Popular
                   </div>
                 )}
                 {isYearly && (
-                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 text-[11px] font-bold tracking-wider uppercase rounded-full whitespace-nowrap transition-all duration-300 ${isSelected ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black shadow-[0_5px_15px_rgba(212,175,55,0.4)]" : "bg-white/10 text-white/60"}`}>
+                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 text-[11px] font-bold tracking-wider uppercase rounded-full whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black shadow-[0_5px_15px_rgba(212,175,55,0.4)]" : "bg-white/10 text-white/60"}`}>
                     Best Value
                   </div>
                 )}
 
-                <div className="text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
+                <div className="relative z-10 text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
 
-                <div className="flex items-baseline justify-center gap-1 mb-10">
+                <div className="relative z-10 flex items-baseline justify-center gap-1 mb-10">
                   {plan.originalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
                   <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{plan.price}</span>
                 </div>
 
-                <ul className="flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
+                <ul className="relative z-10 flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
                   {plan.features.map((feat, idx) => (
                     <li key={idx} className={`flex gap-3 items-start ${!feat.included ? "opacity-35" : ""}`}>
                       {feat.included ? (
@@ -253,18 +289,32 @@ function BuyContent() {
         <div ref={buttonRef} className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
           <label className="w-full">
             <span className="mb-2 block text-sm font-medium text-white/70">Email for license delivery</span>
-            <input
-              id="email-input"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                if (emailError) setEmailError("");
-              }}
-              placeholder="you@example.com"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
-            />
+            <div className="relative w-full rounded-xl overflow-hidden backdrop-blur-md">
+              <input
+                id="email-input"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  if (emailError) setEmailError("");
+                }}
+                placeholder="you@example.com"
+                className="relative z-10 w-full rounded-xl px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:ring-2 focus:ring-[#9c8df6]/20"
+                style={{
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  boxShadow: [
+                    "inset 0 1px 1px rgba(255,255,255,0.05)",
+                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "0 1px 2px rgba(0,0,0,0.1)",
+                  ].join(", "),
+                }}
+              />
+              {/* Inner subtle specular highlights */}
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
+            </div>
           </label>
           {emailError && (
             <div className="text-amber-400 text-sm -mt-2 mb-1 w-full text-center animate-pulse font-medium">
@@ -274,15 +324,47 @@ function BuyContent() {
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
-            className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg ${!selectedPlanId
+            className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden hover:scale-[1.02] ${!selectedPlanId
               ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
               : checkoutPhase === "error"
                 ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                 : selectedPlanId === "yearly"
-                  ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(212,175,55,0.3)]"
-                  : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02] shadow-[0_10px_30px_rgba(139,92,246,0.2)]"
+                  ? "text-black animate-pulse"
+                  : "text-white"
               }`}
+            style={
+              !selectedPlanId || checkoutPhase === "error"
+                ? undefined
+                : selectedPlanId === "yearly"
+                  ? {
+                    background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
+                    boxShadow: [
+                      "inset 0 1px 1px rgba(255,255,255,0.4)",
+                      "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                      "0 4px 15px rgba(253,224,71,0.35)",
+                      "0 0 0 0.5px rgba(255,255,255,0.2)",
+                    ].join(", "),
+                  }
+                  : {
+                    background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
+                    boxShadow: [
+                      "inset 0 1px 1px rgba(255,255,255,0.25)",
+                      "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                      "0 4px 15px rgba(139,92,246,0.4)",
+                      "0 0 0 0.5px rgba(255,255,255,0.1)",
+                    ].join(", "),
+                  }
+            }
           >
+            {selectedPlanId && checkoutPhase !== "error" && (
+              <>
+                {selectedPlanId === "yearly" ? (
+                  <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+                ) : (
+                  <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+                )}
+              </>
+            )}
             {checkoutPhase === "error" ? (
               <>Checkout Failed - Try Again <X size={20} /></>
             ) : checkoutLocked ? (
@@ -322,8 +404,22 @@ function BuyContent() {
         </div>
 
         {/* ── S U P P O R T  &  Q U E R I E S ── */}
-        <div className="w-full max-w-[500px] px-8 py-8 rounded-[2rem] border border-white/5 bg-white/[0.01] relative overflow-hidden text-center mb-10">
-          <p className="text-white/40 text-[14px] leading-relaxed relative z-10">
+        <div
+          className="w-full max-w-[500px] px-8 py-8 rounded-[2rem] backdrop-blur-xl relative overflow-hidden text-center mb-10"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: [
+              "inset 0 1px 1px rgba(255,255,255,0.1)",
+              "0 4px 20px rgba(0,0,0,0.15)",
+            ].join(", "),
+          }}
+        >
+          {/* Top specular highlight edge */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+          {/* Inner refraction glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-transparent to-transparent pointer-events-none rounded-[2rem]" />
+          <p className="text-white/45 text-[14px] leading-relaxed relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
             Need help or want to use a different cryptocurrency or network? Message{" "}
             <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="text-[#9c8df6] hover:text-[#aba0f7] transition-colors">
               @RPWallet_support_bot
@@ -341,23 +437,43 @@ function BuyContent() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-[#0d0d0e]/80 backdrop-blur-xl border-t border-white/[0.05]"
+            className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-2xl"
+            style={{
+              background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0%, rgba(13, 13, 14, 0.96) 100%)",
+              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+              boxShadow: "0 -4px 30px rgba(0,0,0,0.4)",
+            }}
           >
+            {/* Top specular highlight edge for the sticky bar */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
             <div className="max-w-[440px] mx-auto">
               <label className="mb-3 block">
                 <span className="sr-only">Email for license delivery</span>
-                <input
-                  id="sticky-email-input"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    if (emailError) setEmailError("");
-                  }}
-                  placeholder="Email for license delivery"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-[#9c8df6]/60 focus:ring-2 focus:ring-[#9c8df6]/20"
-                />
+                <div className="relative w-full rounded-xl overflow-hidden backdrop-blur-md">
+                  <input
+                    id="sticky-email-input"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (emailError) setEmailError("");
+                    }}
+                    placeholder="Email for license delivery"
+                    className="relative z-10 w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:ring-2 focus:ring-[#9c8df6]/20"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      boxShadow: [
+                        "inset 0 1px 1px rgba(255,255,255,0.05)",
+                        "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                        "0 1px 2px rgba(0,0,0,0.1)",
+                      ].join(", "),
+                    }}
+                  />
+                  {/* Specular edge overlays */}
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+                </div>
               </label>
               {emailError && (
                 <div className="text-amber-400 text-sm mb-3 w-full text-center animate-pulse font-medium">
@@ -367,15 +483,47 @@ function BuyContent() {
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg shadow-2xl ${!selectedPlanId
+                className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden hover:scale-[1.02] ${!selectedPlanId
                   ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
                   : checkoutPhase === "error"
                     ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                     : selectedPlanId === "yearly"
-                      ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black"
-                      : "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white"
+                      ? "text-black"
+                      : "text-white"
                   }`}
+                style={
+                  !selectedPlanId || checkoutPhase === "error"
+                    ? undefined
+                    : selectedPlanId === "yearly"
+                      ? {
+                        background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
+                        boxShadow: [
+                          "inset 0 1px 1px rgba(255,255,255,0.4)",
+                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                          "0 4px 15px rgba(253,224,71,0.35)",
+                          "0 0 0 0.5px rgba(255,255,255,0.2)",
+                        ].join(", "),
+                      }
+                      : {
+                        background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
+                        boxShadow: [
+                          "inset 0 1px 1px rgba(255,255,255,0.25)",
+                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                          "0 4px 15px rgba(139,92,246,0.4)",
+                          "0 0 0 0.5px rgba(255,255,255,0.1)",
+                        ].join(", "),
+                      }
+                }
               >
+                {selectedPlanId && checkoutPhase !== "error" && (
+                  <>
+                    {selectedPlanId === "yearly" ? (
+                      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
+                    ) : (
+                      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
+                    )}
+                  </>
+                )}
                 {checkoutPhase === "error" ? (
                   <>Checkout Failed - Try Again <X size={20} /></>
                 ) : checkoutLocked ? (

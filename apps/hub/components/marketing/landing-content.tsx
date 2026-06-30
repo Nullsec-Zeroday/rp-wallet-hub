@@ -291,34 +291,189 @@ export default function LandingContent() {
             <span className="text-[#ab9ff2]">Phantom & Trust.</span>
           </h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-lg mx-auto leading-relaxed mt-4">
-            Flawless 1:1 simulations for both wallets. Set any balance, simulate any token, and nobody will know it's not the real thing.
+            Set any balance, simulate any token, and nobody will know it's not the real thing.
           </p>
         </div>
 
         <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto relative">
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/11.webp")} alt="Pixel-perfect icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">Pixel-Perfect 1:1 Copy</h3>
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/11.webp")} alt="Pixel-perfect icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Pixel-Perfect Copy</h3>
           </motion.div>
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/live token.webp")} alt="Live token prices icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">Live Token Prices</h3>
+
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/live token.webp")} alt="Live token prices icon" width={64} height={64} className="relative z-10 w-15 aspect-auto md:w-20 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Live Token Prices</h3>
           </motion.div>
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/p2p.webp")} alt="P2P transaction icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">P2P Transaction Simulation</h3>
+
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/p2p.webp")} alt="P2P transaction icon" width={64} height={64} className="relative z-10 w-18 aspect-auto md:w-20 object-contain saturate-[1.5] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">P2P Transaction</h3>
           </motion.div>
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/dollar.webp")} alt="Set any balance icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">Set Any Balance</h3>
+
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/dollar.webp")} alt="Set any balance icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Set Any Balance</h3>
           </motion.div>
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/user.webp")} alt="No sign up icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">No Sign Up</h3>
+
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/user.webp")} alt="No sign up icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">No Data Collected</h3>
           </motion.div>
-          <motion.div variants={fadeInUp} className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-            <Image src={getAssetUrl("/3d-icons/download.webp")} alt="Nothing to download icon" width={64} height={64} className="w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8]" />
-            <h3 className="font-medium text-white/90 text-sm md:text-base">Nothing to Download</h3>
+
+          <motion.div
+            variants={fadeInUp}
+            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
+          >
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
+            {/* Hover shine sweep effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+            {/* Hover ambient highlight overlay */}
+            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+            <Image src={getAssetUrl("/3d-icons/download.webp")} alt="Nothing to download icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">No Download</h3>
           </motion.div>
         </motion.div>
       </section>
@@ -331,14 +486,37 @@ export default function LandingContent() {
             initial="initial"
             whileInView="whileInView"
             viewport={{ once: true }}
-            className="glass-panel backdrop-blur-md bg-white/[0.02] border border-white/5 p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center shadow-xl relative"
+            className="backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center relative overflow-hidden"
+            style={{
+              background: "linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.05) 100%)",
+              border: "1px solid rgba(255,255,255,0.13)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.2)",
+                "inset 0 -1px 2px rgba(0,0,0,0.12)",
+                "0 8px 40px rgba(0,0,0,0.3)",
+                "0 2px 6px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+                "0 0 60px rgba(171,159,242,0.08)",
+              ].join(", "),
+            }}
           >
-            {/* subtle background glow inside the panel */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-ph4ntom-purple/10 blur-[120px] rounded-full pointer-events-none" />
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
+            {/* Bottom subtle dark edge for depth */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Left edge highlight */}
+            <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-white/20 via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2.5rem]" />
+            {/* Subtle purple inner glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-ph4ntom-purple/8 blur-[120px] rounded-full pointer-events-none" />
 
             {/* Centered Column */}
             <div className="relative z-10 w-full flex flex-col items-center">
-              <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-4 leading-tight">
+              {/* <div className="mb-6">
+                <Image src={getAssetUrl("/3d-icons/access.webp")} alt="Get Access" width={80} height={80} className="size-16 drop-shadow-2xl object-contain" />
+              </div> */}
+              <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-10 leading-tight">
                 How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">get access.</span>
               </h2>
               {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
@@ -346,36 +524,35 @@ export default function LandingContent() {
             </p> */}
 
               <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
-                {/* Vertical line for mobile */}
-                <div className="absolute left-[19px] top-[32px] bottom-[-16px] w-[2px] bg-gradient-to-b from-[#ab9ff2]/40 to-transparent md:hidden" />
-                {/* Horizontal line for desktop */}
-                <div className="hidden md:block absolute top-[19px] left-[50px] right-[50px] h-[2px] bg-gradient-to-r from-[#ab9ff2]/40 via-[#ab9ff2]/20 to-transparent" />
-
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
-                    <Image src={getAssetUrl("/3d-icons/Shopping Cart Icon.webp")} alt="Purchase" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
+                  <div className="absolute left-[10px] top-[32px] h-[calc(100%-8px)] w-[4px] md:hidden z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
+                  <div className="hidden md:block absolute top-[10px] left-[calc(50%+20px)] w-[calc(100%-40px)] h-[4px] z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
+                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
+                    <Image src={getAssetUrl("/3d-icons/Shopping Cart Icon.webp")} alt="Purchase" width={48} height={48} className="w-full h-full object-contain" />
                   </div>
-                  <div className="flex flex-col md:pt-0">
+                  <div className="flex flex-col md:pt-4">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
                     <p className="text-white/50 text-[14px] leading-snug">Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                   </div>
                 </div>
 
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
-                    <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
+                  <div className="absolute left-[10px] top-[32px] h-[calc(100%-8px)] w-[4px] md:hidden z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
+                  <div className="hidden md:block absolute top-[10px] left-[calc(50%+20px)] w-[calc(100%-40px)] h-[4px] z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
+                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
+                    <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={48} height={48} className="w-full h-full object-contain" />
                   </div>
-                  <div className="flex flex-col md:pt-0">
+                  <div className="flex flex-col md:pt-4">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
                     <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
                   </div>
                 </div>
 
                 <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="relative z-10 size-10 shrink-0 flex items-center justify-center">
-                    <Image src={getAssetUrl("/3d-icons/iPhone Icon.webp")} alt="Install" width={28} height={28} className="w-7 h-7 object-contain saturate-[0.8]" />
+                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
+                    <Image src={getAssetUrl("/3d-icons/iPhone Icon.webp")} alt="Install" width={48} height={48} className="w-full h-full object-contain" />
                   </div>
-                  <div className="flex flex-col md:pt-0">
+                  <div className="flex flex-col md:pt-4">
                     <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
                     <p className="text-white/50 text-[14px] leading-snug">
                       Enter your license key,{" "}
@@ -398,10 +575,41 @@ export default function LandingContent() {
             </div>
           </motion.div>
           <div
-            className="mt-6 max-w-[26rem] mx-auto bg-white/[0.03] border border-white/[0.05] p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 shadow-lg backdrop-blur-sm"
+            className="mt-6 max-w-[26rem] mx-auto p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 backdrop-blur-xl relative overflow-hidden group/glass"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.15)",
+                "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                "0 4px 24px rgba(0,0,0,0.25)",
+                "0 1px 3px rgba(0,0,0,0.15)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+              ].join(", "),
+            }}
           >
-            <span className="text-white/80 text-[15px] font-medium">Already have a license key?</span>
-            <Link href="/dashboard" className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap">
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* Bottom subtle dark edge for depth */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-full" />
+
+            <span className="relative z-10 text-white/85 text-[15px] font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Already have a license key?</span>
+            <Link
+              href="/dashboard"
+              className="relative z-10 text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
+                boxShadow: [
+                  "inset 0 1px 1px rgba(255,255,255,0.25)",
+                  "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                  "0 2px 8px rgba(139,92,246,0.4)",
+                  "0 0 0 0.5px rgba(255,255,255,0.1)",
+                ].join(", "),
+              }}
+            >
+              <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
               Log In
             </Link>
           </div>
@@ -462,53 +670,82 @@ export default function LandingContent() {
             const isPopular = plan.id === "popular";
             const isYearly = plan.id === "yearly";
 
+            const bgGradient = isPopular
+              ? "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(255,255,255,0.02) 50%, rgba(139,92,246,0.06) 100%)"
+              : isYearly
+                ? "linear-gradient(135deg, rgba(253,224,71,0.12) 0%, rgba(255,255,255,0.02) 50%, rgba(253,224,71,0.08) 100%)"
+                : "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)";
+
+            const borderColor = isPopular
+              ? "rgba(139,92,246,0.35)"
+              : isYearly
+                ? "rgba(253,224,71,0.45)"
+                : "rgba(255,255,255,0.12)";
+
+            const glowShadow = isPopular
+              ? "0 0 40px rgba(139,92,246,0.15)"
+              : isYearly
+                ? "0 0 40px rgba(253,224,71,0.25)"
+                : "0 4px 24px rgba(0,0,0,0.25)";
+
             return (
               <div
                 key={plan.id}
-                className={`glass-panel p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${isPopular
-                  ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#8b5cf6,transparent)_border-box] shadow-[0_0_40px_rgba(139,92,246,0.15)] z-10"
-                  : isYearly
-                    ? "border border-transparent [background:linear-gradient(#161618,#161618)_padding-box,linear-gradient(to_bottom,#ffffff,transparent)_border-box] shadow-[0_0_30px_rgba(255,255,255,0.15)]"
-                    : "bg-[#121212]/80 border border-white/[0.04] hover:bg-[#151515] hover:border-white/[0.08]"
-                  }`}
+                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer hover:scale-[1.02]"}`}
                 onClick={() => {
                   if (!checkoutLocked) {
                     handleCheckout(plan);
                   }
                 }}
+                style={{
+                  background: bgGradient,
+                  border: `1px solid ${borderColor}`,
+                  boxShadow: [
+                    "inset 0 1px 1px rgba(255,255,255,0.15)",
+                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "0 4px 24px rgba(0,0,0,0.25)",
+                    "0 1px 3px rgba(0,0,0,0.15)",
+                    "0 0 0 0.5px rgba(255,255,255,0.08)",
+                    glowShadow,
+                  ].join(", "),
+                }}
               >
+                {/* Top specular highlight edge */}
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                {/* Bottom subtle dark edge */}
+                <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+                {/* Inner refraction glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
+                {/* Hover shine sweep effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
+                {/* Hover ambient highlight overlay */}
+                <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
                 {isPopular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#8b5cf6] text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] whitespace-nowrap">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#8b5cf6] text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] whitespace-nowrap z-20">
                     Most Popular
                   </div>
                 )}
                 {isYearly && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-white via-gray-100 to-gray-300 text-black text-[11px] font-bold tracking-wider uppercase rounded-full shadow-[0_5px_15px_rgba(255,255,255,0.3)] whitespace-nowrap">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black text-[11px] font-bold tracking-wider uppercase rounded-full shadow-[0_5px_15px_rgba(212,175,55,0.4)] whitespace-nowrap z-20">
                     Best Value
                   </div>
                 )}
 
-                <div className="flex flex-col items-center text-center mb-4">
-                  <Image
-                    src={getAssetUrl(isStarter ? "/3d-icons/7 d.webp" : isPopular ? "/3d-icons/30 d.webp" : "/3d-icons/1 y.webp")}
-                    alt={isStarter ? "7 days" : isPopular ? "30 days" : "1 year"}
-                    width={72}
-                    height={72}
-                    className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain mb-3"
-                  />
+                <div className="relative z-10 flex flex-col items-center text-center mb-4 mt-2">
                   <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
                 </div>
 
-                <div className="flex items-baseline justify-center gap-1 mb-10">
+                <div className="relative z-10 flex items-baseline justify-center gap-1 mb-10">
                   {plan.originalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
                   <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{plan.price}</span>
                 </div>
 
-                <ul className="flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
+                <ul className="relative z-10 flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
                   {plan.features.map((feat, idx) => (
                     <li key={idx} className={`flex gap-3 items-start ${!feat.included ? "opacity-35" : ""}`}>
                       {feat.included ? (
-                        <div className={`flex size-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${isYearly ? "bg-gradient-to-br from-white to-gray-300" : "bg-[#9c8df6]"}`}>
+                        <div className={`flex size-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${isYearly ? "bg-gradient-to-br from-[#fde047] to-[#ca8a04]" : "bg-[#9c8df6]"}`}>
                           <Check size={13} strokeWidth={3} className={isYearly ? "text-black" : "text-white"} />
                         </div>
                       ) : (
@@ -527,15 +764,52 @@ export default function LandingContent() {
                     e.stopPropagation();
                     handleCheckout(plan);
                   }}
-                  className={`w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 ${selectedPlanId === plan.id && checkoutPhase === "error"
+                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] ${selectedPlanId === plan.id && checkoutPhase === "error"
                     ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                     : isPopular
-                      ? "bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent text-white hover:scale-[1.02]"
+                      ? "text-white"
                       : isYearly
-                        ? "bg-gradient-to-r from-white via-gray-100 to-gray-300 text-black hover:scale-[1.02] shadow-[0_5px_20px_rgba(255,255,255,0.2)]"
-                        : "bg-white/5 text-white hover:bg-white/10 border border-white/5"
+                        ? "text-black"
+                        : "text-white"
                     }`}
+                  style={
+                    selectedPlanId === plan.id && checkoutPhase === "error"
+                      ? undefined
+                      : isPopular
+                        ? {
+                          background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
+                          boxShadow: [
+                            "inset 0 1px 1px rgba(255,255,255,0.25)",
+                            "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                            "0 2px 8px rgba(139,92,246,0.4)",
+                            "0 0 0 0.5px rgba(255,255,255,0.1)",
+                          ].join(", "),
+                        }
+                        : isYearly
+                          ? {
+                              background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
+                              boxShadow: [
+                                "inset 0 1px 1px rgba(255,255,255,0.4)",
+                                "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                                "0 4px 15px rgba(253,224,71,0.35)",
+                                "0 0 0 0.5px rgba(255,255,255,0.2)",
+                              ].join(", "),
+                            }
+                          : {
+                            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
+                            border: "1px solid rgba(255,255,255,0.12)",
+                            boxShadow: [
+                              "inset 0 1px 1px rgba(255,255,255,0.15)",
+                              "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                              "0 2px 8px rgba(0,0,0,0.1)",
+                              "0 0 0 0.5px rgba(255,255,255,0.08)",
+                            ].join(", "),
+                          }
+                  }
                 >
+                  {!isPopular && !isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />}
+                  {isPopular && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />}
+                  {isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/65 to-transparent" />}
                   {selectedPlanId === plan.id && checkoutPhase === "error" ? (
                     <>Checkout Failed - Try Again <X size={20} /></>
                   ) : selectedPlanId === plan.id && checkoutLocked ? (
