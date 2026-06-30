@@ -675,7 +675,7 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
     return c.text("Order amount mismatch", 409);
   }
 
-  if (paymentStatus !== "finished") {
+  if (!isFulfilledNowPaymentsStatus(paymentStatus)) {
     await store.updatePaymentOrderStatus(order.id, paymentStatus);
     return c.text("OK");
   }
@@ -720,6 +720,10 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
 
   console.log(`[nowpayments-webhook] Created license for order ${order.id}`);
   return c.text("OK");
+}
+
+function isFulfilledNowPaymentsStatus(status: string) {
+  return status === "finished" || status === "partially_paid";
 }
 
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
