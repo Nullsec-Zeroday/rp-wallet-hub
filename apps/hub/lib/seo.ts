@@ -131,7 +131,7 @@ export function buildWebApplicationSchema() {
     operatingSystem: "iOS, Android, Windows, macOS",
     offers: {
       "@type": "Offer",
-      price: "19.00",
+      price: "14.00",
       priceCurrency: "USD",
     },
     author: {
