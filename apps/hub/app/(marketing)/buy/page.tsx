@@ -389,7 +389,7 @@ function BuyContent() {
             ) : !selectedPlanId ? (
               "Select a package to continue"
             ) : (
-              <>Pay {selectedPlanDisplayPrice} with Crypto <ShoppingCart size={20} /></>
+              <>Crypto Checkout - {selectedPlanDisplayPrice}</>
             )}
           </button>
 
@@ -548,7 +548,7 @@ function BuyContent() {
                 ) : !selectedPlanId ? (
                   "Select a package to continue"
                 ) : (
-                  <>Pay {selectedPlanDisplayPrice} with Crypto <ShoppingCart size={20} /></>
+                  <>Crypto Checkout — {selectedPlanDisplayPrice}</>
                 )}
               </button>
 
