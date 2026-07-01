@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getAssetUrl } from "@/lib/utils";
 import { homepageFaq } from "@/lib/seo";
@@ -66,6 +67,7 @@ function ProductImageSwiper() {
 
 
 export default function LandingContent() {
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== "undefined") return window.innerWidth < 768;
     return true;
@@ -99,30 +101,9 @@ export default function LandingContent() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const demoEnabled = isDemoFeatureEnabled();
 
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
-  const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
-  const [checkoutError, setCheckoutError] = useState("");
-  const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const yearlyDiscountOffer = useYearlyDiscountOffer();
 
-  const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
-
-  useEffect(() => {
-    const resetReturnedCheckout = () => {
-      setCheckoutError("");
-      setCheckoutPhase("idle");
-      setIsSlowCheckout(false);
-      setSelectedPlanId(null);
-    };
-    window.addEventListener("pageshow", resetReturnedCheckout);
-    return () => window.removeEventListener("pageshow", resetReturnedCheckout);
-  }, []);
-
   const handleCheckout = async (plan: any) => {
-    if (checkoutLocked) return;
-    setSelectedPlanId(plan.id);
-
     trackEvent("pricing_buy_clicked", {
       plan: plan.id,
       price: plan.price,
@@ -137,10 +118,8 @@ export default function LandingContent() {
       landing_copy_variant: "control",
       provider: "nowpayments",
     });
-    setCheckoutError("");
-    setIsSlowCheckout(false);
-    setCheckoutPhase("opening");
-    window.location.href = `/buy?plan=${encodeURIComponent(plan.id)}&checkout=1`;
+    
+    router.push(`/buy?plan=${encodeURIComponent(plan.id)}&checkout=1`);
   };
 
   return (
@@ -206,7 +185,7 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
               The #1 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">fake crypto wallet app.</span>
@@ -222,7 +201,7 @@ export default function LandingContent() {
               Available on iOS & Android.
             </span>
             <p>
-              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
+              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom & Trust Wallet. Create content online or prank your friends - no real crypto involved.
             </p>
           </motion.div>
         </div>
@@ -698,12 +677,8 @@ export default function LandingContent() {
             return (
               <div
                 key={plan.id}
-                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"}`}
-                onClick={() => {
-                  if (!checkoutLocked) {
-                    handleCheckout(plan);
-                  }
-                }}
+                className="backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card cursor-pointer"
+                onClick={() => handleCheckout(plan)}
                 style={{
                   background: bgGradient,
                   border: `1px solid ${borderColor}`,
@@ -746,7 +721,7 @@ export default function LandingContent() {
                   </div>
                   {showYearlyDiscount && (
                     <div className="mt-3 rounded-full border border-[#fde047]/25 bg-[#fde047]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#fde68a]">
-                      30-min sliced price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
+                      discounted price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
                     </div>
                   )}
                 </div>
@@ -768,25 +743,21 @@ export default function LandingContent() {
                   ))}
                 </ul>
 
+
                 <button
-                  disabled={checkoutLocked}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCheckout(plan);
                   }}
-                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] ${checkoutLocked ? "cursor-wait" : "cursor-pointer"} ${selectedPlanId === plan.id && checkoutPhase === "error"
-                    ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
-                    : isPopular
-                      ? "text-white"
-                      : isYearly
-                        ? "text-black"
-                        : "text-white"
+                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] cursor-pointer ${isPopular
+                    ? "text-white"
+                    : isYearly
+                      ? "text-black"
+                      : "text-white"
                     }`}
                   style={
-                    selectedPlanId === plan.id && checkoutPhase === "error"
-                      ? undefined
-                      : isPopular
-                        ? {
+                    isPopular
+                      ? {
                           background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
                           boxShadow: [
                             "inset 0 1px 1px rgba(255,255,255,0.25)",
@@ -795,8 +766,8 @@ export default function LandingContent() {
                             "0 0 0 0.5px rgba(255,255,255,0.1)",
                           ].join(", "),
                         }
-                        : isYearly
-                          ? {
+                      : isYearly
+                        ? {
                             background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
                             boxShadow: [
                               "inset 0 1px 1px rgba(255,255,255,0.4)",
@@ -805,7 +776,7 @@ export default function LandingContent() {
                               "0 0 0 0.5px rgba(255,255,255,0.2)",
                             ].join(", "),
                           }
-                          : {
+                        : {
                             background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
                             border: "1px solid rgba(255,255,255,0.12)",
                             boxShadow: [
@@ -820,31 +791,8 @@ export default function LandingContent() {
                   {!isPopular && !isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />}
                   {isPopular && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />}
                   {isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/65 to-transparent" />}
-                  {selectedPlanId === plan.id && checkoutPhase === "error" ? (
-                    <>Checkout Failed - Try Again <X size={20} /></>
-                  ) : selectedPlanId === plan.id && checkoutLocked ? (
-                    <>
-                      <svg className="w-6 h-6 animate-spin text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                      </svg>
-                      {checkoutPhase === "preparing" ? "Preparing checkout..." : "Opening checkout..."}
-                    </>
-                  ) : (
-                    <>Buy <ArrowRight size={18} /></>
-                  )}
+                  Buy <ArrowRight size={18} />
                 </button>
-
-                {selectedPlanId === plan.id && checkoutPhase === "error" && (
-                  <div className="absolute -bottom-6 left-0 right-0 text-red-400 text-xs text-center animate-pulse">
-                    {checkoutError || "Please try again."}
-                  </div>
-                )}
-                {selectedPlanId === plan.id && isSlowCheckout && !checkoutError && (
-                  <div className="absolute -bottom-6 left-0 right-0 text-amber-400/80 text-xs text-center">
-                    Checkout is taking a little longer. Please wait...
-                  </div>
-                )}
               </div>
             );
           })}

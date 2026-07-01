@@ -273,7 +273,7 @@ function BuyContent() {
                   </div>
                   {showYearlyDiscount && (
                     <div className="mt-3 rounded-full border border-[#fde047]/25 bg-[#fde047]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#fde68a]">
-                      30-min sliced price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
+                      discounted price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
                     </div>
                   )}
                 </div>

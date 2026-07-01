@@ -59,7 +59,10 @@ export default function Navigation() {
               href="https://t.me/rpwalletTG"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative overflow-hidden h-9 px-3 rounded-full flex items-center justify-center gap-1.5 text-[13px] font-semibold text-white backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap cursor-pointer mr-2 shadow-lg"
+              className={cn(
+                "relative overflow-hidden h-7 px-3 rounded-full flex items-center justify-center gap-1.5 text-[12px] font-semibold text-white backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap cursor-pointer mr-2 shadow-lg duration-200",
+                isMobileMenuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+              )}
               style={{
                 background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
                 border: "1px solid rgba(255,255,255,0.12)",
@@ -77,8 +80,8 @@ export default function Navigation() {
               <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent pointer-events-none" />
               {/* Inner refraction glow */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-full" />
-              
-              <span className="relative z-10 font-semibold tracking-wide">Telegram</span>
+
+              <span className="relative z-10 font-semibold tracking-wide">Join Telegram</span>
               <ArrowUpRight size={13} className="text-white/60 relative z-10" />
             </a>
 
@@ -111,9 +114,31 @@ export default function Navigation() {
           </Link>
           <Link
             href="/dashboard"
-            className="group relative mt-4 flex w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-10 py-4 text-xl font-medium text-white backdrop-blur-md transition-all hover:bg-white/[0.08] hover:border-[#ab9ff2]/40 hover:shadow-[0_0_20px_rgba(171,159,242,0.15)] active:scale-95"
+            className="group relative mt-6 flex h-12 w-full max-w-[280px] items-center justify-center overflow-hidden rounded-full backdrop-blur-xl transition-all active:scale-[0.97] hover:scale-[1.01] duration-200"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              boxShadow: [
+                "inset 0 1px 1px rgba(255,255,255,0.2)",
+                "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                "0 8px 20px rgba(0,0,0,0.3)",
+                "0 0 0 0.5px rgba(255,255,255,0.08)",
+                "0 0 25px rgba(171,159,242,0.12)",
+              ].join(", "),
+            }}
           >
-            <span className="relative z-10 tracking-wide">Log In</span>
+            {/* Top specular highlight edge */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none" />
+            {/* Bottom subtle dark edge */}
+            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.08] to-transparent pointer-events-none" />
+            {/* Inner refraction glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.06] via-transparent to-white/[0.03] pointer-events-none rounded-full" />
+            {/* Hover glow highlight */}
+            <div className="absolute inset-0 bg-[#ab9ff2]/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none" />
+
+            <span className="relative z-10 text-[15px] font-semibold tracking-wide text-white">
+              Activate Wallet
+            </span>
           </Link>
         </div>
       </div>
