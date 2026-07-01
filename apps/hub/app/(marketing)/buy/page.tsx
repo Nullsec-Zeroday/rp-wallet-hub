@@ -11,6 +11,7 @@ import { useRef } from "react";
 import { useInView, motion, AnimatePresence } from "framer-motion";
 import { trackEvent } from "@/lib/track";
 import { HUB_API_BASE_URL } from "@/lib/api-base-url";
+import { formatYearlyDiscountRemaining, useYearlyDiscountOffer } from "@/lib/use-yearly-discount-offer";
 
 const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
@@ -37,6 +38,7 @@ function BuyContent() {
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const [email, setEmail] = useState("");
   const autoCheckoutStartedRef = useRef(false);
+  const yearlyDiscountOffer = useYearlyDiscountOffer();
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
@@ -44,6 +46,11 @@ function BuyContent() {
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
   const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
+  const getPlanDisplayPrice = (plan: (typeof PLANS)[number]) => {
+    const isExpiredYearly = plan.id === "yearly" && yearlyDiscountOffer.isReady && !yearlyDiscountOffer.isActive;
+    return isExpiredYearly && plan.originalPrice ? plan.originalPrice : plan.price;
+  };
+  const selectedPlanDisplayPrice = selectedPlan ? getPlanDisplayPrice(selectedPlan) : undefined;
 
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -85,7 +92,7 @@ function BuyContent() {
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
     trackEvent("checkout_started", {
       plan: plan.id,
-      price: plan.price,
+      price: getPlanDisplayPrice(plan),
       provider: "nowpayments",
     });
     const normalizedEmail = email.trim().toLowerCase();
@@ -125,6 +132,7 @@ function BuyContent() {
         planId: plan.id,
         email: normalizedEmail,
         affiliateCode,
+        yearlyOfferActive: plan.id === "yearly" && yearlyDiscountOffer.isReady ? yearlyDiscountOffer.isActive : undefined,
       });
       setCheckoutPhase("opening");
       trackEvent("checkout_url_ready", { plan: plan.id, provider: "nowpayments" });
@@ -177,6 +185,9 @@ function BuyContent() {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
             const isYearly = plan.id === "yearly";
+            const showYearlyDiscount = isYearly && yearlyDiscountOffer.isReady && yearlyDiscountOffer.isActive;
+            const displayPrice = getPlanDisplayPrice(plan);
+            const showOriginalPrice = Boolean(isYearly && plan.originalPrice && showYearlyDiscount);
 
             const bgGradient = isSelected
               ? isYearly
@@ -205,7 +216,7 @@ function BuyContent() {
                     setSelectedPlanId(plan.id);
                     trackEvent("pricing_plan_selected", {
                       plan: plan.id,
-                      price: plan.price,
+                      price: displayPrice,
                       source: "buy_page",
                     });
                   }
@@ -255,9 +266,16 @@ function BuyContent() {
 
                 <div className="relative z-10 text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
 
-                <div className="relative z-10 flex items-baseline justify-center gap-1 mb-10">
-                  {plan.originalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
-                  <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{plan.price}</span>
+                <div className="relative z-10 mb-10 flex min-h-[94px] flex-col items-center justify-start">
+                  <div className="flex items-baseline justify-center gap-1">
+                    {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
+                    <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{displayPrice}</span>
+                  </div>
+                  {showYearlyDiscount && (
+                    <div className="mt-3 rounded-full border border-[#fde047]/25 bg-[#fde047]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#fde68a]">
+                      30-min sliced price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
+                    </div>
+                  )}
                 </div>
 
                 <ul className="relative z-10 flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
@@ -371,7 +389,7 @@ function BuyContent() {
             ) : !selectedPlanId ? (
               "Select a package to continue"
             ) : (
-              <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
+              <>Pay {selectedPlanDisplayPrice} with Crypto <ShoppingCart size={20} /></>
             )}
           </button>
 
@@ -530,7 +548,7 @@ function BuyContent() {
                 ) : !selectedPlanId ? (
                   "Select a package to continue"
                 ) : (
-                  <>Pay {selectedPlan?.price} with Crypto <ShoppingCart size={20} /></>
+                  <>Pay {selectedPlanDisplayPrice} with Crypto <ShoppingCart size={20} /></>
                 )}
               </button>
 

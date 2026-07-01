@@ -102,13 +102,22 @@ const SELLAUTH_PLANS: Record<string, SellAuthPlan> = {
 
 type PaymentPlan = SellAuthPlan & {
   priceAmount: string;
+  originalPriceAmount?: string;
 };
 
 const PAYMENT_PLANS: Record<string, PaymentPlan> = {
   starter: { ...SELLAUTH_PLANS.starter, priceAmount: "14.00" },
   popular: { ...SELLAUTH_PLANS.popular, priceAmount: "29.00" },
-  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00" },
+  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00", originalPriceAmount: "299.00" },
 };
+
+function resolvePaymentPlanPrice(plan: PaymentPlan, input: { yearlyOfferActive?: boolean }) {
+  if (plan.id === "yearly" && input.yearlyOfferActive === false && plan.originalPriceAmount) {
+    return plan.originalPriceAmount;
+  }
+
+  return plan.priceAmount;
+}
 
 const app = new Hono<HonoEnv>();
 
@@ -534,6 +543,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       planId?: string;
       email?: string;
       affiliateCode?: string;
+      yearlyOfferActive?: boolean;
     }>();
     const planId = normalizePayloadString(body.planId)?.toLowerCase();
     const email = normalizePayloadString(body.email)?.toLowerCase();
@@ -551,6 +561,9 @@ app.post("/payments/nowpayments/checkout", async (c) => {
     if (!plan) return c.json({ error: "Invalid plan", requestId }, 400);
     if (!email || !isValidEmail(email)) return c.json({ error: "A valid email address is required", requestId }, 400);
 
+    const priceAmount = resolvePaymentPlanPrice(plan, {
+      yearlyOfferActive: body.yearlyOfferActive,
+    });
     const store = getPlatformStore(c.env.DATABASE_URL);
     console.log("[nowpayments-checkout] Creating payment order", { requestId, planId: plan.id });
     const order = await store.createPaymentOrder({
@@ -558,7 +571,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       email,
       planId: plan.id,
       planLabel: plan.label,
-      priceAmount: plan.priceAmount,
+      priceAmount,
       priceCurrency: "USD",
       durationDays: plan.durationDays,
       allowedDevices: plan.allowedDevices,
@@ -571,7 +584,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
     console.log("[nowpayments-checkout] Creating NOWPayments invoice", {
       requestId,
       orderId: order.id,
-      amount: plan.priceAmount,
+      amount: priceAmount,
       callbackOrigin: apiOrigin,
     });
     const response = await fetch("https://api.nowpayments.io/v1/invoice", {
@@ -581,7 +594,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
         "x-api-key": c.env.NOWPAYMENTS_API_KEY,
       },
       body: JSON.stringify({
-        price_amount: Number(plan.priceAmount),
+        price_amount: Number(priceAmount),
         price_currency: "usd",
         order_id: order.id,
         order_description: `RPWallet ${plan.label}`,

@@ -136,6 +136,7 @@ export class RpWalletApiClient {
     planId: string;
     email: string;
     affiliateCode?: string;
+    yearlyOfferActive?: boolean;
   }) {
     return this.request<{ checkoutUrl: string; orderId: string }>("/payments/nowpayments/checkout", {
       method: "POST",
