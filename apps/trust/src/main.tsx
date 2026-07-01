@@ -28,12 +28,14 @@ import { RouterProvider } from "./shims/router-context";
 import WalletShell from "./wallet-shell";
 import { DEFAULT_TRUST_NOTIFICATION_SETTINGS, TrustWalletProvider } from "@/lib/trust-wallet-context";
 import { requestNotificationPermission, showSystemNotification } from "@/lib/notifications";
-import { RpWalletApiClient } from "@rp-wallet/api-client";
+import { RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
 import {
+  clearCachedBootstrap,
   clearPendingToken,
   addDemoPaywallListener,
   applyDemoRestrictions,
+  canUseCachedBootstrap,
   getPlatformDeviceId,
   isDemoExpired,
   isIOS,
@@ -48,6 +50,12 @@ import "../../phantom/src/styles.css";
 import "./styles.css";
 
 const NOTIFICATION_PERMISSION_PROMPT_KEY = "rp-wallet:trust:notification-permission-prompted";
+const EXPIRED_ACCESS_MESSAGE = "This wallet session has ended. Open the hub to renew your access or launch the wallet with an active license.";
+
+function clearTrustLocalSession() {
+  clearCachedBootstrap("trust");
+  clearPendingToken("trust");
+}
 
 function maxIsoDate(left: string, right: string) {
   return Date.parse(right) > Date.parse(left) ? right : left;
@@ -122,7 +130,7 @@ function TrustApp() {
   const api = useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => {
     const cached = readCachedBootstrap("trust");
-    return cached ? applyDemoRestrictions("trust", cached) : null;
+    return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("trust", cached) : null;
   });
   const [loading, setLoading] = useState(true);
   const [mutating, setMutating] = useState(false);
@@ -130,6 +138,25 @@ function TrustApp() {
   const [installReady, setInstallReady] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = useState(false);
+  const payloadRef = React.useRef(payload);
+
+  useEffect(() => {
+    payloadRef.current = payload;
+  }, [payload]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (payloadRef.current?.access?.kind === "demo") return;
+      clearTrustLocalSession();
+      setPayload(null);
+      setInstallReady(false);
+      setError(EXPIRED_ACCESS_MESSAGE);
+      setLoading(false);
+    };
+
+    window.addEventListener(RP_WALLET_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(RP_WALLET_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, []);
 
   useEffect(() => {
     if (payload?.access?.kind !== "demo") return;
@@ -203,13 +230,13 @@ function TrustApp() {
     loadWallet
       .catch((loadError) => {
         const cached = readCachedBootstrap("trust");
-        if (cached) {
-          setPayload(cached);
+        if (cached && canUseCachedBootstrap(cached)) {
+          setPayload(applyDemoRestrictions("trust", cached));
           setInstallReady(true);
         } else if (pendingToken) {
           setError(getFriendlyBootstrapError(loadError, "This launch token has expired. Open the app again from the hub."));
         } else {
-          setError("Reconnect through the hub to refresh this wallet session.");
+          setError(EXPIRED_ACCESS_MESSAGE);
         }
       })
       .finally(() => {
@@ -659,6 +686,7 @@ function DevTokenPanel({
 }) {
   const [tokenInput, setTokenInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const buyUrl = `${appEnv.hubUrl.replace(/\/+$/, "")}/buy`;
 
   async function submitToken(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -684,6 +712,10 @@ function DevTokenPanel({
       <section className="balancePanel">
         <h1 className="statusTitle">Open this from the hub</h1>
         <p className="muted">{body}</p>
+
+        <a className="submitButton" href={buyUrl}>
+          Renew Access
+        </a>
 
         {import.meta.env.DEV ? (
           <form className="devTokenForm" onSubmit={submitToken}>

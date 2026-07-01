@@ -23,6 +23,13 @@ import type {
   WalletTransaction,
 } from "@rp-wallet/types";
 
+export const RP_WALLET_UNAUTHORIZED_EVENT = "rp-wallet:unauthorized";
+
+function emitUnauthorized(path: string, status: number) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(RP_WALLET_UNAUTHORIZED_EVENT, { detail: { path, status } }));
+}
+
 export interface AdminLicenseSnapshot {
   license: {
     id: string;
@@ -484,6 +491,9 @@ export class RpWalletApiClient {
         detail = body.error ? `: ${body.error}` : "";
       } catch {
         detail = "";
+      }
+      if (response.status === 401) {
+        emitUnauthorized(path, response.status);
       }
       throw new Error(`RPWallet API request failed: ${response.status}${detail}`);
     }

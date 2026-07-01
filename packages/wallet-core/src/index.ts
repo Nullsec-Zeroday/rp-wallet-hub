@@ -1,6 +1,6 @@
 import type { WalletAppId, WalletAppSummary, WalletBootstrapPayload } from "@rp-wallet/types";
 
-const DEMO_USERNAME = "rpwallet";
+const DEMO_USERNAME = "RPWallet";
 const DEMO_WALLET_NAME = "RPWallet";
 const DEMO_PAYWALL_EVENT = "rp-wallet:demo-paywall";
 
@@ -115,6 +115,11 @@ export function writeCachedBootstrap(walletAppId: WalletAppId, payload: WalletBo
   window.localStorage.setItem(getWalletStorageKey(walletAppId, "bootstrap"), JSON.stringify(payload));
 }
 
+export function clearCachedBootstrap(walletAppId: WalletAppId) {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(getWalletStorageKey(walletAppId, "bootstrap"));
+}
+
 export function readPendingToken(walletAppId: WalletAppId) {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(getWalletStorageKey(walletAppId, "pending-token")) || readCookie(getWalletCookieName(walletAppId, "pending-token"));
@@ -138,6 +143,16 @@ export function isDemoPayload(payload?: Pick<WalletBootstrapPayload, "access"> |
 
 export function isDemoExpired(payload?: Pick<WalletBootstrapPayload, "access"> | null, now = Date.now()) {
   return isDemoPayload(payload) && Date.parse(payload?.access?.expiresAt || "") <= now;
+}
+
+export function isAccessExpired(payload?: Pick<WalletBootstrapPayload, "access" | "license"> | null, now = Date.now()) {
+  const expiresAt = payload?.access?.expiresAt || payload?.license?.expiresAt || "";
+  return Date.parse(expiresAt) <= now;
+}
+
+export function canUseCachedBootstrap(payload?: Pick<WalletBootstrapPayload, "access" | "license"> | null, now = Date.now()) {
+  if (!payload) return false;
+  return isDemoPayload(payload) || !isAccessExpired(payload, now);
 }
 
 export function applyDemoRestrictions(walletAppId: WalletAppId, payload: WalletBootstrapPayload): WalletBootstrapPayload {

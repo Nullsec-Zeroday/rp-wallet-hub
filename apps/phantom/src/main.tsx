@@ -2,12 +2,14 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Eye, Gamepad2, Send, ShoppingCart, X } from "lucide-react";
-import { RpWalletApiClient } from "@rp-wallet/api-client";
+import { RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
 import {
+  clearCachedBootstrap,
   clearPendingToken,
   addDemoPaywallListener,
   applyDemoRestrictions,
+  canUseCachedBootstrap,
   getPlatformDeviceId,
   isDemoExpired,
   isIOS,
@@ -30,6 +32,8 @@ import "@ionic/react/css/core.css";
 import "./styles.css";
 
 const DEV_PWA_AUTH_BYPASS = import.meta.env.DEV;
+const PHANTOM_PERSISTED_STORE_KEY = "phantom-wallet-storage";
+const EXPIRED_ACCESS_MESSAGE = "This wallet session has ended. Open the hub to renew your access or launch the wallet with an active license.";
 const DEV_PAYWALL_PREVIEW = import.meta.env.DEV && typeof window !== "undefined"
   ? new URLSearchParams(window.location.search).get("paywall")
   : null;
@@ -55,6 +59,13 @@ function registerPh4ntomServiceWorker() {
   }
 }
 
+function clearPh4ntomLocalSession() {
+  clearCachedBootstrap("phantom");
+  clearPendingToken("phantom");
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PHANTOM_PERSISTED_STORE_KEY);
+}
+
 function Ph4ntomApp() {
   const api = React.useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => {
@@ -62,7 +73,7 @@ function Ph4ntomApp() {
     if (DEV_PWA_AUTH_BYPASS) {
       return cached?.license.id === "dev-license" ? cached : createDevPh4ntomPayload();
     }
-    return cached ? applyDemoRestrictions("phantom", cached) : null;
+    return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("phantom", cached) : null;
   });
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
@@ -70,6 +81,25 @@ function Ph4ntomApp() {
   const [now, setNow] = React.useState(() => Date.now());
   const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = React.useState(false);
   const [devPaywallPreviewOpen, setDevPaywallPreviewOpen] = React.useState(Boolean(DEV_PAYWALL_PREVIEW));
+  const payloadRef = React.useRef(payload);
+
+  React.useEffect(() => {
+    payloadRef.current = payload;
+  }, [payload]);
+
+  React.useEffect(() => {
+    const handleUnauthorized = () => {
+      if (payloadRef.current?.access?.kind === "demo") return;
+      clearPh4ntomLocalSession();
+      setPayload(null);
+      setInstallReady(false);
+      setError(EXPIRED_ACCESS_MESSAGE);
+      setLoading(false);
+    };
+
+    window.addEventListener(RP_WALLET_UNAUTHORIZED_EVENT, handleUnauthorized);
+    return () => window.removeEventListener(RP_WALLET_UNAUTHORIZED_EVENT, handleUnauthorized);
+  }, []);
 
   React.useEffect(() => {
     if (payload?.access?.kind !== "demo") return;
@@ -141,13 +171,13 @@ function Ph4ntomApp() {
     loadWallet
       .catch((loadError) => {
         const cached = readCachedBootstrap("phantom");
-        if (cached) {
-          setPayload(cached);
+        if (cached && canUseCachedBootstrap(cached)) {
+          setPayload(applyDemoRestrictions("phantom", cached));
           setInstallReady(true);
         } else if (pendingToken) {
           setError(getFriendlyBootstrapError(loadError, "Open Ph4ntom again from the hub to refresh this wallet session."));
         } else {
-          setError("Reconnect through the hub to refresh this wallet session.");
+          setError(EXPIRED_ACCESS_MESSAGE);
         }
       })
       .finally(() => {
@@ -416,7 +446,7 @@ function InstallGate({ heading, tone }: { heading: string; tone: string }) {
 }
 
 function ReconnectPanel({ body }: { body: string }) {
-  const hubUrl = (import.meta.env as any).VITE_HUB_URL || "https://rpwallet.app";
+  const buyUrl = `${appEnv.hubUrl.replace(/\/+$/, "")}/buy`;
 
   return (
     <main className="min-h-screen bg-[#0d0d0e] text-white px-6 py-12 flex flex-col font-sans">
@@ -430,9 +460,9 @@ function ReconnectPanel({ body }: { body: string }) {
 
       <a
         className="flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-[#ab9ff2] to-[#7f66ff] text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-        href={hubUrl}
+        href={buyUrl}
       >
-        Open Hub
+        Renew Access
       </a>
     </main>
   );
@@ -484,7 +514,7 @@ function createDevPh4ntomPayload(): WalletBootstrapPayload {
       userId: "dev-user",
       walletAppId: "phantom",
       displayName: "RPWallet",
-      username: "rpwallet",
+      username: "RPWallet",
       createdAt: now,
       updatedAt: now,
     },
