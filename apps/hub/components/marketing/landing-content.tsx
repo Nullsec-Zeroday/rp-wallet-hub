@@ -184,7 +184,7 @@ export default function LandingContent() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
             </div>
-            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">800+ Active Users</span>
+            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 800+ Creators & Larpers</span>
           </div>
 
           {/* <style jsx global>{`
@@ -222,7 +222,7 @@ export default function LandingContent() {
               Available on iOS & Android.
             </span>
             <p>
-              Set any balance, import any token, simulate transactions & much more in a pixel-perfect clone of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
+              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom & Trust Wallet. Flex your balance, prank your friends and create viral crypto larp content.
             </p>
           </motion.div>
         </div>
