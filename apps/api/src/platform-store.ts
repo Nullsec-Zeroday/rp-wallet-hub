@@ -279,6 +279,27 @@ export interface PaymentOrderSummary {
   fulfilledAt?: string;
 }
 
+export type SupportTicketType = "did_not_receive_key" | "bug";
+export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export interface SupportTicketSummary {
+  id: string;
+  type: SupportTicketType;
+  status: SupportTicketStatus;
+  email: string;
+  subject: string;
+  message: string;
+  provider: string;
+  orderId?: string;
+  providerPaymentId?: string;
+  transactionHash?: string;
+  paymentCurrency?: string;
+  amount?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreatePaymentOrderInput {
   provider: string;
   email: string;
@@ -289,6 +310,24 @@ export interface CreatePaymentOrderInput {
   durationDays: number;
   allowedDevices: number;
   affiliateCode?: string;
+}
+
+export interface CreateSupportTicketInput {
+  type: SupportTicketType;
+  email: string;
+  subject?: string;
+  message: string;
+  provider?: string;
+  orderId?: string;
+  providerPaymentId?: string;
+  transactionHash?: string;
+  paymentCurrency?: string;
+  amount?: string;
+}
+
+export interface UpdateSupportTicketInput {
+  status?: SupportTicketStatus;
+  adminNotes?: string;
 }
 
 export interface AdminLicenseSnapshot {
@@ -365,6 +404,9 @@ export interface PlatformStore {
   updatePaymentOrderProvider(id: string, providerPaymentId: string, status: string): Promise<void>;
   updatePaymentOrderStatus(id: string, status: string): Promise<void>;
   completePaymentOrder(id: string, providerPaymentId: string, licenseId: string): Promise<boolean>;
+  createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary>;
+  getAdminSupportTickets(): Promise<SupportTicketSummary[]>;
+  updateAdminSupportTicket(id: string, input: UpdateSupportTicketInput): Promise<SupportTicketSummary | null>;
   createPurchasedLicense(input: PurchasedLicenseInput): Promise<LicenseSummary>;
   getAdminLicenseSnapshot(licenseKey: string): Promise<AdminLicenseSnapshot | null>;
   getAdminUnusedActiveLicenses(): Promise<AdminUnusedLicenseSummary[]>;
@@ -417,6 +459,7 @@ export function getPlatformStore(databaseUrl?: string): PlatformStore {
 
 class InMemoryPlatformStore implements PlatformStore {
   private readonly paymentOrders = new Map<string, PaymentOrderSummary>();
+  private readonly supportTickets = new Map<string, SupportTicketSummary>();
   private readonly users = new Map<string, UserSummary>();
   private readonly licenses = new Map<string, LicenseRecord>();
   private readonly sessions = new Map<string, SessionRecord>();
@@ -490,6 +533,46 @@ class InMemoryPlatformStore implements PlatformStore {
       fulfilledAt: now,
     });
     return true;
+  }
+
+  async createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary> {
+    const now = new Date().toISOString();
+    const ticket: SupportTicketSummary = {
+      id: createId("tkt"),
+      type: input.type,
+      status: "open",
+      email: input.email,
+      subject: normalizeTicketSubject(input),
+      message: input.message,
+      provider: normalizeOptionalString(input.provider) || "nowpayments",
+      orderId: normalizeOptionalString(input.orderId),
+      providerPaymentId: normalizeOptionalString(input.providerPaymentId),
+      transactionHash: normalizeOptionalString(input.transactionHash),
+      paymentCurrency: normalizeOptionalString(input.paymentCurrency)?.toUpperCase(),
+      amount: normalizeOptionalString(input.amount),
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.supportTickets.set(ticket.id, ticket);
+    return ticket;
+  }
+
+  async getAdminSupportTickets(): Promise<SupportTicketSummary[]> {
+    return [...this.supportTickets.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  }
+
+  async updateAdminSupportTicket(id: string, input: UpdateSupportTicketInput): Promise<SupportTicketSummary | null> {
+    const ticket = this.supportTickets.get(id);
+    if (!ticket) return null;
+
+    const updated: SupportTicketSummary = {
+      ...ticket,
+      status: input.status || ticket.status,
+      adminNotes: input.adminNotes === undefined ? ticket.adminNotes : normalizeOptionalString(input.adminNotes),
+      updatedAt: new Date().toISOString(),
+    };
+    this.supportTickets.set(id, updated);
+    return updated;
   }
 
   async createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary> {
@@ -1663,6 +1746,52 @@ class NeonPlatformStore implements PlatformStore {
       .where(and(eq(schema.paymentOrders.id, id), isNull(schema.paymentOrders.licenseId)))
       .returning({ id: schema.paymentOrders.id });
     return completed.length > 0;
+  }
+
+  async createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary> {
+    const [ticket] = await this.db
+      .insert(schema.supportTickets)
+      .values({
+        id: createId("tkt"),
+        type: input.type,
+        email: input.email,
+        subject: normalizeTicketSubject(input),
+        message: input.message,
+        provider: normalizeOptionalString(input.provider) || "nowpayments",
+        orderId: normalizeOptionalString(input.orderId),
+        providerPaymentId: normalizeOptionalString(input.providerPaymentId),
+        transactionHash: normalizeOptionalString(input.transactionHash),
+        paymentCurrency: normalizeOptionalString(input.paymentCurrency)?.toUpperCase(),
+        amount: normalizeOptionalString(input.amount),
+      })
+      .returning();
+
+    return toSupportTicketSummary(ticket);
+  }
+
+  async getAdminSupportTickets(): Promise<SupportTicketSummary[]> {
+    const tickets = await this.db.select().from(schema.supportTickets).orderBy(desc(schema.supportTickets.createdAt)).limit(500);
+    return tickets.map(toSupportTicketSummary);
+  }
+
+  async updateAdminSupportTicket(id: string, input: UpdateSupportTicketInput): Promise<SupportTicketSummary | null> {
+    const values: {
+      status?: SupportTicketStatus;
+      adminNotes?: string;
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+    if (input.status) values.status = input.status;
+    if (input.adminNotes !== undefined) values.adminNotes = normalizeOptionalString(input.adminNotes);
+
+    const [ticket] = await this.db
+      .update(schema.supportTickets)
+      .set(values)
+      .where(eq(schema.supportTickets.id, id))
+      .returning();
+
+    return ticket ? toSupportTicketSummary(ticket) : null;
   }
 
   async createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary> {
@@ -3272,6 +3401,7 @@ type DbAffiliateClick = typeof schema.affiliateClicks.$inferSelect;
 type DbAffiliateCheckoutIntent = typeof schema.affiliateCheckoutIntents.$inferSelect;
 type DbAffiliateConversion = typeof schema.affiliateConversions.$inferSelect;
 type DbPaymentOrder = typeof schema.paymentOrders.$inferSelect;
+type DbSupportTicket = typeof schema.supportTickets.$inferSelect;
 
 const DEFAULT_NOTIFICATION_COINS = [
   { symbol: "SOL", enabled: true, min: 5, max: 95 },
@@ -3329,6 +3459,19 @@ function normalizeAffiliateCode(code: string) {
 function normalizeOptionalString(value?: string) {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
+}
+
+function normalizeTicketSubject(input: CreateSupportTicketInput) {
+  const fallback = input.type === "did_not_receive_key" ? "License key not received" : "Bug report";
+  return normalizeOptionalString(input.subject)?.slice(0, 160) || fallback;
+}
+
+export function isSupportTicketType(value?: string): value is SupportTicketType {
+  return value === "did_not_receive_key" || value === "bug";
+}
+
+export function isSupportTicketStatus(value?: string): value is SupportTicketStatus {
+  return value === "open" || value === "in_progress" || value === "resolved" || value === "closed";
 }
 
 function normalizeCommissionRate(value?: string) {
@@ -3392,6 +3535,26 @@ function toPaymentOrderSummary(order: DbPaymentOrder): PaymentOrderSummary {
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     fulfilledAt: order.fulfilledAt?.toISOString(),
+  };
+}
+
+function toSupportTicketSummary(ticket: DbSupportTicket): SupportTicketSummary {
+  return {
+    id: ticket.id,
+    type: ticket.type,
+    status: ticket.status,
+    email: ticket.email,
+    subject: ticket.subject,
+    message: ticket.message,
+    provider: ticket.provider,
+    orderId: ticket.orderId ?? undefined,
+    providerPaymentId: ticket.providerPaymentId ?? undefined,
+    transactionHash: ticket.transactionHash ?? undefined,
+    paymentCurrency: ticket.paymentCurrency ?? undefined,
+    amount: ticket.amount ?? undefined,
+    adminNotes: ticket.adminNotes ?? undefined,
+    createdAt: ticket.createdAt.toISOString(),
+    updatedAt: ticket.updatedAt.toISOString(),
   };
 }
 

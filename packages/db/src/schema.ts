@@ -17,6 +17,8 @@ export const walletEventType = pgEnum("wallet_event_type", ["wallet_received", "
 export const affiliateStatus = pgEnum("affiliate_status", ["active", "disabled"]);
 export const affiliateConversionStatus = pgEnum("affiliate_conversion_status", ["pending", "approved", "rejected", "paid"]);
 export const affiliatePayoutStatus = pgEnum("affiliate_payout_status", ["pending", "paid", "cancelled"]);
+export const supportTicketType = pgEnum("support_ticket_type", ["did_not_receive_key", "bug"]);
+export const supportTicketStatus = pgEnum("support_ticket_status", ["open", "in_progress", "resolved", "closed"]);
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -66,6 +68,24 @@ export const paymentOrders = pgTable(
   },
   (table) => [uniqueIndex("payment_orders_provider_payment_unique").on(table.provider, table.providerPaymentId)],
 );
+
+export const supportTickets = pgTable("support_tickets", {
+  id: text("id").primaryKey(),
+  type: supportTicketType("type").notNull(),
+  status: supportTicketStatus("status").default("open").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  provider: text("provider").default("nowpayments").notNull(),
+  orderId: text("order_id"),
+  providerPaymentId: text("provider_payment_id"),
+  transactionHash: text("transaction_hash"),
+  paymentCurrency: text("payment_currency"),
+  amount: text("amount"),
+  adminNotes: text("admin_notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
 
 export const sessions = pgTable("sessions", {
   id: text("id").primaryKey(),

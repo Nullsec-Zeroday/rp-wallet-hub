@@ -118,7 +118,7 @@ export default function LandingContent() {
       landing_copy_variant: "control",
       provider: "nowpayments",
     });
-    
+
     router.push(`/buy?plan=${encodeURIComponent(plan.id)}&checkout=1`);
   };
 
@@ -185,7 +185,7 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.6rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
               The #1 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">fake crypto wallet app.</span>
@@ -714,7 +714,7 @@ export default function LandingContent() {
                   <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
                 </div>
 
-                <div className="relative z-10 mb-10 flex min-h-[94px] flex-col items-center justify-start">
+                <div className={`relative z-10 flex flex-col items-center justify-start transition-all duration-300 ${showYearlyDiscount ? "min-h-[94px] mb-10" : "min-h-[60px] mb-6"}`}>
                   <div className="flex items-baseline justify-center gap-1">
                     {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
                     <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{displayPrice}</span>
@@ -758,34 +758,34 @@ export default function LandingContent() {
                   style={
                     isPopular
                       ? {
-                          background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
-                          boxShadow: [
-                            "inset 0 1px 1px rgba(255,255,255,0.25)",
-                            "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                            "0 2px 8px rgba(139,92,246,0.4)",
-                            "0 0 0 0.5px rgba(255,255,255,0.1)",
-                          ].join(", "),
-                        }
+                        background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
+                        boxShadow: [
+                          "inset 0 1px 1px rgba(255,255,255,0.25)",
+                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                          "0 2px 8px rgba(139,92,246,0.4)",
+                          "0 0 0 0.5px rgba(255,255,255,0.1)",
+                        ].join(", "),
+                      }
                       : isYearly
                         ? {
-                            background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
-                            boxShadow: [
-                              "inset 0 1px 1px rgba(255,255,255,0.4)",
-                              "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                              "0 4px 15px rgba(253,224,71,0.35)",
-                              "0 0 0 0.5px rgba(255,255,255,0.2)",
-                            ].join(", "),
-                          }
+                          background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
+                          boxShadow: [
+                            "inset 0 1px 1px rgba(255,255,255,0.4)",
+                            "inset 0 -1px 1px rgba(0,0,0,0.15)",
+                            "0 4px 15px rgba(253,224,71,0.35)",
+                            "0 0 0 0.5px rgba(255,255,255,0.2)",
+                          ].join(", "),
+                        }
                         : {
-                            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-                            border: "1px solid rgba(255,255,255,0.12)",
-                            boxShadow: [
-                              "inset 0 1px 1px rgba(255,255,255,0.15)",
-                              "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                              "0 2px 8px rgba(0,0,0,0.1)",
-                              "0 0 0 0.5px rgba(255,255,255,0.08)",
-                            ].join(", "),
-                          }
+                          background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          boxShadow: [
+                            "inset 0 1px 1px rgba(255,255,255,0.15)",
+                            "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                            "0 2px 8px rgba(0,0,0,0.1)",
+                            "0 0 0 0.5px rgba(255,255,255,0.08)",
+                          ].join(", "),
+                        }
                   }
                 >
                   {!isPopular && !isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />}

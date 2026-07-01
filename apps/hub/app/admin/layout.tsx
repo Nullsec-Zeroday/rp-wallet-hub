@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Ticket } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
@@ -31,6 +31,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className={`text-sm font-medium transition-colors ${pathname.startsWith("/admin/keys") ? "text-white" : "text-zinc-400 hover:text-white"}`}
             >
               Keys
+            </Link>
+            <Link 
+              href="/admin/tickets" 
+              className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${pathname.startsWith("/admin/tickets") ? "text-white" : "text-zinc-400 hover:text-white"}`}
+            >
+              <Ticket className="h-4 w-4" />
+              Tickets
             </Link>
           </nav>
           <div className="ml-auto flex items-center space-x-4">

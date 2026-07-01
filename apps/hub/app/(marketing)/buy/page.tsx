@@ -12,9 +12,11 @@ import { useInView, motion, AnimatePresence } from "framer-motion";
 import { trackEvent } from "@/lib/track";
 import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import { formatYearlyDiscountRemaining, useYearlyDiscountOffer } from "@/lib/use-yearly-discount-offer";
+import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
 
 const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
+const STICKY_CHECKOUT_HIDE_DISTANCE = 160;
 
 export default function BuyPage() {
   return (
@@ -37,12 +39,13 @@ function BuyContent() {
   const [emailError, setEmailError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const [email, setEmail] = useState("");
+  const [isCheckoutAreaFarBelow, setIsCheckoutAreaFarBelow] = useState(false);
   const autoCheckoutStartedRef = useRef(false);
   const yearlyDiscountOffer = useYearlyDiscountOffer();
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
-  const showSticky = !isButtonInView && selectedPlanId;
+  const showSticky = isCheckoutAreaFarBelow && !isButtonInView && selectedPlanId;
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
   const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
@@ -71,6 +74,23 @@ function BuyContent() {
 
     window.addEventListener("pageshow", resetReturnedCheckout);
     return () => window.removeEventListener("pageshow", resetReturnedCheckout);
+  }, []);
+
+  React.useEffect(() => {
+    const updateStickyVisibility = () => {
+      const checkoutArea = buttonRef.current;
+      if (!checkoutArea) return;
+      const { top } = checkoutArea.getBoundingClientRect();
+      setIsCheckoutAreaFarBelow(top > window.innerHeight + STICKY_CHECKOUT_HIDE_DISTANCE);
+    };
+
+    updateStickyVisibility();
+    window.addEventListener("scroll", updateStickyVisibility, { passive: true });
+    window.addEventListener("resize", updateStickyVisibility);
+    return () => {
+      window.removeEventListener("scroll", updateStickyVisibility);
+      window.removeEventListener("resize", updateStickyVisibility);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -266,7 +286,7 @@ function BuyContent() {
 
                 <div className="relative z-10 text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
 
-                <div className="relative z-10 mb-10 flex min-h-[94px] flex-col items-center justify-start">
+                <div className={`relative z-10 flex flex-col items-center justify-start transition-all duration-300 ${showYearlyDiscount ? "min-h-[94px] mb-10" : "min-h-[60px] mb-6"}`}>
                   <div className="flex items-baseline justify-center gap-1">
                     {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
                     <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{displayPrice}</span>
@@ -417,9 +437,11 @@ function BuyContent() {
           </p>
         </div>
 
+        {/* <SupportTicketForm defaultEmail={normalizedEmail} /> */}
+
         {/* ── S U P P O R T  &  Q U E R I E S ── */}
         <div
-          className="w-full max-w-[500px] px-8 py-8 rounded-[2rem] backdrop-blur-xl relative overflow-hidden text-center mb-10"
+          className="w-full max-w-[500px] mt-4 px-8 py-8 rounded-[2rem] backdrop-blur-xl relative overflow-hidden text-center mb-10"
           style={{
             background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -441,6 +463,8 @@ function BuyContent() {
             on Telegram.
           </p>
         </div>
+
+
       </main>
 
       {/* ── S T I C K Y  C H E C K O U T  B U T T O N ── */}

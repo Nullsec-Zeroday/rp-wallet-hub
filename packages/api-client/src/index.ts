@@ -82,6 +82,27 @@ export interface AdminLicenseReminderResult {
   to: string;
 }
 
+export type SupportTicketType = "did_not_receive_key" | "bug";
+export type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export interface SupportTicket {
+  id: string;
+  type: SupportTicketType;
+  status: SupportTicketStatus;
+  email: string;
+  subject: string;
+  message: string;
+  provider: string;
+  orderId?: string;
+  providerPaymentId?: string;
+  transactionHash?: string;
+  paymentCurrency?: string;
+  amount?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class RpWalletApiClient {
   constructor(private readonly baseUrl = apiDefaults.localBaseUrl) {}
 
@@ -139,6 +160,23 @@ export class RpWalletApiClient {
     yearlyOfferActive?: boolean;
   }) {
     return this.request<{ checkoutUrl: string; orderId: string }>("/payments/nowpayments/checkout", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  async createSupportTicket(body: {
+    type: SupportTicketType;
+    email: string;
+    subject?: string;
+    message: string;
+    orderId?: string;
+    providerPaymentId?: string;
+    transactionHash?: string;
+    paymentCurrency?: string;
+    amount?: string;
+  }) {
+    return this.request<{ ticket: SupportTicket }>("/support/tickets", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -311,6 +349,31 @@ export class RpWalletApiClient {
   async resetAdminLicenseAccess(adminToken: string, body: { licenseKey: string }) {
     return this.request<AdminLicenseResetResult>("/admin/licenses/reset-access", {
       method: "POST",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getAdminSupportTickets(adminToken: string) {
+    return this.request<{ tickets: SupportTicket[] }>("/admin/tickets", {
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+      },
+    });
+  }
+
+  async updateAdminSupportTicket(
+    adminToken: string,
+    id: string,
+    body: {
+      status?: SupportTicketStatus;
+      adminNotes?: string;
+    },
+  ) {
+    return this.request<{ ticket: SupportTicket }>(`/admin/tickets/${encodeURIComponent(id)}`, {
+      method: "PATCH",
       headers: {
         authorization: `Bearer ${adminToken}`,
       },

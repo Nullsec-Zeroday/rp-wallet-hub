@@ -1,4 +1,5 @@
 import { Check, Clock3, LifeBuoy, Mail, MessageCircle, RotateCcw, ShieldCheck, X } from "lucide-react";
+import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
 
 type ResultKind = "success" | "cancelled";
 
@@ -150,6 +151,8 @@ export function PaymentResultPage({ kind }: PaymentResultPageProps) {
             on Telegram.
           </p>
         </div>
+
+        {isSuccess && <SupportTicketForm />}
       </main>
     </div>
   );

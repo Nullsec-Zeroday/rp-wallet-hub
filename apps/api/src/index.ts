@@ -17,7 +17,7 @@ import type {
 import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
-import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore } from "./platform-store";
+import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore, isSupportTicketStatus, isSupportTicketType } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 const AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
@@ -529,6 +529,64 @@ app.post("/admin/licenses/reset-access", async (c) => {
   const result = await getPlatformStore(c.env.DATABASE_URL).resetAdminLicenseAccess(licenseKey);
   if (!result) return c.json({ error: "License not found" }, 404);
   return c.json(result);
+});
+
+app.post("/support/tickets", async (c) => {
+  const body = await c.req.json<{
+    type?: string;
+    email?: string;
+    subject?: string;
+    message?: string;
+    orderId?: string;
+    providerPaymentId?: string;
+    transactionHash?: string;
+    paymentCurrency?: string;
+    amount?: string;
+  }>();
+
+  const type = normalizePayloadString(body.type);
+  const email = normalizePayloadString(body.email)?.toLowerCase();
+  const message = normalizePayloadString(body.message);
+
+  if (!isSupportTicketType(type)) return c.json({ error: "type must be did_not_receive_key or bug" }, 400);
+  if (!email || !isValidEmail(email)) return c.json({ error: "A valid email is required" }, 400);
+  if (!message || message.length < 10) return c.json({ error: "Please describe the issue in at least 10 characters" }, 400);
+
+  const ticket = await getPlatformStore(c.env.DATABASE_URL).createSupportTicket({
+    type,
+    email,
+    subject: normalizePayloadString(body.subject),
+    message: message.slice(0, 4000),
+    orderId: normalizePayloadString(body.orderId),
+    providerPaymentId: normalizePayloadString(body.providerPaymentId),
+    transactionHash: normalizePayloadString(body.transactionHash),
+    paymentCurrency: normalizePayloadString(body.paymentCurrency),
+    amount: normalizePayloadString(body.amount),
+  });
+
+  return c.json({ ticket });
+});
+
+app.get("/admin/tickets", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const tickets = await getPlatformStore(c.env.DATABASE_URL).getAdminSupportTickets();
+  return c.json({ tickets });
+});
+
+app.patch("/admin/tickets/:id", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const id = c.req.param("id");
+  const body = await c.req.json<{ status?: string; adminNotes?: string }>();
+  const status = normalizePayloadString(body.status);
+
+  if (status && !isSupportTicketStatus(status)) return c.json({ error: "Invalid ticket status" }, 400);
+
+  const ticket = await getPlatformStore(c.env.DATABASE_URL).updateAdminSupportTicket(id, {
+    status: status && isSupportTicketStatus(status) ? status : undefined,
+    adminNotes: body.adminNotes === undefined ? undefined : normalizePayloadString(body.adminNotes) || "",
+  });
+  if (!ticket) return c.json({ error: "Ticket not found" }, 404);
+  return c.json({ ticket });
 });
 
 app.post("/payments/nowpayments/checkout", async (c) => {
