@@ -15,17 +15,6 @@ const nextConfig: NextConfig = {
         destination: "https://rpwallet.app/blog/fake-crypto-portfolio-for-content-creators",
         permanent: true,
       },
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "www.rpwallet.app",
-          },
-        ],
-        destination: "https://rpwallet.app/:path*",
-        permanent: true,
-      },
     ];
   },
   webpack(config) {
