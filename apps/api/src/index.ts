@@ -602,6 +602,9 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       planId?: string;
       email?: string;
       affiliateCode?: string;
+      affiliateCheckoutIntentId?: string;
+      affiliateVisitorId?: string;
+      affiliateClickId?: string;
       yearlyOfferActive?: boolean;
     }>();
     const planId = normalizePayloadString(body.planId)?.toLowerCase();
@@ -635,6 +638,9 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       durationDays: plan.durationDays,
       allowedDevices: plan.allowedDevices,
       affiliateCode: normalizePayloadString(body.affiliateCode)?.toLowerCase(),
+      affiliateCheckoutIntentId: normalizePayloadString(body.affiliateCheckoutIntentId),
+      affiliateVisitorId: normalizePayloadString(body.affiliateVisitorId),
+      affiliateClickId: normalizePayloadString(body.affiliateClickId),
     });
     console.log("[nowpayments-checkout] Payment order created", { requestId, orderId: order.id });
 
@@ -778,6 +784,7 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
       }),
       store.createAffiliateConversion({
         affiliateCode: order.affiliateCode,
+        checkoutIntentId: order.affiliateCheckoutIntentId,
         sellauthOrderId: `nowpayments:${paymentId}`,
         licenseId: license.id,
         buyerEmail: order.email,

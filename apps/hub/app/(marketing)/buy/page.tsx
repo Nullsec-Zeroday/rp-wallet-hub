@@ -135,6 +135,7 @@ function BuyContent() {
     try {
       const attribution = getStoredAttribution();
       let affiliateCode: string | undefined;
+      let affiliateCheckoutIntentId: string | undefined;
       if (attribution) {
         const intentResult = await api
           .createAffiliateCheckoutIntent({
@@ -145,13 +146,19 @@ function BuyContent() {
             buyerEmail: normalizedEmail,
           })
           .catch(() => null);
-        affiliateCode = intentResult?.accepted ? attribution.affiliateCode : undefined;
+        if (intentResult?.accepted) {
+          affiliateCode = attribution.affiliateCode;
+          affiliateCheckoutIntentId = intentResult.intent?.id;
+        }
       }
 
       const result = await api.createNowPaymentsCheckout({
         planId: plan.id,
         email: normalizedEmail,
         affiliateCode,
+        affiliateCheckoutIntentId,
+        affiliateVisitorId: affiliateCode ? attribution?.visitorId : undefined,
+        affiliateClickId: affiliateCode ? attribution?.clickId : undefined,
         yearlyOfferActive: plan.id === "yearly" && yearlyDiscountOffer.isReady ? yearlyDiscountOffer.isActive : undefined,
       });
       setCheckoutPhase("opening");

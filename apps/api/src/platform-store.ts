@@ -195,6 +195,7 @@ export interface AffiliateCheckoutIntentInput {
 
 export interface AffiliateConversionInput {
   affiliateCode?: string;
+  checkoutIntentId?: string;
   sellauthOrderId: string;
   licenseId?: string;
   buyerEmail?: string;
@@ -272,6 +273,9 @@ export interface PaymentOrderSummary {
   durationDays: number;
   allowedDevices: number;
   affiliateCode?: string;
+  affiliateCheckoutIntentId?: string;
+  affiliateVisitorId?: string;
+  affiliateClickId?: string;
   status: string;
   licenseId?: string;
   createdAt: string;
@@ -310,6 +314,9 @@ export interface CreatePaymentOrderInput {
   durationDays: number;
   allowedDevices: number;
   affiliateCode?: string;
+  affiliateCheckoutIntentId?: string;
+  affiliateVisitorId?: string;
+  affiliateClickId?: string;
 }
 
 export interface CreateSupportTicketInput {
@@ -496,6 +503,9 @@ class InMemoryPlatformStore implements PlatformStore {
       durationDays: input.durationDays,
       allowedDevices: input.allowedDevices,
       affiliateCode: normalizeOptionalString(input.affiliateCode),
+      affiliateCheckoutIntentId: normalizeOptionalString(input.affiliateCheckoutIntentId),
+      affiliateVisitorId: normalizeOptionalString(input.affiliateVisitorId),
+      affiliateClickId: normalizeOptionalString(input.affiliateClickId),
       status: "created",
       createdAt: now,
       updatedAt: now,
@@ -662,10 +672,11 @@ class InMemoryPlatformStore implements PlatformStore {
       return { accepted: true, conversion: this.affiliateConversions.get(input.sellauthOrderId)! };
     }
 
-    const affiliate = input.affiliateCode ? this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode)) : this.findAffiliateForConversion(input)?.affiliate;
+    const exactMatch = this.findAffiliateForConversion(input);
+    const affiliate = exactMatch?.affiliate || (input.affiliateCode ? this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode)) : undefined);
     if (!affiliate || affiliate.status !== "active") return { accepted: false };
 
-    const match = this.findAffiliateForConversion({ ...input, affiliateCode: affiliate.code });
+    const match = exactMatch || this.findAffiliateForConversion({ ...input, affiliateCode: affiliate.code });
     const amount = normalizeMoney(input.amount);
     const commissionAmount = calculateCommissionAmount(amount, affiliate.commissionRate);
     const license = input.licenseId ? this.licenses.get(input.licenseId) : undefined;
@@ -1631,6 +1642,14 @@ class InMemoryPlatformStore implements PlatformStore {
   }
 
   private findAffiliateForConversion(input: AffiliateConversionInput) {
+    if (input.checkoutIntentId) {
+      const intent = this.affiliateCheckoutIntents.get(input.checkoutIntentId);
+      if (!intent) return undefined;
+      if (input.affiliateCode && intent.affiliateCode !== normalizeAffiliateCode(input.affiliateCode)) return undefined;
+      const affiliate = this.affiliates.get(intent.affiliateId);
+      return affiliate ? { affiliate, intent } : undefined;
+    }
+
     const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : undefined;
     const candidates = [...this.affiliateCheckoutIntents.values()]
       .filter((intent) => {
@@ -1714,6 +1733,9 @@ class NeonPlatformStore implements PlatformStore {
         durationDays: input.durationDays,
         allowedDevices: input.allowedDevices,
         affiliateCode: normalizeOptionalString(input.affiliateCode),
+        affiliateCheckoutIntentId: normalizeOptionalString(input.affiliateCheckoutIntentId),
+        affiliateVisitorId: normalizeOptionalString(input.affiliateVisitorId),
+        affiliateClickId: normalizeOptionalString(input.affiliateClickId),
       })
       .returning();
     return toPaymentOrderSummary(order);
@@ -1912,7 +1934,7 @@ class NeonPlatformStore implements PlatformStore {
     if (existing) return { accepted: true, conversion: toAffiliateConversionSummary(existing) };
 
     const match = await this.findAffiliateIntentForConversion(input);
-    const affiliate = input.affiliateCode ? await this.getActiveAffiliateByCode(input.affiliateCode) : match?.affiliate;
+    const affiliate = match?.affiliate || (input.affiliateCode ? await this.getActiveAffiliateByCode(input.affiliateCode) : undefined);
     if (!affiliate) return { accepted: false };
 
     const amount = normalizeMoney(input.amount);
@@ -3007,6 +3029,18 @@ class NeonPlatformStore implements PlatformStore {
   }
 
   private async findAffiliateIntentForConversion(input: AffiliateConversionInput) {
+    if (input.checkoutIntentId) {
+      const [intent] = await this.db
+        .select()
+        .from(schema.affiliateCheckoutIntents)
+        .where(eq(schema.affiliateCheckoutIntents.id, input.checkoutIntentId))
+        .limit(1);
+      if (!intent) return undefined;
+      if (input.affiliateCode && intent.affiliateCode !== normalizeAffiliateCode(input.affiliateCode)) return undefined;
+      const affiliate = await this.getActiveAffiliateByCode(intent.affiliateCode);
+      return affiliate ? { affiliate, intent: toAffiliateCheckoutIntentSummary(intent) } : undefined;
+    }
+
     const intents = await this.db
       .select()
       .from(schema.affiliateCheckoutIntents)
@@ -3530,6 +3564,9 @@ function toPaymentOrderSummary(order: DbPaymentOrder): PaymentOrderSummary {
     durationDays: order.durationDays,
     allowedDevices: order.allowedDevices,
     affiliateCode: order.affiliateCode ?? undefined,
+    affiliateCheckoutIntentId: order.affiliateCheckoutIntentId ?? undefined,
+    affiliateVisitorId: order.affiliateVisitorId ?? undefined,
+    affiliateClickId: order.affiliateClickId ?? undefined,
     status: order.status,
     licenseId: order.licenseId ?? undefined,
     createdAt: order.createdAt.toISOString(),

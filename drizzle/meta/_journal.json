@@ -64,6 +64,13 @@
       "when": 1782925200000,
       "tag": "0009_support_tickets",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783011600000,
+      "tag": "0010_nowpayments_affiliate_attribution",
+      "breakpoints": true
     }
   ]
 }
