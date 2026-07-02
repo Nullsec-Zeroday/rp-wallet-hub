@@ -147,7 +147,7 @@ export default function AffiliateAdminPage() {
         {snapshot && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             {/* Left large col */}
-            <div className="col-span-4 space-y-4">
+            <div className="min-w-0 md:col-span-2 lg:col-span-4 space-y-4">
               <Panel title="Creators">
                 <div className="overflow-auto">
                   <table className="w-full text-sm">
@@ -198,7 +198,7 @@ export default function AffiliateAdminPage() {
             </div>
 
             {/* Right smaller col */}
-            <div className="col-span-3 space-y-4">
+            <div className="min-w-0 md:col-span-2 lg:col-span-3 space-y-4">
               <Panel title="Recent conversions">
                 <ActivityTable rows={snapshot.conversions.map((conversion) => ({
                   id: conversion.id,
@@ -234,7 +234,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950 shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-sm">
       <div className="p-6">
         <h3 className="text-lg font-medium">{title}</h3>
       </div>
@@ -257,12 +257,12 @@ function ActivityTable({ rows }: { rows: Array<{ id: string; title: string; deta
   return (
     <div className="space-y-6">
       {rows.slice(0, 12).map((row) => (
-        <div key={row.id} className="flex items-center">
-          <div className="ml-0 space-y-1">
-            <p className="text-sm font-medium leading-none">{row.title}</p>
-            <p className="text-sm text-zinc-500">{row.detail}</p>
+        <div key={row.id} className="flex min-w-0 items-start gap-4">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="truncate text-sm font-medium leading-none" title={row.title}>{row.title}</p>
+            <p className="break-all text-sm leading-5 text-zinc-500 [overflow-wrap:anywhere]" title={row.detail}>{row.detail}</p>
           </div>
-          <div className="ml-auto font-medium text-xs text-zinc-500">
+          <div className="shrink-0 font-medium text-xs text-zinc-500">
             {new Date(row.date).toLocaleDateString()}
           </div>
         </div>
