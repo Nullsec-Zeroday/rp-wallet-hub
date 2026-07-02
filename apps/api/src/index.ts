@@ -110,6 +110,7 @@ const PAYMENT_PLANS: Record<string, PaymentPlan> = {
   popular: { ...SELLAUTH_PLANS.popular, priceAmount: "29.00" },
   yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00", originalPriceAmount: "299.00" },
 };
+const EMAIL_FROM = "RPWallet <noreply@rpwallet.app>";
 
 function resolvePaymentPlanPrice(plan: PaymentPlan, input: { yearlyOfferActive?: boolean }) {
   if (plan.id === "yearly" && input.yearlyOfferActive === false && plan.originalPriceAmount) {
@@ -2044,7 +2045,7 @@ async function sendPurchaseEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.us>",
+      from: EMAIL_FROM,
       html: buildPurchaseEmailHtml(params),
       subject: `Your RPWallet License Key — ${params.planLabel}`,
       to: params.to,
@@ -2078,7 +2079,7 @@ async function sendLicenseReminderEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.us>",
+      from: EMAIL_FROM,
       html: buildLicenseReminderEmailHtml(params),
       subject: "Reminder: your RPWallet key is ready",
       to: params.to,
@@ -2179,7 +2180,7 @@ async function sendAffiliateMagicLinkEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "RPWallet <noreply@rpwallet.us>",
+      from: EMAIL_FROM,
       html: buildAffiliateMagicLinkHtml(params),
       subject: "Your RPWallet affiliate login link",
       to: params.to,
