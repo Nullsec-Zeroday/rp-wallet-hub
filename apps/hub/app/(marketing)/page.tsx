@@ -6,9 +6,9 @@ import {
 } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
+  title: "RPWallet - Phantom Wallet Simulator & Fake Crypto Wallet App",
   description:
-    "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app. Perfect for creators and roleplay flexes.",
+    "Use RPWallet as a realistic Phantom wallet simulator and fake crypto wallet app for creator screenshots, roleplay, product demos, and mock portfolios.",
   keywords: [
     "larp",
     "larping",
@@ -35,15 +35,15 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
+    title: "RPWallet - Phantom Wallet Simulator & Fake Crypto Wallet App",
     description:
-      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
+      "Create realistic Phantom-style and crypto wallet simulator screens for content, demos, roleplay, and mock portfolios.",
     url: "/",
   },
   twitter: {
-    title: "The Ultimate Phantom Wallet & Fake Crypto Simulator App",
+    title: "RPWallet - Phantom Wallet Simulator & Fake Crypto Wallet App",
     description:
-      "The #1 fake phantom wallet simulator for crypto content creation. Create indistinguishable screenshots with our premium fake crypto app.",
+      "Create realistic Phantom-style and crypto wallet simulator screens for content, demos, roleplay, and mock portfolios.",
   },
 };
 

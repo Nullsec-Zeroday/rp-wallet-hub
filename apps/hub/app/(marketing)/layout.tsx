@@ -8,11 +8,11 @@ import SocialProofToasts from "@/components/marketing/social-proof-toasts";
 
 export const metadata: Metadata = {
   title: {
-    default: "Premium Phantom Simulator & Fake Crypto App",
+    default: "RPWallet - Phantom Wallet Simulator & Fake Crypto App",
     template: "%s | RPWallet",
   },
   description:
-    "The world's most realistic phantom simulator and fake crypto app for content creation. Create perfect screenshots and roleplay portfolios with our premium fake wallet.",
+    "Use RPWallet to create realistic Phantom and crypto wallet simulator screens for content, demos, mock portfolios, and roleplay without real funds.",
   alternates: {
     canonical: "/",
   },

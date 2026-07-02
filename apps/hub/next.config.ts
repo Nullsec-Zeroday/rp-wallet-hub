@@ -3,6 +3,31 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@rp-wallet/api-client", "@rp-wallet/auth", "@rp-wallet/config", "@rp-wallet/types"],
+  async redirects() {
+    return [
+      {
+        source: "/blog/why-we-chose-pwa",
+        destination: "https://rpwallet.app/blog/crypto-wallet-simulator-use-cases",
+        permanent: true,
+      },
+      {
+        source: "/blog/whale-watching-simulation",
+        destination: "https://rpwallet.app/blog/fake-crypto-portfolio-for-content-creators",
+        permanent: true,
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.rpwallet.app",
+          },
+        ],
+        destination: "https://rpwallet.app/:path*",
+        permanent: true,
+      },
+    ];
+  },
   webpack(config) {
     config.resolve ??= {};
     config.resolve.alias ??= {};

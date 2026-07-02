@@ -19,8 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: absoluteUrl("/buy"),
       lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.8,
+      changeFrequency: "weekly",
+      priority: 0.95,
     },
     {
       url: absoluteUrl("/blog"),
@@ -32,13 +32,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: absoluteUrl("/privacy"),
       lastModified: new Date("2026-04-23"),
       changeFrequency: "yearly",
-      priority: 0.3,
+      priority: 0.15,
     },
     {
       url: absoluteUrl("/terms"),
       lastModified: new Date("2026-04-23"),
       changeFrequency: "yearly",
-      priority: 0.3,
+      priority: 0.15,
     },
     ...blogPosts.map((post) => ({
       url: absoluteUrl(`/blog/${post.slug}`),

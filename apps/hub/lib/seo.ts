@@ -5,7 +5,7 @@ export const siteConfig = {
   name: "RPWallet",
   url: "https://rpwallet.app",
   description:
-    "RPWallet is the world's most realistic phantom simulator and crypto wallet mockup tool. Perfect for content creation, simulation, and roleplay. Flex millions in crypto with an indistinguishable fake crypto app interface.",
+    "RPWallet is a realistic Phantom and crypto wallet simulator for content creators, product demos, mockups, and roleplay. Create editable wallet screens without real funds, seed phrases, or blockchain transactions.",
   ogImage: "/opengraph-image.png",
   xHandle: "@rpwallet",
 };
@@ -15,6 +15,21 @@ export const homepageFaq = [
     question: "Is RPWallet a real crypto wallet app?",
     answer:
       "No. RPWallet is a wallet simulator and visual production tool. It never asks for a seed phrase, never connects to your real wallet, and cannot process real blockchain transactions.",
+  },
+  {
+    question: "Can I use RPWallet as a Phantom wallet simulator?",
+    answer:
+      "Yes. RPWallet includes a Phantom-style simulator for screenshots, short videos, demos, mock portfolios, and entertainment content without using real crypto assets.",
+  },
+  {
+    question: "Does RPWallet work on iPhone and Android?",
+    answer:
+      "Yes. RPWallet is built for mobile-first wallet visuals and can be used on iOS and Android as a web app.",
+  },
+  {
+    question: "What is RPWallet best used for?",
+    answer:
+      "RPWallet is best for creator content, roleplay scenes, product mockups, demo walkthroughs, and safe wallet screenshots where real balances or private wallet data should not be exposed.",
   },
 ];
 
@@ -32,7 +47,7 @@ export function buildDefaultMetadata(): Metadata {
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
-      default: "Premium Crypto Wallet Simulator & Fake phantom Wallet for Crypto Creators",
+      default: "RPWallet - Phantom Wallet Simulator & Fake Crypto Wallet App",
       template: `%s | ${siteConfig.name}`,
     },
     description: siteConfig.description,
@@ -69,7 +84,7 @@ export function buildDefaultMetadata(): Metadata {
       locale: "en_US",
       url: siteConfig.url,
       siteName: siteConfig.name,
-      title: buildTitle("Show Off Millions in Crypto Instantly"),
+      title: buildTitle("Phantom Wallet Simulator & Fake Crypto Wallet App"),
       description: siteConfig.description,
       images: [
         {
@@ -82,7 +97,7 @@ export function buildDefaultMetadata(): Metadata {
     },
     twitter: {
       card: "summary_large_image",
-      title: buildTitle("Show Off Millions in Crypto Instantly"),
+      title: buildTitle("Phantom Wallet Simulator & Fake Crypto Wallet App"),
       description: siteConfig.description,
       creator: siteConfig.xHandle,
       images: [ogImageUrl],
@@ -125,6 +140,12 @@ export function buildWebApplicationSchema() {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: siteConfig.name,
+    alternateName: [
+      "RP Wallet",
+      "Phantom Wallet Simulator",
+      "Crypto Wallet Simulator",
+      "LARP Wallet",
+    ],
     url: siteConfig.url,
     description: siteConfig.description,
     applicationCategory: ["FinanceApplication", "EntertainmentApplication"],
@@ -138,6 +159,47 @@ export function buildWebApplicationSchema() {
       "@type": "Organization",
       name: "RPWallet Team",
     },
+    featureList: [
+      "Phantom-style wallet simulation",
+      "Trust-style wallet simulation",
+      "Editable balances and token lists",
+      "Simulated transaction history",
+      "Mobile wallet screenshots and short videos",
+    ],
+  };
+}
+
+export function buildOfferCatalogSchema(
+  plans: Array<{
+    name: string;
+    priceNum: number;
+    duration: string;
+    features: { text: string; included: boolean }[];
+  }>,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    name: "RPWallet pricing plans",
+    url: absoluteUrl("/buy"),
+    itemListElement: plans.map((plan) => ({
+      "@type": "Offer",
+      name: `${plan.name} - ${plan.duration}`,
+      price: plan.priceNum,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: absoluteUrl("/buy"),
+      itemOffered: {
+        "@type": "SoftwareApplication",
+        name: siteConfig.name,
+        applicationCategory: "EntertainmentApplication",
+        operatingSystem: "iOS, Android",
+        description: siteConfig.description,
+        featureList: plan.features
+          .filter((feature) => feature.included)
+          .map((feature) => feature.text),
+      },
+    })),
   };
 }
 
