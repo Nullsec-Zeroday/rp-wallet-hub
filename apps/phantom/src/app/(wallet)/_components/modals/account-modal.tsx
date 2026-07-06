@@ -7,6 +7,7 @@ import { formatCurrency, TOKEN_MAP } from "@/lib/wallet-data";
 import Avatar from "../avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { deleteBackendWalletAccount } from "@/lib/backend-wallet";
 
 
 interface AccountModalProps {
@@ -34,8 +35,7 @@ export default function AccountModal({
     baseCurrency,
     accounts,
     currentAccountIndex,
-    switchAccount,
-    removeAccount
+    switchAccount
   } = useWalletStore();
   const totalBalance = getTotalBalance();
 
@@ -46,6 +46,7 @@ export default function AccountModal({
   const [isClosing, setIsClosing] = React.useState(false);
   const [activeView, setActiveView] = React.useState<'list' | 'edit'>('list');
   const [editingAccountIndex, setEditingAccountIndex] = React.useState<number>(0);
+  const [deletingAccountId, setDeletingAccountId] = React.useState<string | null>(null);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -251,14 +252,23 @@ export default function AccountModal({
           const editingAccount = accounts[editingAccountIndex] || accounts[0];
           const editingDisplayName = editingAccount?.profile?.username || editingAccount?.walletName || `Account ${editingAccountIndex + 1}`;
           
-          const handleRemoveAccount = () => {
+          const handleRemoveAccount = async () => {
             if (accounts.length <= 1) {
               toast.error("Cannot remove the only remaining account.");
               return;
             }
-            removeAccount(editingAccount.id);
-            toast.success(`Removed account ${editingDisplayName}`);
-            setActiveView('list');
+            if (!editingAccount || deletingAccountId) return;
+
+            setDeletingAccountId(editingAccount.id);
+            try {
+              await deleteBackendWalletAccount(editingAccount.id);
+              toast.success(`Removed account ${editingDisplayName}`);
+              setActiveView('list');
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Unable to remove account.");
+            } finally {
+              setDeletingAccountId(null);
+            }
           };
 
           return (
@@ -373,9 +383,10 @@ export default function AccountModal({
                   <div className="bg-[#1c1c1e] rounded-[16px] overflow-hidden">
                     <button 
                       onClick={handleRemoveAccount}
+                      disabled={deletingAccountId === editingAccount?.id}
                       className="w-full h-[54px] px-4 flex items-center justify-start active:bg-[#252528] transition-colors text-[#FF3B30] font-medium text-[16px]"
                     >
-                      Remove Account
+                      {deletingAccountId === editingAccount?.id ? "Removing..." : "Remove Account"}
                     </button>
                   </div>
                 </div>

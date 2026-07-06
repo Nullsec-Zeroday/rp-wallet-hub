@@ -436,6 +436,7 @@ export interface PlatformStore {
   exchangeWalletBootstrap(input: WalletBootstrapInput): Promise<WalletBootstrapResult | null>;
   getWalletState(sessionId: string, walletAppId: WalletAppId): Promise<WalletBootstrapPayload | null>;
   createWalletAccount(sessionId: string, input: CreateWalletAccountRequest): Promise<WalletBootstrapPayload | null>;
+  deleteWalletAccount(sessionId: string, walletAppId: WalletAppId, accountId: string): Promise<WalletBootstrapPayload | null>;
   updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null>;
   getWalletTransactions(sessionId: string, walletAppId: WalletAppId): Promise<WalletTransaction[] | null>;
   createWalletTransaction(sessionId: string, input: CreateWalletTransactionRequest): Promise<CreateWalletTransactionResponse | null>;
@@ -1008,6 +1009,30 @@ class InMemoryPlatformStore implements PlatformStore {
     this.walletAccounts.set(profile.id, [...accounts, account]);
 
     return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+
+  async deleteWalletAccount(sessionId: string, walletAppId: WalletAppId, accountId: string): Promise<WalletBootstrapPayload | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session || new Date(session.expiresAt) <= new Date()) return null;
+
+    const user = this.users.get(session.userId);
+    const license = this.licenses.get(session.licenseId);
+    if (!user || !license) return null;
+
+    const profile = this.getOrCreateWalletProfile(user.id, walletAppId, walletRegistry[walletAppId].name);
+    const accounts = this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === accountId);
+    if (!account || accounts.length <= 1) return null;
+
+    this.walletAccounts.set(profile.id, accounts.filter((entry) => entry.id !== accountId));
+    for (const key of [...this.walletBalances.keys()]) {
+      if (key.startsWith(`${accountId}:`)) this.walletBalances.delete(key);
+    }
+    this.walletTransactions.set(profile.id, (this.walletTransactions.get(profile.id) || []).filter((transaction) => transaction.accountId !== accountId));
+    this.walletNotifications.set(profile.id, (this.walletNotifications.get(profile.id) || []).filter((notification) => notification.accountId !== accountId));
+    this.walletEvents.set(profile.id, (this.walletEvents.get(profile.id) || []).filter((event) => event.accountId !== accountId));
+
+    return this.buildWalletBootstrap(user, license, walletAppId);
   }
 
   async updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null> {
@@ -2366,6 +2391,26 @@ class NeonPlatformStore implements PlatformStore {
     });
 
     return this.buildWalletBootstrap(user, license, input.walletAppId);
+  }
+
+  async deleteWalletAccount(sessionId: string, walletAppId: WalletAppId, accountId: string): Promise<WalletBootstrapPayload | null> {
+    const session = await this.getSession(sessionId);
+    if (!session) return null;
+
+    const user = await this.getUser(session.userId);
+    const license = await this.getLicense(session.licenseId);
+    const profile = await this.getOrCreateWalletProfile(user.id, walletAppId, walletRegistry[walletAppId].name);
+    const accounts = await this.getOrCreateWalletAccounts(profile);
+    const account = accounts.find((entry) => entry.id === accountId);
+    if (!account || accounts.length <= 1) return null;
+
+    await this.db.delete(schema.walletEvents).where(eq(schema.walletEvents.accountId, accountId));
+    await this.db.delete(schema.walletNotifications).where(eq(schema.walletNotifications.accountId, accountId));
+    await this.db.delete(schema.walletTransactions).where(eq(schema.walletTransactions.accountId, accountId));
+    await this.db.delete(schema.walletBalances).where(eq(schema.walletBalances.accountId, accountId));
+    await this.db.delete(schema.walletAccounts).where(eq(schema.walletAccounts.id, accountId));
+
+    return this.buildWalletBootstrap(user, license, walletAppId);
   }
 
   async updateWalletState(sessionId: string, input: UpdateWalletStateRequest): Promise<WalletBootstrapPayload | null> {

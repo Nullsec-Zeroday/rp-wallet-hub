@@ -424,6 +424,12 @@ export class RpWalletApiClient {
     });
   }
 
+  async deleteWalletAccount(walletAppId: WalletAppId, accountId: string) {
+    return this.request<WalletBootstrapPayload>(`/wallet-accounts/${encodeURIComponent(accountId)}?walletAppId=${encodeURIComponent(walletAppId)}`, {
+      method: "DELETE",
+    });
+  }
+
   async getWalletEvents(walletAppId: WalletAppId, after?: string) {
     const params = new URLSearchParams({ walletAppId });
     if (after) params.set("after", after);

@@ -6,6 +6,8 @@ import { useLivePrices } from "@/hooks/useLivePrices";
 import TokenLogo from "../token-logo";
 import { TokenPickerModal } from "./token-picker-modal";
 import { SwapToast } from "../swap-toast";
+import { createBackendWalletTransaction } from "@/lib/backend-wallet";
+import { toast } from "sonner";
 
 interface TradeModalProps {
   visible: boolean;
@@ -47,16 +49,17 @@ const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => 
 
 export default function TradeModal({ visible, onClose, onCloseStart }: TradeModalProps) {
   const [isClosing, setIsClosing] = useState(false);
-  const [isSwipeClosing, setIsSwipeClosing] = useState(false);
-  const [translateY, setTranslateY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const startYRef = useRef(0);
-  const currentYRef = useRef(0);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const isHeaderDragging = useRef(false);
+  const headerDragStartY = useRef(0);
+  const headerCurrentDragY = useRef(0);
+  const isSwipeClosing = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [toastState, setToastState] = useState<"swapping" | "swapped" | null>(null);
 
   // Swap State
-  const { tokenBalances, baseCurrency, customTokens, updateBalance, addTransaction } = useWalletStore();
+  const { tokenBalances, baseCurrency, customTokens } = useWalletStore();
   const { prices } = useLivePrices();
   const [payToken, setPayToken] = useState("SOL");
   const [receiveToken, setReceiveToken] = useState("USDC");
@@ -99,34 +102,31 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
     // Simulate processing delay
     const delay = Math.floor(Math.random() * 2001) + 3000;
     setTimeout(() => {
-      const currentPayBal = tokenBalances.find(b => b.symbol === sourceToken)?.balance ?? 0;
-      const currentReceiveBal = tokenBalances.find(b => b.symbol === destToken)?.balance ?? 0;
+      createBackendWalletTransaction({
+        type: "swap",
+        tokenSymbol: sourceToken,
+        amount: String(amtPayToken),
+        toTokenSymbol: destToken,
+        toAmount: String(amtReceive),
+        fromAddress: "Self",
+        toAddress: "Self",
+      }).then(() => {
+        const audio = new Audio("/sound-effect/confetti.mp3");
+        audio.play().catch(e => console.log("Audio play failed:", e));
 
-      updateBalance(sourceToken, Math.max(0, currentPayBal - amtPayToken));
-      updateBalance(destToken, currentReceiveBal + amtReceive);
+        setToastState("swapped");
 
-      addTransaction({
-        type: 'swap',
-        token: sourceToken,
-        amount: amtPayToken,
-        toToken: destToken,
-        toAmount: amtReceive,
-        status: 'confirmed',
-        from: 'Self',
-        to: 'Self',
-      });
-
-      const audio = new Audio("/sound-effect/confetti.mp3");
-      audio.play().catch(e => console.log("Audio play failed:", e));
-
-      setToastState("swapped");
-
-      setTimeout(() => {
+        setTimeout(() => {
+          setToastState(null);
+          handleClose();
+        }, 2500);
+      }).catch((error) => {
+        console.error("Trade persist failed:", error);
+        toast.error("Unable to save swap. Check your session and balance.");
         setToastState(null);
-        handleClose();
-      }, 2500);
+      });
     }, delay);
-  }, [canSwap, payToken, receiveToken, payAmountNum, receiveAmount, tokenBalances, updateBalance, addTransaction]);
+  }, [canSwap, payToken, receiveToken, payAmountNum, receiveAmount]);
 
   const buttonText = toastState === "swapping"
     ? "Swapping..."
@@ -142,8 +142,7 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
     setMounted(true);
     if (visible) {
       setIsClosing(false);
-      setIsSwipeClosing(false);
-      setTranslateY(0);
+      isSwipeClosing.current = false;
       document.body.style.overflow = "hidden";
       setPayAmount("");
     } else {
@@ -159,37 +158,100 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
     }, 200);
   };
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    startYRef.current = e.clientY;
-    currentYRef.current = e.clientY;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
+  useEffect(() => {
+    const header = headerRef.current;
+    const modal = modalContainerRef.current;
+    if (!visible || !header || !modal) return;
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    currentYRef.current = e.clientY;
-    const delta = Math.max(0, currentYRef.current - startYRef.current);
-    setTranslateY(delta);
-  };
+    let rafId: number;
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    const onTouchStart = (event: TouchEvent) => {
+      isHeaderDragging.current = true;
+      headerDragStartY.current = event.touches[0].clientY;
+      modal.style.transition = "none";
+      modal.style.animation = "none";
+    };
 
-    const delta = currentYRef.current - startYRef.current;
-    if (delta > 100) {
-      if (onCloseStart) onCloseStart();
-      setIsSwipeClosing(true);
-      setTranslateY(window.innerHeight);
-      setTimeout(() => {
-        onClose();
-      }, 300);
-    } else {
-      setTranslateY(0);
-    }
-  };
+    const onTouchMove = (event: TouchEvent) => {
+      if (!isHeaderDragging.current) return;
+      if (event.cancelable) event.preventDefault();
+
+      const diff = event.touches[0].clientY - headerDragStartY.current;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        if (diff > 0) {
+          headerCurrentDragY.current = diff;
+          modal.style.transform = `translateY(${diff}px)`;
+        } else {
+          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
+          headerCurrentDragY.current = rubberBand;
+          modal.style.transform = `translateY(${rubberBand}px)`;
+        }
+      });
+    };
+
+    const onTouchEnd = () => {
+      if (!isHeaderDragging.current) return;
+      isHeaderDragging.current = false;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      if (headerCurrentDragY.current > 120) {
+        isSwipeClosing.current = true;
+        modal.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(100vh)";
+        handleClose();
+      } else {
+        modal.style.transition = "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(0px)";
+      }
+      headerCurrentDragY.current = 0;
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      isHeaderDragging.current = true;
+      headerDragStartY.current = event.clientY;
+      modal.style.transition = "none";
+      modal.style.animation = "none";
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isHeaderDragging.current) return;
+
+      const diff = event.clientY - headerDragStartY.current;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        if (diff > 0) {
+          headerCurrentDragY.current = diff;
+          modal.style.transform = `translateY(${diff}px)`;
+        } else {
+          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
+          headerCurrentDragY.current = rubberBand;
+          modal.style.transform = `translateY(${rubberBand}px)`;
+        }
+      });
+    };
+
+    const onMouseUp = () => onTouchEnd();
+
+    header.addEventListener("touchstart", onTouchStart, { passive: false });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    header.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      header.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      header.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [visible]);
 
   const handleFlip = useCallback(() => {
     setPayToken(receiveToken);
@@ -225,36 +287,29 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
       <div
         className="absolute inset-0 bg-black/60 pointer-events-auto"
         style={{
-          animation: isSwipeClosing ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
-          opacity: isSwipeClosing ? Math.max(0, 1 - translateY / 300) : undefined
+          animation: isSwipeClosing.current ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
         }}
         onClick={handleClose}
       />
 
       {/* Sheet */}
       <div
+        ref={modalContainerRef}
         className="w-full max-w-md bg-[#000000] flex flex-col pointer-events-auto shadow-2xl relative rounded-t-[32px]"
         style={{
           height: "94vh",
           paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
-          transform: `translateY(${translateY}px)`,
-          transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-          animation: isSwipeClosing ? "none" : (isClosing ? "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards" : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards"),
+          animation: isClosing
+            ? (isSwipeClosing.current ? "none" : "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards")
+            : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
           willChange: "transform",
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
       >
-        <div className="w-full flex justify-center pt-3 pb-3">
-          <div className="w-9 h-[5px] bg-[#444444] rounded-full" />
-        </div>
+        <div ref={headerRef} className="cursor-grab active:cursor-grabbing w-full flex flex-col flex-shrink-0 z-20">
+          <div className="w-full flex justify-center pt-3 pb-3">
+            <div className="w-9 h-[5px] bg-[#444444] rounded-full" />
+          </div>
 
-        <div
-          className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 pb-4">
             <button
@@ -268,7 +323,9 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
               <SlidersHorizontal size={18} className="text-[#eeeeee]" />
             </button>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col">
           <div className="flex flex-col px-4 mt-12 mb-2">
             {/* You Pay Section */}
             <div className="flex flex-col bg-[#1c1c1e] rounded-[24px] p-5 relative z-0">

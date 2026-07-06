@@ -1520,6 +1520,29 @@ app.post("/wallet-accounts", async (c) => {
   return c.json(applyWalletAvailabilityToPayload(c.env, response));
 });
 
+app.delete("/wallet-accounts/:accountId", async (c) => {
+  const sessionId = getCookie(c, getSessionCookieName(c));
+  if (!sessionId) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const walletAppId = c.req.query("walletAppId") as WalletAppId | undefined;
+  const wallet = walletAppId ? getConfiguredWallet(c.env, walletAppId) : null;
+  if (!walletAppId || !wallet) {
+    return c.json({ error: "walletAppId is required" }, 400);
+  }
+  if (!wallet.enabled) {
+    return c.json({ error: "Wallet app is disabled" }, 400);
+  }
+
+  const response = await getPlatformStore(c.env.DATABASE_URL).deleteWalletAccount(sessionId, walletAppId, c.req.param("accountId"));
+  if (!response) {
+    return c.json({ error: "Unable to delete wallet account" }, 400);
+  }
+
+  return c.json(applyWalletAvailabilityToPayload(c.env, response));
+});
+
 app.get("/wallet-transactions", async (c) => {
   const sessionId = getCookie(c, getSessionCookieName(c));
   if (!sessionId) {

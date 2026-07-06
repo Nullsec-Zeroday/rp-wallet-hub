@@ -45,6 +45,11 @@ export async function createBackendWalletAccount(name?: string) {
   });
 }
 
+export async function deleteBackendWalletAccount(accountId: string) {
+  const payload = await api.deleteWalletAccount("phantom", accountId);
+  return applyPayload(payload);
+}
+
 export async function createBackendWalletTransaction(input: Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId">) {
   const account = getCurrentBackendAccount();
   if (!account) throw new Error("No wallet account is available.");

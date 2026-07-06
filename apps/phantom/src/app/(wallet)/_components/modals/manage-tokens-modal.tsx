@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import TokenLogo from "../token-logo";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import { appEnv } from "@/app-env";
+import { updateBackendWalletState } from "@/lib/backend-wallet";
 
 interface ManageTokensModalProps {
   visible: boolean;
@@ -43,6 +44,7 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
   const [searchLoading, setSearchLoading] = useState(false);
   const [isImporting, setIsImporting] = useState<string | null>(null);
   const [localBalances, setLocalBalances] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const allTokens = useMemo(() => {
     return [...TOKENS, ...customTokens];
@@ -144,14 +146,30 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
     }, 600);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isSaving) return;
+
     const newBalances = allTokens.map((token) => ({
       symbol: token.symbol,
       balance: parseFloat(localBalances[token.symbol] ?? "0") || 0,
     }));
     updateAllBalances(newBalances);
-    toast.success("Balances updated successfully");
-    handleClose();
+    setIsSaving(true);
+
+    try {
+      await updateBackendWalletState({
+        balances: newBalances.map((balance) => ({
+          amount: String(balance.balance),
+          tokenSymbol: balance.symbol,
+        })),
+      });
+      toast.success("Balances updated successfully");
+      handleClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Saved locally, but backend sync failed.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!visible) return null;
@@ -302,9 +320,10 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
         <div className="bg-[#111111] px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))] border-t border-white/[0.04]">
           <button
             onClick={handleSave}
+            disabled={isSaving}
             className="w-full h-[54px] rounded-[18px] bg-[#AB9FF2] text-[#111111] font-bold text-[17px] active:scale-[0.98] transition-transform"
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
         </div>
       </motion.div>
