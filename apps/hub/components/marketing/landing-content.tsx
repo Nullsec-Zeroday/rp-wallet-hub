@@ -22,6 +22,17 @@ const PRODUCT_IMAGES = [
   { src: "/product/new-product-2.webp", alt: "RPWallet product screenshot 2" },
 ] as const;
 
+const VOUCHES = [
+  { src: "/vouches/alex-m.webp", name: "Telegram User" },
+  { src: "/vouches/ben-t.webp", name: "Telegram User" },
+  { src: "/vouches/chloe-s.webp", name: "Telegram User" },
+  { src: "/vouches/dara-k.webp", name: "Telegram User" },
+  { src: "/vouches/david-p.webp", name: "Telegram User" },
+  { src: "/vouches/emily-r.webp", name: "Telegram User" },
+  { src: "/vouches/frank-w.webp", name: "Telegram User" },
+  { src: "/vouches/mia-g.webp", name: "Telegram User" },
+] as const;
+
 function ProductImageSwiper() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -596,6 +607,144 @@ export default function LandingContent() {
           </div>
         </section>
       )}
+
+      <section id="vouches" className="pb-12 md:pb-20 relative">
+        <motion.div
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true }}
+          className="text-center mb-8 md:mb-12 px-6"
+        >
+          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
+            Don&apos;t take our word.
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">Take theirs.</span>
+          </h2>
+          <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
+            Vouches straight from our Telegram support chats.
+          </p>
+        </motion.div>
+
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true }}
+          className="relative"
+          style={{
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent)",
+            maskImage: "linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent)",
+          }}
+        >
+          <div className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory px-6 pb-4 md:px-[max(1.5rem,calc((100vw-1200px)/2))]">
+            {VOUCHES.map((vouch) => (
+              <motion.div
+                key={vouch.src}
+                variants={fadeInUp}
+                className="relative w-[240px] md:w-[280px] shrink-0 snap-center backdrop-blur-xl p-2.5 rounded-[1.9rem] overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  boxShadow: [
+                    "inset 0 1px 1px rgba(255,255,255,0.15)",
+                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "0 4px 24px rgba(0,0,0,0.25)",
+                    "0 1px 3px rgba(0,0,0,0.15)",
+                    "0 0 0 0.5px rgba(255,255,255,0.08)",
+                  ].join(", "),
+                }}
+              >
+                {/* Top specular highlight edge */}
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                {/* Inner refraction glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[1.9rem]" />
+
+                <div className="relative z-10 overflow-hidden rounded-[1.35rem] border border-white/10">
+                  <Image
+                    src={getAssetUrl(vouch.src)}
+                    alt={`Telegram vouch from ${vouch.name}`}
+                    width={480}
+                    height={1044}
+                    loading="lazy"
+                    sizes="(min-width: 768px) 280px, 240px"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+
+                <div className="relative z-10 flex items-center gap-2.5 px-2 pt-2.5 pb-1">
+                  {/* <div
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold text-white"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(0,136,204,0.9) 0%, rgba(0,172,238,0.95) 100%)",
+                      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25), 0 1px 4px rgba(0,136,204,0.35)",
+                    }}
+                  >
+                    <Send size={11} strokeWidth={2.5} className="text-white" />
+                  </div> */}
+                  <span className="text-white/90 text-[13px] font-medium">{vouch.name}</span>
+                  <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-white/45">
+                    <span className="flex size-3.5 items-center justify-center rounded-full bg-ph4ntom-green">
+                      <Check size={9} strokeWidth={3.5} className="text-white" />
+                    </span>
+                    Verified
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* View More CTA Card */}
+            <motion.a
+              href="https://t.me/rpwalletTG"
+              target="_blank"
+              rel="noopener noreferrer"
+              variants={fadeInUp}
+              className="relative w-[240px] md:w-[280px] shrink-0 snap-center backdrop-blur-xl p-2.5 rounded-[1.9rem] overflow-hidden flex flex-col items-center justify-center gap-4 group cursor-pointer transition-all hover:scale-[1.02]"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: [
+                  "inset 0 1px 1px rgba(255,255,255,0.15)",
+                  "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                  "0 4px 24px rgba(0,0,0,0.25)",
+                  "0 1px 3px rgba(0,0,0,0.15)",
+                  "0 0 0 0.5px rgba(255,255,255,0.08)",
+                ].join(", "),
+                minHeight: "320px",
+              }}
+            >
+              {/* Top specular highlight edge */}
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              {/* Inner refraction glow */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[1.9rem]" />
+
+              <div
+                className="flex size-14 items-center justify-center rounded-full transition-transform group-hover:scale-110"
+                style={{
+                  background: "linear-gradient(135deg, rgba(0,136,204,0.9) 0%, rgba(0,172,238,0.95) 100%)",
+                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25), 0 2px 12px rgba(0,136,204,0.4)",
+                }}
+              >
+                <Send size={22} strokeWidth={2} className="text-white" />
+              </div>
+              <div className="text-center px-4">
+                <p className="text-white/90 text-[15px] font-semibold mb-1">View More Vouches</p>
+                <p className="text-white/50 text-[12px] leading-relaxed">Join our Telegram to see hundreds more reviews from real users</p>
+              </div>
+              <div
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold text-white transition-all group-hover:gap-3"
+                style={{
+                  background: "linear-gradient(135deg, rgba(0,136,204,0.8) 0%, rgba(0,172,238,0.85) 100%)",
+                  boxShadow: "0 2px 8px rgba(0,136,204,0.3)",
+                }}
+              >
+                Join Telegram
+                <ArrowRight size={14} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </motion.a>
+          </div>
+        </motion.div>
+      </section>
 
       <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
         <div className="text-center mb-10">
