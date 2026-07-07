@@ -23,13 +23,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
     },
     {
-      url: absoluteUrl("/phantom-wallet-simulator"),
+      url: absoluteUrl("/wallet-simulator"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: absoluteUrl("/fake-phantom-wallet"),
+      url: absoluteUrl("/wallet-mockup"),
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,

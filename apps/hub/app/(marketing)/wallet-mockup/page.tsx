@@ -76,13 +76,13 @@ export const metadata: Metadata = {
     "larp phantom wallet",
   ],
   alternates: {
-    canonical: "/fake-phantom-wallet",
+    canonical: "/wallet-mockup",
   },
   openGraph: {
     title: "Fake Phantom Wallet - Download-Free Phantom Simulator",
     description:
       "A safe fake Phantom wallet for iOS and Android. No APK, no download, no real crypto.",
-    url: "/fake-phantom-wallet",
+    url: "/wallet-mockup",
     type: "website",
   },
   twitter: {
@@ -105,7 +105,7 @@ function buildHowToSchema() {
       position: index + 1,
       name: step.title,
       text: step.body,
-      url: absoluteUrl(`/fake-phantom-wallet#step-${index + 1}`),
+      url: absoluteUrl(`/wallet-mockup#step-${index + 1}`),
     })),
   };
 }
@@ -117,7 +117,7 @@ export default function FakePhantomWalletPage() {
     buildFaqSchema(faq),
     buildBreadcrumbSchema([
       { name: "Home", item: "/" },
-      { name: "Fake Phantom Wallet", item: "/fake-phantom-wallet" },
+      { name: "Fake Phantom Wallet", item: "/wallet-mockup" },
     ]),
   ].filter(Boolean);
 
@@ -210,7 +210,7 @@ export default function FakePhantomWalletPage() {
               <div className="flex flex-col items-center gap-4">
                 <TryFreeButton wrapperClassName="w-full sm:w-[280px]" className="!w-full" />
                 <Link
-                  href="/phantom-wallet-simulator"
+                  href="/wallet-simulator"
                   className="inline-flex items-center gap-1 text-[14px] font-medium text-white/50 hover:text-white transition-colors"
                 >
                   Explore the Phantom wallet simulator <ArrowUpRight size={15} />

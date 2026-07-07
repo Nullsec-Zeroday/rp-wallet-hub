@@ -56,13 +56,13 @@ export const metadata: Metadata = {
     "fake crypto wallet simulator",
   ],
   alternates: {
-    canonical: "/phantom-wallet-simulator",
+    canonical: "/wallet-simulator",
   },
   openGraph: {
     title: "Phantom Wallet Simulator - Fake Phantom Wallet for iOS & Android",
     description:
       "Create pixel-perfect fake Phantom wallet screens with any balance and custom tokens. No real crypto involved.",
-    url: "/phantom-wallet-simulator",
+    url: "/wallet-simulator",
     type: "website",
   },
   twitter: {
@@ -120,7 +120,7 @@ export default function PhantomWalletSimulatorPage() {
     buildFaqSchema(faq),
     buildBreadcrumbSchema([
       { name: "Home", item: "/" },
-      { name: "Phantom Wallet Simulator", item: "/phantom-wallet-simulator" },
+      { name: "Phantom Wallet Simulator", item: "/wallet-simulator" },
     ]),
   ].filter(Boolean);
 

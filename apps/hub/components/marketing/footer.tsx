@@ -41,8 +41,8 @@ export default function Footer() {
             </div>
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Simulators</span>
-              <Link href="/phantom-wallet-simulator" className="text-white/40 hover:text-white transition-colors">Phantom Wallet Simulator</Link>
-              <Link href="/fake-phantom-wallet" className="text-white/40 hover:text-white transition-colors">Fake Phantom Wallet</Link>
+              <Link href="/wallet-simulator" className="text-white/40 hover:text-white transition-colors">Phantom Wallet Simulator</Link>
+              <Link href="/wallet-mockup" className="text-white/40 hover:text-white transition-colors">Fake Phantom Wallet</Link>
             </div>
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Socials</span>
