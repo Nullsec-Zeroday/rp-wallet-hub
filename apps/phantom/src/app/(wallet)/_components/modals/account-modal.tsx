@@ -4,6 +4,7 @@ import React from "react";
 import { X, User, Settings, Pencil, Check, Copy, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useWalletStore } from "@/lib/wallet-store";
 import { formatCurrency, TOKEN_MAP } from "@/lib/wallet-data";
+import { useLivePrices } from "@/hooks/useLivePrices";
 import Avatar from "../avatar";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -29,15 +30,14 @@ export default function AccountModal({
 }: AccountModalProps) {
   const {
     walletName,
-    getTotalBalance,
     profile,
-    cashBalance,
     baseCurrency,
     accounts,
     currentAccountIndex,
-    switchAccount
+    switchAccount,
+    customTokens
   } = useWalletStore();
-  const totalBalance = getTotalBalance();
+  const { prices } = useLivePrices();
 
   const iconIndex = profile?.iconIndex ?? 1;
   const avatarType = profile?.avatarType ?? 'emoji';
@@ -48,6 +48,23 @@ export default function AccountModal({
   const [editingAccountIndex, setEditingAccountIndex] = React.useState<number>(0);
   const [deletingAccountId, setDeletingAccountId] = React.useState<string | null>(null);
   const router = useRouter();
+  const tokenLookup = React.useMemo(() => {
+    const lookup = { ...TOKEN_MAP };
+    customTokens.forEach((token) => {
+      lookup[token.symbol] = token;
+    });
+    return lookup;
+  }, [customTokens]);
+
+  const getAccountTotalBalance = React.useCallback((account: typeof accounts[number]) => {
+    const tokenTotal = account.tokenBalances.reduce((total, balance) => {
+      const livePrice = prices[balance.symbol]?.usd;
+      const fallbackPrice = tokenLookup[balance.symbol]?.price ?? 0;
+      return total + balance.balance * (livePrice ?? fallbackPrice);
+    }, 0);
+
+    return tokenTotal + account.cashBalance;
+  }, [prices, tokenLookup]);
 
   React.useEffect(() => {
     if (visible) {
@@ -135,11 +152,7 @@ export default function AccountModal({
                   const isActive = index === currentAccountIndex;
                   const accDisplayName = account.profile?.username || account.walletName || `Account ${index + 1}`;
                   
-                  // Calculate balance for this account
-                  const accTotalBalance = account.tokenBalances.reduce((total, b) => {
-                    const token = TOKEN_MAP[b.symbol];
-                    return total + (token ? b.balance * token.price : 0);
-                  }, 0) + account.cashBalance;
+                  const accTotalBalance = getAccountTotalBalance(account);
 
                   const getInitials = (name: string) => {
                     if (!name) return "";

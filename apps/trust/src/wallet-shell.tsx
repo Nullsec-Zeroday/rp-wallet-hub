@@ -29,6 +29,7 @@ export default function WalletShell() {
   const rotatingIllusionLogged = React.useRef(false);
 
   const [scrolled, setScrolled] = React.useState(false);
+  const [maskVisible, setMaskVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [isScaledDown, setIsScaledDown] = React.useState(false);
 
@@ -232,7 +233,7 @@ export default function WalletShell() {
   return (
     <div className="absolute inset-0 flex h-screen w-full flex-col overflow-hidden bg-black">
       <div id="_rht_toaster" className="p-0" style={{ position: "fixed", zIndex: 9999, inset: "16px", pointerEvents: "none" }}></div>
-      <div 
+      <div
         className="relative flex flex-col flex-1 w-full h-full self-center md:max-w-[438px] overflow-hidden bg-[#1B1B1C]"
         style={{
           transformOrigin: "bottom center",
@@ -244,7 +245,23 @@ export default function WalletShell() {
         }}
       >
 
-        <WalletHeader scrolled={scrolled} />
+        <WalletHeader />
+
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "calc(max(env(safe-area-inset-top), 54px) + 96px)",
+            background: "linear-gradient(to bottom, #1B1B1C 0%, rgba(27,27,28,0.97) 28%, rgba(27,27,28,0.85) 48%, rgba(27,27,28,0.6) 66%, rgba(27,27,28,0.3) 84%, rgba(27,27,28,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 50,
+            opacity: maskVisible ? 1 : 0,
+            transition: "opacity 0.25s ease",
+          }}
+        />
 
         <div
           ref={spinnerWrapRef}
@@ -281,9 +298,12 @@ export default function WalletShell() {
         <main
           ref={scrollRef}
           className="min-h-0 flex-1 wallet-scroll relative overflow-y-auto overscroll-y-contain pb-[75px] pt-0"
+          style={{ paddingTop: "calc(max(env(safe-area-inset-top), 54px) + 48px)" }}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 130;
             setScrolled((current) => (current === nextScrolled ? current : nextScrolled));
+            const nextMaskVisible = event.currentTarget.scrollTop > 4;
+            setMaskVisible((current) => (current === nextMaskVisible ? current : nextMaskVisible));
             scrollbarRef.current?.show();
           }}
         >
@@ -299,6 +319,20 @@ export default function WalletShell() {
             {pathname.startsWith("/discover") && <DiscoverPage />}
           </div>
         </main>
+
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "96px",
+            background: "linear-gradient(to top, #1B1B1C 0%, rgba(27,27,28,0.9) 26%, rgba(27,27,28,0.6) 52%, rgba(27,27,28,0.28) 78%, rgba(27,27,28,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 50,
+          }}
+        />
 
         <CustomScrollbar
           ref={scrollbarRef}

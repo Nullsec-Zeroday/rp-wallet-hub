@@ -273,8 +273,8 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
           </div>
         </div>
 
-        {/* Time range tabs (left-aligned) */}
-        <div style={{ display: "flex", justifyContent: "flex-start", padding: "10px 12px 14px", gap: "2px" }}>
+        {/* Time range tabs (full width) */}
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 20px 14px", gap: "0px" }}>
           {(["1H", "1D", "1W", "1M", "1Y", "ALL"] as const).map((range) => (
             <button
               className={`t-range-btn${activeRange === range ? " t-range-active" : ""}`}
@@ -469,18 +469,15 @@ export default function CoinModal({ isOpen, onClose, symbol }: CoinModalProps) {
         <div style={{ height: "80px" }}></div>
       </div>
 
-      {/* Bottom bar: fills to edge, solid bg */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "hsl(var(--twc-backgroundPrimary,240 1.8% 10.8%))", padding: "10px 16px calc(28px + env(safe-area-inset-bottom, 0px))" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <button id="tCoinSwap" data-i18n="btn.swap" style={{ flex: 1, background: "#48FF91", border: "none", borderRadius: "50px", padding: "14px 20px", color: "#1B1B1C", fontSize: "16px", fontWeight: 600, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>Swap</button>
-          <button id="tCoinMore" style={{ width: "48px", height: "48px", background: "#223F2E", border: "none", borderRadius: "50%", color: "#48FF91", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, WebkitTapHighlightColor: "transparent" }}>
-            <svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor">
-              <circle cx="2" cy="2" r="2"></circle>
-              <circle cx="8" cy="2" r="2"></circle>
-              <circle cx="14" cy="2" r="2"></circle>
-            </svg>
-          </button>
-        </div>
+      {/* Bottom bar: content fades out above full-width Trade button */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(to top, #1B1B1C 0%, #1B1B1C 60%, rgba(27,27,28,0.85) 74%, rgba(27,27,28,0.45) 88%, rgba(27,27,28,0) 100%)", padding: "40px 16px calc(28px + env(safe-area-inset-bottom, 0px))" }}>
+        <button id="tCoinSwap" data-i18n="btn.trade" style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "9px", background: "#48FF91", border: "none", borderRadius: "50px", padding: "15px 20px", color: "#1B1B1C", fontSize: "17px", fontWeight: 600, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.7877 5.215C22.1977 5.025 21.5677 5.355 21.3777 5.945L20.7177 8.025C20.6277 7.835 20.5377 7.655 20.4377 7.455C18.7777 4.475 15.6277 2.625 12.2277 2.625C8.82771 2.625 5.67771 4.475 4.01771 7.455C3.71771 7.995 3.90771 8.685 4.45771 8.985C4.99771 9.285 5.68771 9.095 5.98771 8.545C7.24771 6.285 9.63771 4.875 12.2277 4.875C14.8177 4.875 17.2077 6.285 18.4577 8.545C18.5677 8.745 18.6577 8.935 18.7477 9.125L16.5677 8.425C15.9777 8.235 15.3477 8.565 15.1577 9.155C14.9677 9.745 15.2977 10.375 15.8877 10.565L20.6077 12.065C20.7177 12.105 20.8377 12.115 20.9477 12.115C21.4277 12.115 21.8677 11.815 22.0177 11.335L23.5177 6.615C23.7077 6.025 23.3777 5.395 22.7877 5.205V5.215Z" fill="currentColor"></path>
+            <path d="M19.9875 15.015C19.4475 14.715 18.7575 14.905 18.4575 15.455C17.1975 17.715 14.8075 19.125 12.2175 19.125C9.62752 19.125 7.23752 17.715 5.98752 15.455C5.92752 15.345 5.87752 15.235 5.82752 15.135L8.09752 15.865C8.68752 16.055 9.31752 15.725 9.50752 15.135C9.69752 14.545 9.36752 13.915 8.77752 13.725L4.05752 12.225C3.46752 12.035 2.83752 12.365 2.64752 12.955L1.14752 17.655C0.957522 18.245 1.28752 18.875 1.87752 19.065C1.98752 19.105 2.10752 19.115 2.21752 19.115C2.69752 19.115 3.13752 18.815 3.28752 18.335L3.91752 16.355C3.94752 16.415 3.97752 16.475 4.00752 16.545C5.65752 19.525 8.80752 21.375 12.2075 21.375C15.6075 21.375 18.7575 19.525 20.4075 16.545C20.7075 16.005 20.5175 15.315 19.9675 15.015H19.9875Z" fill="currentColor"></path>
+          </svg>
+          Trade
+        </button>
       </div>
     </div>
   );

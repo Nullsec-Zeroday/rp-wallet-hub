@@ -685,7 +685,7 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                   <div
                     ref={spinnerRef}
                     className={`refresh-spinner ${refreshing ? "animating" : ""}`}
-                    style={{ ['--spinner-color' as string]: '#888888' }}
+                    style={{ ['--spinner-color' as string]: '#888888', opacity: 0 }}
                   >
                     {Array.from({ length: 8 }).map((_, i) => (
                       <div key={i} className="bar" style={{ opacity: 0, transition: "opacity 0.08s linear" }} />

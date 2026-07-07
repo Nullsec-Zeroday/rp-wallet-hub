@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Crown, Eye, Gamepad2, Send, ShoppingCart, X } from "lucide-react";
-import { RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
+import { isRpWalletApiClientError, RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
 import type { WalletBootstrapPayload } from "@rp-wallet/types";
 import {
   clearCachedBootstrap,
@@ -66,18 +66,21 @@ function clearPh4ntomLocalSession() {
   window.localStorage.removeItem(PHANTOM_PERSISTED_STORE_KEY);
 }
 
+function readInitialPh4ntomPayload() {
+  const cached = readCachedBootstrap("phantom");
+  if (DEV_PWA_AUTH_BYPASS) {
+    return cached?.license.id === "dev-license" ? cached : createDevPh4ntomPayload();
+  }
+  return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("phantom", cached) : null;
+}
+
 function Ph4ntomApp() {
   const api = React.useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
-  const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(() => {
-    const cached = readCachedBootstrap("phantom");
-    if (DEV_PWA_AUTH_BYPASS) {
-      return cached?.license.id === "dev-license" ? cached : createDevPh4ntomPayload();
-    }
-    return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("phantom", cached) : null;
-  });
-  const [loading, setLoading] = React.useState(true);
+  const initialPayload = React.useMemo(readInitialPh4ntomPayload, []);
+  const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(initialPayload);
+  const [loading, setLoading] = React.useState(!initialPayload);
   const [error, setError] = React.useState("");
-  const [installReady, setInstallReady] = React.useState(false);
+  const [installReady, setInstallReady] = React.useState(Boolean(initialPayload));
   const [now, setNow] = React.useState(() => Date.now());
   const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = React.useState(false);
   const [devPaywallPreviewOpen, setDevPaywallPreviewOpen] = React.useState(Boolean(DEV_PAYWALL_PREVIEW));
@@ -145,7 +148,8 @@ function Ph4ntomApp() {
       return;
     }
 
-    setLoading(true);
+    const shouldBlockOnStartupCheck = !payloadRef.current;
+    setLoading(shouldBlockOnStartupCheck);
     const loadWallet = pendingToken
       ? api
         .exchangeWalletBootstrap({
@@ -170,6 +174,18 @@ function Ph4ntomApp() {
 
     loadWallet
       .catch((loadError) => {
+        if (isRpWalletApiClientError(loadError)) {
+          clearPh4ntomLocalSession();
+          setPayload(null);
+          setInstallReady(false);
+          setError(
+            pendingToken
+              ? getFriendlyBootstrapError(loadError, "Open Ph4ntom again from the hub to refresh this wallet session.")
+              : EXPIRED_ACCESS_MESSAGE,
+          );
+          return;
+        }
+
         const cached = readCachedBootstrap("phantom");
         if (cached && canUseCachedBootstrap(cached)) {
           setPayload(applyDemoRestrictions("phantom", cached));

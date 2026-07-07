@@ -28,7 +28,7 @@ import { RouterProvider } from "./shims/router-context";
 import WalletShell from "./wallet-shell";
 import { DEFAULT_TRUST_NOTIFICATION_SETTINGS, TrustWalletProvider } from "@/lib/trust-wallet-context";
 import { requestNotificationPermission, showSystemNotification } from "@/lib/notifications";
-import { RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
+import { isRpWalletApiClientError, RP_WALLET_UNAUTHORIZED_EVENT, RpWalletApiClient } from "@rp-wallet/api-client";
 import type { CreateWalletTransactionRequest, WalletBootstrapPayload, WalletEvent, WalletMutationType, WalletNotificationSettings, WalletTransaction } from "@rp-wallet/types";
 import {
   clearCachedBootstrap,
@@ -126,16 +126,22 @@ function getSafeTokenClearedPath() {
   return `${pathname}${window.location.hash}`;
 }
 
+function readInitialTrustPayload() {
+  const cached = readCachedBootstrap("trust");
+  if (import.meta.env.DEV) {
+    return cached || createDevTrustPayload();
+  }
+  return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("trust", cached) : null;
+}
+
 function TrustApp() {
   const api = useMemo(() => new RpWalletApiClient(appEnv.apiBaseUrl), []);
-  const [payload, setPayload] = useState<WalletBootstrapPayload | null>(() => {
-    const cached = readCachedBootstrap("trust");
-    return cached && canUseCachedBootstrap(cached) ? applyDemoRestrictions("trust", cached) : null;
-  });
-  const [loading, setLoading] = useState(true);
+  const initialPayload = useMemo(readInitialTrustPayload, []);
+  const [payload, setPayload] = useState<WalletBootstrapPayload | null>(initialPayload);
+  const [loading, setLoading] = useState(!initialPayload);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState("");
-  const [installReady, setInstallReady] = useState(false);
+  const [installReady, setInstallReady] = useState(Boolean(initialPayload));
   const [now, setNow] = useState(() => Date.now());
   const [activeDemoPaywallOpen, setActiveDemoPaywallOpen] = useState(false);
   const payloadRef = React.useRef(payload);
@@ -216,7 +222,8 @@ function TrustApp() {
       return;
     }
 
-    setLoading(true);
+    const shouldBlockOnStartupCheck = !payloadRef.current;
+    setLoading(shouldBlockOnStartupCheck);
     const loadWallet = pendingToken
       ? exchangeTrustToken(pendingToken, launchDeviceId || getPlatformDeviceId())
       : api.getWalletState("trust").then((response) => {
@@ -229,6 +236,18 @@ function TrustApp() {
 
     loadWallet
       .catch((loadError) => {
+        if (isRpWalletApiClientError(loadError)) {
+          clearTrustLocalSession();
+          setPayload(null);
+          setInstallReady(false);
+          setError(
+            pendingToken
+              ? getFriendlyBootstrapError(loadError, "This launch token has expired. Open the app again from the hub.")
+              : EXPIRED_ACCESS_MESSAGE,
+          );
+          return;
+        }
+
         const cached = readCachedBootstrap("trust");
         if (cached && canUseCachedBootstrap(cached)) {
           setPayload(applyDemoRestrictions("trust", cached));

@@ -1,14 +1,11 @@
 import React, { useState } from "react";
-import { Bell, Check, RefreshCw, Search } from "lucide-react";
-import { formatTrustCurrency, TRUST_TOKENS } from "@/lib/trust-token-data";
+import { Bell, Check, RefreshCw } from "lucide-react";
+import { TRUST_TOKENS } from "@/lib/trust-token-data";
 import { useTrustWallet, type TrustSettingsInput } from "@/lib/trust-wallet-context";
 import { requestNotificationPermission } from "@/lib/notifications";
 import type { WalletMutationType } from "@rp-wallet/types";
 import { requestDemoPaywall } from "@rp-wallet/wallet-core";
 
-interface WalletHeaderProps {
-  scrolled?: boolean;
-}
 
 const generateTrustAddress = () => {
   const chars = "0123456789abcdef";
@@ -19,7 +16,7 @@ const generateTrustAddress = () => {
   return result;
 };
 
-export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
+export default function WalletHeader() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isExtraCoinsVisible, setIsExtraCoinsVisible] = useState(false);
   const trustWallet = useTrustWallet();
@@ -91,37 +88,44 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
 
   return (
     <>
-      <div id="trustMainHeader" className="flex items-center justify-between gap-4" style={{ position: "relative", zIndex: 100, background: "transparent", paddingLeft: "16px", paddingRight: "16px", paddingTop: "max(env(safe-area-inset-top), 54px)", marginBottom: "2px" }}>
-      <div className={scrolled ? "flex-1 flex justify-start" : "flex justify-start"}>
-        <button data-testid="wallet-header-settings-button" type="button" className="outline-none bg-transparent p-2 -ml-2" onClick={() => trustWallet.demoMode ? requestDemoPaywall("settings") : setIsSettingsOpen(true)}>
-          <svg xmlns="http://www.w3.org/2000/svg" className="text-utility-1-opacity-1" width="28" height="28" viewBox="0 0 24 24" fill="none">
-            <path fillRule="evenodd" clipRule="evenodd" d="M10.65 3L9.93163 3.53449L9.32754 5.54812L7.47651 4.55141L6.5906 4.68143L4.68141 6.59062L4.55139 7.47652L5.5481 9.32755L3.53449 9.93163L3 10.65V13.35L3.53449 14.0684L5.54811 14.6725L4.55142 16.5235L4.68144 17.4094L6.59063 19.3186L7.47653 19.4486L9.32754 18.4519L9.93163 20.4655L10.65 21H13.35L14.0684 20.4655L14.6725 18.4519L16.5235 19.4486L17.4094 19.3185L19.3186 17.4094L19.4486 16.5235L18.4519 14.6724L20.4655 14.0684L21 13.35V10.65L20.4655 9.93163L18.4519 9.32754L19.4486 7.47654L19.3186 6.59063L17.4094 4.68144L16.5235 4.55142L14.6725 5.54812L14.0684 3.53449L13.35 3H10.65ZM10.4692 6.96284L11.208 4.5H12.792L13.5308 6.96284L13.8753 7.0946C13.9654 7.12908 14.0543 7.16597 14.142 7.2052L14.4789 7.35598L16.7433 6.13668L17.8633 7.25671L16.644 9.52111L16.7948 9.85803C16.834 9.9457 16.8709 10.0346 16.9054 10.1247L17.0372 10.4692L19.5 11.208V12.792L17.0372 13.5308L16.9054 13.8753C16.8709 13.9654 16.834 14.0543 16.7948 14.1419L16.644 14.4789L17.8633 16.7433L16.7433 17.8633L14.4789 16.644L14.142 16.7948C14.0543 16.834 13.9654 16.8709 13.8753 16.9054L13.5308 17.0372L12.792 19.5H11.208L10.4692 17.0372L10.1247 16.9054C10.0346 16.8709 9.94569 16.834 9.85803 16.7948L9.52111 16.644L7.25671 17.8633L6.13668 16.7433L7.35597 14.4789L7.2052 14.142C7.16597 14.0543 7.12908 13.9654 7.0946 13.8753L6.96284 13.5308L4.5 12.792L4.5 11.208L6.96284 10.4692L7.0946 10.1247C7.12907 10.0346 7.16596 9.94571 7.20519 9.85805L7.35596 9.52113L6.13666 7.2567L7.25668 6.13667L9.5211 7.35598L9.85803 7.2052C9.9457 7.16597 10.0346 7.12908 10.1247 7.0946L10.4692 6.96284ZM14.25 12C14.25 13.2426 13.2426 14.25 12 14.25C10.7574 14.25 9.75 13.2426 9.75 12C9.75 10.7574 10.7574 9.75 12 9.75C13.2426 9.75 14.25 10.7574 14.25 12ZM15.75 12C15.75 14.0711 14.0711 15.75 12 15.75C9.92893 15.75 8.25 14.0711 8.25 12C8.25 9.92893 9.92893 8.25 12 8.25C14.0711 8.25 15.75 9.92893 15.75 12Z" fill="currentColor"></path>
-          </svg>
+      <div id="trustMainHeader" className="flex items-center justify-between gap-3" style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 100, background: "transparent", paddingLeft: "16px", paddingRight: "16px", paddingTop: "max(env(safe-area-inset-top), 54px)" }}>
+      <div className="flex justify-start min-w-0">
+        <button
+          data-testid="wallet-header-settings-button"
+          type="button"
+          className="outline-none flex items-center gap-2 rounded-full"
+          style={{ background: "#2A2A2D", border: "none", cursor: "pointer", padding: "5px 18px 5px 6px", minHeight: "46px" }}
+          onClick={() => trustWallet.demoMode ? requestDemoPaywall("settings") : setIsSettingsOpen(true)}
+        >
+          <span className="flex items-center justify-center shrink-0" style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#FEB902" }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.4 4.7H8.3C6.3 4.7 4.7 6.3 4.7 8.3V15.7C4.7 17.7 6.3 19.3 8.3 19.3H15.7C17.7 19.3 19.3 17.7 19.3 15.7V11.6C19.3 10.1 18.2 9 16.7 9H9.4" stroke="#FFFFFF" strokeWidth="2.3" strokeLinecap="round" fill="none"></path>
+              <path d="M13.9 14.15h1.7" stroke="#FFFFFF" strokeWidth="2.3" strokeLinecap="round"></path>
+            </svg>
+          </span>
+          <span id="walletNameDisplay" className="text-white font-semibold" style={{ fontSize: "17px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{trustWallet.walletName}</span>
         </button>
       </div>
 
-      {scrolled ? (
-        <div className="flex flex-col items-center justify-center shrink-0 transition-opacity duration-300" style={{ minHeight: "38px" }}>
-          <span className="text-white text-[17px] font-bold leading-tight">{formatTrustCurrency(trustWallet.totalValue, trustWallet.baseCurrency)}</span>
-        </div>
-      ) : (
-        <div className="flex-1">
-          <div className="flex items-center bg-utility-1-opacity-5 rounded-full px-4 gap-2 transition-all duration-300" style={{ paddingTop: "10px", paddingBottom: "10px" }}>
-            <svg className="text-utility-1-opacity-1 mr-2" fill="none" width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path fillRule="evenodd" clipRule="evenodd" d="M10.6262 1.99976C15.3904 1.99976 19.2527 5.86217 19.2528 10.6263C19.2528 12.3718 18.7333 13.9969 17.8415 15.355L21.4847 18.9983L21.6059 19.1326C22.1688 19.8231 22.1282 20.8412 21.4847 21.4848C20.841 22.1285 19.8222 22.1693 19.1316 21.6059L18.9983 21.4848L15.355 17.8415C13.9969 18.7333 12.3718 19.2528 10.6262 19.2528C5.86214 19.2527 1.99973 15.3904 1.99973 10.6263C1.99981 5.86222 5.86219 1.99984 10.6262 1.99976ZM10.6262 5.51628C7.80427 5.51636 5.51633 7.8043 5.51625 10.6263C5.51625 13.4483 7.80422 15.7362 10.6262 15.7363C13.4483 15.7363 15.7362 13.4484 15.7362 10.6263C15.7362 7.80425 13.4483 5.51628 10.6262 5.51628Z" fill="currentColor"></path>
-            </svg>
-            <span className="text-utility-1-opacity-2 typography-body-14" data-i18n="trust.search">Search</span>
-          </div>
-        </div>
-      )}
-
-      <div className={scrolled ? "flex-1 flex justify-end items-center gap-6" : "flex items-center gap-6"}>
-        {scrolled && (
-          <button data-testid="wallet-header-search-icon" type="button" className="outline-none bg-transparent p-2 transition-opacity duration-300">
-            <Search className="text-utility-1-opacity-1" size={24} strokeWidth={2.5} />
-          </button>
-        )}
-        <button data-testid="wallet-header-scan-button" type="button" className="outline-none bg-transparent p-2">
+      <div className="flex items-center gap-3">
+        <button
+          data-testid="wallet-header-history-button"
+          type="button"
+          className="outline-none flex items-center justify-center shrink-0"
+          style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#2A2A2D", border: "none", cursor: "pointer" }}
+          onClick={() => window.dispatchEvent(new Event("trust-open-history"))}
+        >
+          <svg className="text-utility-1-opacity-1" fill="none" width="22" height="22" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M23.109 12C23.109 17.58 18.569 22.12 12.989 22.12C10.049 22.12 7.25903 20.85 5.33903 18.63C5.13903 18.4 5.04902 18.11 5.06902 17.81C5.08902 17.51 5.22903 17.24 5.44903 17.04C5.65903 16.87 5.91903 16.77 6.18903 16.77C6.51903 16.77 6.82902 16.91 7.03902 17.16C8.53902 18.88 10.699 19.88 12.989 19.88C17.329 19.88 20.859 16.34 20.859 12C20.859 7.66 17.329 4.12 12.989 4.12C9.09903 4.12 5.82903 6.91 5.21903 10.76L5.18903 10.9H6.01903C6.46903 10.9 6.87903 11.17 7.05903 11.6C7.22903 12.02 7.12903 12.5 6.80903 12.82L4.80903 14.82C4.59903 15.04 4.31903 15.15 4.01903 15.15C3.71903 15.15 3.42903 15.04 3.21903 14.82L1.21903 12.82C0.89903 12.5 0.799024 12.02 0.979024 11.6C1.14902 11.17 1.55903 10.9 2.01903 10.9H2.92902V10.79C3.54902 5.71 7.86903 1.88 12.989 1.88C18.569 1.88 23.109 6.42 23.109 12Z" fill="currentColor"></path>
+            <path d="M16.9189 14.62C16.7089 14.94 16.3589 15.12 15.9789 15.12C15.7589 15.12 15.5489 15.06 15.3589 14.94L11.8589 12.6V7C11.8589 6.38 12.3589 5.88 12.9889 5.88C13.6189 5.88 14.1089 6.38 14.1089 7V11.4L14.1689 11.44L16.6089 13.06C16.8589 13.23 17.0289 13.48 17.0889 13.78C17.1489 14.07 17.0889 14.37 16.9189 14.62Z" fill="currentColor"></path>
+          </svg>
+        </button>
+        <button
+          data-testid="wallet-header-scan-button"
+          type="button"
+          className="outline-none flex items-center justify-center shrink-0"
+          style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#2A2A2D", border: "none", cursor: "pointer" }}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="text-utility-1-opacity-1" width="20" height="20" viewBox="0 0 10.327905 9.5664062" version="1.1" id="svg1" xmlSpace="preserve">
             <defs id="defs1"></defs>
             <g id="layer1" transform="translate(-177.39211,-85.718861)">
@@ -146,7 +150,7 @@ export default function WalletHeader({ scrolled = false }: WalletHeaderProps) {
 
                 <div style={{ marginBottom: "24px" }}>
                     <div style={{ color: "#888", fontSize: "12px", textTransform: "uppercase", marginBottom: "12px" }} data-i18n="settings.wallet_name">Wallet Name</div>
-                    <input id="set-walletName" type="text" placeholder="RPWallet" maxLength={32} value={settingsDraft.walletName} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletName: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
+                    <input id="set-walletName" type="text" placeholder="Larper Wallet" maxLength={32} value={settingsDraft.walletName} onChange={(event) => setSettingsDraft((current) => ({ ...current, walletName: event.target.value }))} style={{ width: "100%", padding: "12px", background: "#252525", border: "1px solid #333", borderRadius: "10px", color: "#fff", fontSize: "14px", marginBottom: "8px" }} />
                 </div>
 
                 <div style={{ marginBottom: "24px" }}>

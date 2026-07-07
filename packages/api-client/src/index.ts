@@ -25,6 +25,21 @@ import type {
 
 export const RP_WALLET_UNAUTHORIZED_EVENT = "rp-wallet:unauthorized";
 
+export class RpWalletApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly path: string,
+  ) {
+    super(message);
+    this.name = "RpWalletApiError";
+  }
+}
+
+export function isRpWalletApiClientError(error: unknown) {
+  return error instanceof RpWalletApiError && error.status >= 400 && error.status < 500;
+}
+
 function emitUnauthorized(path: string, status: number) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(RP_WALLET_UNAUTHORIZED_EVENT, { detail: { path, status } }));
@@ -503,7 +518,7 @@ export class RpWalletApiClient {
       if (response.status === 401) {
         emitUnauthorized(path, response.status);
       }
-      throw new Error(`RPWallet API request failed: ${response.status}${detail}`);
+      throw new RpWalletApiError(`RPWallet API request failed: ${response.status}${detail}`, response.status, path);
     }
 
     return response.json() as Promise<T>;

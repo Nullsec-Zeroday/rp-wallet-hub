@@ -362,7 +362,9 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         className="w-full max-w-lg bg-[#000000] rounded-t-[32px] overflow-hidden relative flex flex-col will-change-transform"
         style={{
           height: "94vh",
-          animation: visible ? "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards" : "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
+          animation: isClosing
+            ? "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards"
+            : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
         }}
       >
         {/* Grabber */}

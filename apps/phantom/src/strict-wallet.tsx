@@ -717,7 +717,7 @@ function WalletRouteBody() {
                 <div
                   ref={spinnerRef}
                   className={`refresh-spinner ${refreshing ? "animating" : ""}`}
-                  style={{ ["--spinner-color" as string]: "#888888" }}
+                  style={{ ["--spinner-color" as string]: "#888888", opacity: 0 }}
                 >
                   {Array.from({ length: 8 }).map((_, index) => (
                     <div
