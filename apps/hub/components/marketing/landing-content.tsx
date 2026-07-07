@@ -15,7 +15,6 @@ const DemoModal = dynamic(() => import("./demo-modal"), { ssr: false });
 import { trackEvent } from "@/lib/track";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import { isDemoFeatureEnabled } from "@/lib/demo-config";
-import { formatYearlyDiscountRemaining, useYearlyDiscountOffer } from "@/lib/use-yearly-discount-offer";
 
 const PRODUCT_IMAGES = [
   { src: "/product/new-product-1.webp", alt: "RPWallet product screenshot 1" },
@@ -111,8 +110,6 @@ export default function LandingContent() {
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const demoEnabled = isDemoFeatureEnabled();
-
-  const yearlyDiscountOffer = useYearlyDiscountOffer();
 
   const handleCheckout = async (plan: any) => {
     trackEvent("pricing_buy_clicked", {
@@ -799,11 +796,8 @@ export default function LandingContent() {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
             const isYearly = plan.id === "yearly";
-            const showYearlyDiscount = isYearly && yearlyDiscountOffer.isReady && yearlyDiscountOffer.isActive;
-            const displayPrice = isYearly && yearlyDiscountOffer.isReady && !yearlyDiscountOffer.isActive && plan.originalPrice
-              ? plan.originalPrice
-              : plan.price;
-            const showOriginalPrice = Boolean(isYearly && plan.originalPrice && showYearlyDiscount);
+            const displayPrice = plan.price;
+            const showOriginalPrice = Boolean(isYearly && plan.originalPrice);
 
             const bgGradient = isPopular
               ? "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(255,255,255,0.02) 50%, rgba(139,92,246,0.06) 100%)"
@@ -863,16 +857,11 @@ export default function LandingContent() {
                   <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
                 </div>
 
-                <div className={`relative z-10 flex flex-col items-center justify-start transition-all duration-300 ${showYearlyDiscount ? "min-h-[94px] mb-10" : "min-h-[60px] mb-6"}`}>
+                <div className="relative z-10 flex min-h-[60px] flex-col items-center justify-start mb-6 transition-all duration-300">
                   <div className="flex items-baseline justify-center gap-1">
                     {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
                     <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{displayPrice}</span>
                   </div>
-                  {showYearlyDiscount && (
-                    <div className="mt-3 rounded-full border border-[#fde047]/25 bg-[#fde047]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-[#fde68a]">
-                      discounted price ends in {formatYearlyDiscountRemaining(yearlyDiscountOffer.remainingMs)}
-                    </div>
-                  )}
                 </div>
 
                 <ul className="relative z-10 flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">

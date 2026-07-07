@@ -8,7 +8,7 @@ import {
 export const metadata: Metadata = {
   title: "RPWallet - Phantom Wallet Simulator & Fake Crypto Wallet App",
   description:
-    "Use RPWallet as a realistic Phantom wallet simulator and fake crypto wallet app for creator screenshots, roleplay, product demos, and mock portfolios.",
+    "RPWallet is the #1 Phantom wallet simulator and fake crypto wallet app for iOS & Android. Set any balance, import any token, and simulate transactions for creator screenshots, roleplay, product demos, and mock portfolios — no download, no real crypto.",
   keywords: [
     "larp",
     "larping",
@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     "fake crypto app",
     "fake phantom app",
     "fake phantom wallet",
+    "fake phantom wallet download",
+    "fake phantom wallet apk",
+    "phantom wallet simulator",
     "phantom simulator",
     "simulator wallet",
     "larp wallet",

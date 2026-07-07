@@ -13,9 +13,6 @@ export const metadata: Metadata = {
   },
   description:
     "Use RPWallet to create realistic Phantom and crypto wallet simulator screens for content, demos, mock portfolios, and roleplay without real funds.",
-  alternates: {
-    canonical: "/",
-  },
 };
 
 export default function MarketingLayout({ children }: Readonly<{ children: React.ReactNode }>) {

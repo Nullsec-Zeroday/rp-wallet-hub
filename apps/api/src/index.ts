@@ -102,23 +102,14 @@ const SELLAUTH_PLANS: Record<string, SellAuthPlan> = {
 
 type PaymentPlan = SellAuthPlan & {
   priceAmount: string;
-  originalPriceAmount?: string;
 };
 
 const PAYMENT_PLANS: Record<string, PaymentPlan> = {
   starter: { ...SELLAUTH_PLANS.starter, priceAmount: "14.00" },
   popular: { ...SELLAUTH_PLANS.popular, priceAmount: "29.00" },
-  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00", originalPriceAmount: "299.00" },
+  yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00" },
 };
 const EMAIL_FROM = "RPWallet <noreply@rpwallet.app>";
-
-function resolvePaymentPlanPrice(plan: PaymentPlan, input: { yearlyOfferActive?: boolean }) {
-  if (plan.id === "yearly" && input.yearlyOfferActive === false && plan.originalPriceAmount) {
-    return plan.originalPriceAmount;
-  }
-
-  return plan.priceAmount;
-}
 
 const app = new Hono<HonoEnv>();
 
@@ -605,7 +596,6 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       affiliateCheckoutIntentId?: string;
       affiliateVisitorId?: string;
       affiliateClickId?: string;
-      yearlyOfferActive?: boolean;
     }>();
     const planId = normalizePayloadString(body.planId)?.toLowerCase();
     const email = normalizePayloadString(body.email)?.toLowerCase();
@@ -623,9 +613,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
     if (!plan) return c.json({ error: "Invalid plan", requestId }, 400);
     if (!email || !isValidEmail(email)) return c.json({ error: "A valid email address is required", requestId }, 400);
 
-    const priceAmount = resolvePaymentPlanPrice(plan, {
-      yearlyOfferActive: body.yearlyOfferActive,
-    });
+    const priceAmount = plan.priceAmount;
     const store = getPlatformStore(c.env.DATABASE_URL);
     console.log("[nowpayments-checkout] Creating payment order", { requestId, planId: plan.id });
     const order = await store.createPaymentOrder({
@@ -739,6 +727,7 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
   const store = getPlatformStore(c.env.DATABASE_URL);
   const order = await store.getPaymentOrder(orderId);
   if (!order || order.provider !== "nowpayments") return c.text("Unknown order", 404);
+  if (order.licenseId) return c.text("OK");
 
   const priceAmount = Number(payload.price_amount);
   const priceCurrency = normalizePayloadString(payload.price_currency)?.toUpperCase();
@@ -802,7 +791,7 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
 }
 
 function isFulfilledNowPaymentsStatus(status: string) {
-  return status === "finished" || status === "partially_paid";
+  return status === "finished";
 }
 
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
