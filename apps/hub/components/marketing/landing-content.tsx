@@ -205,9 +205,9 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
           >
-            <span className="text-white/90">
+            {/* <span className="text-white/90">
               Available on iOS & Android.
-            </span>
+            </span> */}
             <p>
               Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom & Trust Wallet. Create content online or prank your friends - no real crypto involved.
             </p>
@@ -275,12 +275,12 @@ export default function LandingContent() {
       <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
         <div className="text-center mb-10 md:mb-14">
           <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
-            Looks exactly like
+            Built to be
             <br />
-            <span className="text-[#ab9ff2]">Phantom & Trust.</span>
+            <span className="text-[#ab9ff2]">indistinguishable.</span>
           </h2>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-lg mx-auto leading-relaxed mt-4">
-            Set any balance, simulate any token, and nobody will know it's not the real thing.
+            Set any balance, add any token, get the perfect LARP experience you can get.
           </p>
         </div>
 
@@ -432,7 +432,7 @@ export default function LandingContent() {
             <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
             <Image src={getAssetUrl("/3d-icons/user.webp")} alt="No sign up icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">No Data Collected</h3>
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Private by Default</h3>
           </motion.div>
 
           <motion.div
@@ -462,7 +462,7 @@ export default function LandingContent() {
             <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
             <Image src={getAssetUrl("/3d-icons/download.webp")} alt="Nothing to download icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">No Download</h3>
+            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Instant Web App</h3>
           </motion.div>
         </motion.div>
       </section>
