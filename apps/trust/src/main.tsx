@@ -139,6 +139,7 @@ function TrustApp() {
   const initialPayload = useMemo(readInitialTrustPayload, []);
   const [payload, setPayload] = useState<WalletBootstrapPayload | null>(initialPayload);
   const [loading, setLoading] = useState(!initialPayload);
+  const [showSplash, setShowSplash] = useState(true);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState("");
   const [installReady, setInstallReady] = useState(Boolean(initialPayload));
@@ -149,6 +150,13 @@ function TrustApp() {
   useEffect(() => {
     payloadRef.current = payload;
   }, [payload]);
+
+  // Always show the splash briefly on mount, even on a fast cached open, then reveal
+  // the wallet. The startup license check still runs independently (non-blocking).
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowSplash(false), 500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -304,7 +312,7 @@ function TrustApp() {
       </div>
 
       <AnimatePresence>
-        {loading && <SplashScreen />}
+        {(loading || showSplash) && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
           <DemoPaywall walletName="Tru5t" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}

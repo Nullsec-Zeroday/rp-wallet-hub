@@ -79,6 +79,7 @@ function Ph4ntomApp() {
   const initialPayload = React.useMemo(readInitialPh4ntomPayload, []);
   const [payload, setPayload] = React.useState<WalletBootstrapPayload | null>(initialPayload);
   const [loading, setLoading] = React.useState(!initialPayload);
+  const [showSplash, setShowSplash] = React.useState(true);
   const [error, setError] = React.useState("");
   const [installReady, setInstallReady] = React.useState(Boolean(initialPayload));
   const [now, setNow] = React.useState(() => Date.now());
@@ -89,6 +90,13 @@ function Ph4ntomApp() {
   React.useEffect(() => {
     payloadRef.current = payload;
   }, [payload]);
+
+  // Always show the splash briefly on mount, even on a fast cached open, then reveal
+  // the wallet. The startup license check still runs independently (non-blocking).
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setShowSplash(false), 500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   React.useEffect(() => {
     const handleUnauthorized = () => {
@@ -239,7 +247,7 @@ function Ph4ntomApp() {
       ) : null}
 
       <AnimatePresence>
-        {loading && <SplashScreen />}
+        {(loading || showSplash) && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
           <DemoPaywall walletName="Ph4ntom" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}

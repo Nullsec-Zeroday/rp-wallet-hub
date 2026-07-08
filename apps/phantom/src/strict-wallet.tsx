@@ -559,11 +559,6 @@ function WalletRouteBody() {
         }
 
         try {
-          const delay = 650 + Math.floor(Math.random() * 350);
-          await new Promise((resolve) => {
-            window.setTimeout(resolve, delay);
-          });
-
           const customMappings: Record<string, string> = {};
           customTokens.forEach((token) => {
             if (token.coingeckoId) {
@@ -579,6 +574,11 @@ function WalletRouteBody() {
         } catch (err) {
           console.warn("[pull-refresh] fetch failed:", err);
         } finally {
+          // Keep the loader up for a fixed 1000ms beyond however long the API call(s)
+          // actually took, so the refresh always feels deliberate.
+          await new Promise((resolve) => {
+            window.setTimeout(resolve, 1000);
+          });
           setTranslateY(0, true, "0.8s");
           if (typeof window !== "undefined" && (window as any).triggerHaptic) {
             (window as any).triggerHaptic("success");
