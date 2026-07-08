@@ -196,7 +196,7 @@ export default function LandingContent() {
             className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
           >
             <>
-              The #1 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">fake crypto wallet app.</span>
+              The #1 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">LARP crypto wallet app.</span>
             </>
           </motion.h1>
           <motion.div
