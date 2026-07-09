@@ -423,7 +423,7 @@ export interface PlatformStore {
   createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary>;
   recordAffiliateClick(input: AffiliateClickInput): Promise<{ accepted: boolean; click?: AffiliateClickSummary; attribution?: { affiliateCode: string; clickId: string; expiresAt: string } }>;
   createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput): Promise<{ accepted: boolean; intent?: AffiliateCheckoutIntentSummary }>;
-  createAffiliateConversion(input: AffiliateConversionInput): Promise<{ accepted: boolean; conversion?: AffiliateConversionSummary }>;
+  createAffiliateConversion(input: AffiliateConversionInput): Promise<{ accepted: boolean; conversion?: AffiliateConversionSummary; affiliate?: AffiliateSummary; created?: boolean }>;
   getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot>;
   createAffiliateMagicLink(email: string): Promise<{ accepted: boolean; token?: string; affiliate?: AffiliateSummary; expiresAt?: string }>;
   verifyAffiliateMagicLink(token: string): Promise<{ accepted: boolean; sessionId?: string; expiresAt?: string; affiliate?: AffiliateSummary }>;
@@ -670,7 +670,7 @@ class InMemoryPlatformStore implements PlatformStore {
 
   async createAffiliateConversion(input: AffiliateConversionInput) {
     if (this.affiliateConversions.has(input.sellauthOrderId)) {
-      return { accepted: true, conversion: this.affiliateConversions.get(input.sellauthOrderId)! };
+      return { accepted: true, conversion: this.affiliateConversions.get(input.sellauthOrderId)!, created: false };
     }
 
     const exactMatch = this.findAffiliateForConversion(input);
@@ -700,7 +700,7 @@ class InMemoryPlatformStore implements PlatformStore {
       updatedAt: new Date().toISOString(),
     };
     this.affiliateConversions.set(conversion.sellauthOrderId, conversion);
-    return { accepted: true, conversion };
+    return { accepted: true, conversion, affiliate, created: true };
   }
 
   async getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot> {
@@ -1956,7 +1956,7 @@ class NeonPlatformStore implements PlatformStore {
       .from(schema.affiliateConversions)
       .where(eq(schema.affiliateConversions.sellauthOrderId, input.sellauthOrderId))
       .limit(1);
-    if (existing) return { accepted: true, conversion: toAffiliateConversionSummary(existing) };
+    if (existing) return { accepted: true, conversion: toAffiliateConversionSummary(existing), created: false };
 
     const match = await this.findAffiliateIntentForConversion(input);
     const affiliate = match?.affiliate || (input.affiliateCode ? await this.getActiveAffiliateByCode(input.affiliateCode) : undefined);
@@ -1986,7 +1986,8 @@ class NeonPlatformStore implements PlatformStore {
       .returning();
 
     const created = conversion ?? (await this.db.select().from(schema.affiliateConversions).where(eq(schema.affiliateConversions.sellauthOrderId, input.sellauthOrderId)).limit(1))[0];
-    return { accepted: true, conversion: toAffiliateConversionSummary(created) };
+    const isNew = Boolean(conversion);
+    return { accepted: true, conversion: toAffiliateConversionSummary(created), affiliate, created: isNew };
   }
 
   async getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot> {

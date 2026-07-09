@@ -18,6 +18,7 @@ import { walletRegistry } from "@rp-wallet/wallet-core";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
 import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore, isSupportTicketStatus, isSupportTicketType } from "./platform-store";
+import type { AffiliateConversionSummary, AffiliateSummary } from "./platform-store";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 const AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
@@ -720,14 +721,39 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
   }
 
   const orderId = normalizePayloadString(payload.order_id);
-  const paymentId = normalizePayloadString(payload.payment_id ?? payload.invoice_id);
   const paymentStatus = normalizePayloadString(payload.payment_status)?.toLowerCase();
-  if (!orderId || !paymentId || !paymentStatus) return c.text("Missing payment fields", 400);
+  // Note: an expired/failed invoice that was never paid can arrive with no
+  // payment_id and no price_amount, so those are validated only on the fulfillment
+  // path below — otherwise the failed/expired notification email never fires.
+  if (!orderId || !paymentStatus) return c.text("Missing payment fields", 400);
 
   const store = getPlatformStore(c.env.DATABASE_URL);
   const order = await store.getPaymentOrder(orderId);
   if (!order || order.provider !== "nowpayments") return c.text("Unknown order", 404);
   if (order.licenseId) return c.text("OK");
+
+  if (!isFulfilledNowPaymentsStatus(paymentStatus)) {
+    // `order.status` is the pre-update value; use it to fire the email only on the
+    // first transition into failed/expired, so nowpayments retries don't re-send.
+    const isNewStatus = order.status !== paymentStatus;
+    await store.updatePaymentOrderStatus(order.id, paymentStatus);
+    if (isNewStatus && order.email && (paymentStatus === "failed" || paymentStatus === "expired")) {
+      c.executionCtx.waitUntil(
+        sendPaymentFailedEmail(c.env, {
+          to: order.email,
+          planLabel: order.planLabel,
+          reason: paymentStatus,
+        }).catch((error) => {
+          console.error("[nowpayments-webhook] Payment-failed email failed", error);
+        }),
+      );
+    }
+    return c.text("OK");
+  }
+
+  // Fulfillment path: now the payment id and amount must be present and valid.
+  const paymentId = normalizePayloadString(payload.payment_id ?? payload.invoice_id);
+  if (!paymentId) return c.text("Missing payment fields", 400);
 
   const priceAmount = Number(payload.price_amount);
   const priceCurrency = normalizePayloadString(payload.price_currency)?.toUpperCase();
@@ -740,11 +766,6 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
       receivedCurrency: payload.price_currency,
     });
     return c.text("Order amount mismatch", 409);
-  }
-
-  if (!isFulfilledNowPaymentsStatus(paymentStatus)) {
-    await store.updatePaymentOrderStatus(order.id, paymentStatus);
-    return c.text("OK");
   }
 
   const licenseKey = await generateLicenseKeyForOrder(order.id, secret);
@@ -771,16 +792,18 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
         planLabel: order.planLabel,
         to: order.email,
       }),
-      store.createAffiliateConversion({
-        affiliateCode: order.affiliateCode,
-        checkoutIntentId: order.affiliateCheckoutIntentId,
-        sellauthOrderId: `nowpayments:${paymentId}`,
-        licenseId: license.id,
-        buyerEmail: order.email,
-        plan: order.planLabel,
-        amount: order.priceAmount,
-        currency: order.priceCurrency,
-      }),
+      store
+        .createAffiliateConversion({
+          affiliateCode: order.affiliateCode,
+          checkoutIntentId: order.affiliateCheckoutIntentId,
+          sellauthOrderId: `nowpayments:${paymentId}`,
+          licenseId: license.id,
+          buyerEmail: order.email,
+          plan: order.planLabel,
+          amount: order.priceAmount,
+          currency: order.priceCurrency,
+        })
+        .then((result) => notifyReferralConversion(c.env, result)),
     ]).catch((error) => {
       console.error("[nowpayments-webhook] Post-fulfillment task failed", error);
     }),
@@ -875,6 +898,7 @@ async function handleSellAuthWebhook(c: Context<HonoEnv>) {
         productId: extractSellAuthProductId(payload),
         variantId: extractSellAuthVariantId(payload),
       })
+      .then((result) => notifyReferralConversion(c.env, result))
       .catch((error) => {
         console.error("[sellauth-webhook] Affiliate conversion recording failed", error);
       }),
@@ -2113,37 +2137,305 @@ async function sendLicenseReminderEmail(
   return response.json<{ id?: string }>().catch(() => undefined);
 }
 
+async function sendPaymentFailedEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    planLabel: string;
+    reason: "failed" | "expired";
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[sendPaymentFailedEmail] RESEND_API_KEY is not set; skipping email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      html: buildPaymentFailedEmailHtml(params),
+      subject:
+        params.reason === "expired"
+          ? "Your RPWallet payment expired"
+          : "Your RPWallet payment didn't go through",
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+
+  return response.json<{ id?: string }>().catch(() => undefined);
+}
+
+/** Fire a "your referral converted" email — only for freshly-recorded conversions. */
+async function notifyReferralConversion(
+  env: ApiEnv,
+  result: { created?: boolean; affiliate?: AffiliateSummary; conversion?: AffiliateConversionSummary },
+) {
+  if (!result.created || !result.conversion || !result.affiliate?.email) return;
+  await sendReferralConversionEmail(env, {
+    to: result.affiliate.email,
+    affiliateName: result.affiliate.displayName,
+    plan: result.conversion.plan,
+    amount: result.conversion.amount,
+    currency: result.conversion.currency,
+    commissionAmount: result.conversion.commissionAmount,
+    commissionRate: result.conversion.commissionRate,
+    buyerEmail: result.conversion.buyerEmail,
+    dashboardUrl: getAffiliateOrigin(env),
+  }).catch((error) => {
+    console.error("[referral] Conversion email failed", error);
+  });
+}
+
+async function sendReferralConversionEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    affiliateName: string;
+    plan: string;
+    amount: string;
+    currency: string;
+    commissionAmount: string;
+    commissionRate: string;
+    buyerEmail?: string;
+    dashboardUrl: string;
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[sendReferralConversionEmail] RESEND_API_KEY is not set; skipping email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      html: buildReferralConversionEmailHtml(params),
+      subject: `You earned a commission — ${params.currency} ${params.commissionAmount}`,
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+
+  return response.json<{ id?: string }>().catch(() => undefined);
+}
+
+const EMAIL_BRAND = {
+  assetBase: "https://rpwallet.app/email",
+  siteUrl: "https://rpwallet.app",
+  telegramUrl: "https://t.me/RPWallet_support_bot",
+  purple: "#ab9ff2",
+  accent: "#7f66ff",
+  pageBg: "#0a0a0b",
+  cardBg: "#141218",
+  keyBg: "#0d0d0e",
+  border: "rgba(255,255,255,0.08)",
+  purpleBorder: "rgba(171,159,242,0.35)",
+  fontStack: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
+  monoStack: "ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace",
+  glassFill: "linear-gradient(155deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02) 55%,rgba(255,255,255,0.05))",
+  glassPurpleFill: "linear-gradient(155deg,rgba(171,159,242,0.22),rgba(127,102,255,0.06) 55%,rgba(171,159,242,0.10))",
+  glassBorder: "rgba(255,255,255,0.12)",
+  glassHighlight: "inset 0 1px 0 rgba(255,255,255,0.22),0 10px 30px rgba(0,0,0,0.35)",
+  glassPurpleGlow: "inset 0 1px 0 rgba(255,255,255,0.25),0 0 0 1px rgba(171,159,242,0.10),0 14px 40px rgba(127,102,255,0.22)",
+};
+
+/** Natural aspect (w/h) of each email icon so we never squish. */
+const EMAIL_ICON_ASPECT: Record<string, number> = {
+  "key-icon.png": 240 / 237,
+  "iphone-icon.png": 123 / 240,
+  "download-icon.png": 228 / 240,
+  "cart-icon.png": 240 / 234,
+  "dollar-icon.png": 232 / 240,
+};
+
+/** Icon sized to a target HEIGHT, width derived from aspect (both attrs set for Outlook). */
+function renderIcon(file: string, height: number, extraStyle = "") {
+  const aspect = EMAIL_ICON_ASPECT[file] ?? 1;
+  const width = Math.round(height * aspect);
+  return `<img src="${EMAIL_BRAND.assetBase}/${file}" width="${width}" height="${height}" alt="" style="display:block;border:0;${extraStyle}" />`;
+}
+
+/** Fixed square glass tile with an aspect-correct icon centered inside. */
+function renderGlassIconTile(file: string, tile: number, iconHeight: number) {
+  const b = EMAIL_BRAND;
+  return `<table role="presentation" width="${tile}" height="${tile}" cellpadding="0" cellspacing="0" style="width:${tile}px;height:${tile}px;border-radius:${Math.round(tile / 3.2)}px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
+  <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon(file, iconHeight, "margin:0 auto;")}</td></tr>
+</table>`;
+}
+
+/**
+ * Shared email chrome: preheader, branded header (ghost mark + wordmark + gradient
+ * rule), card wrapper, and footer. Body-specific markup is injected via `bodyHtml`.
+ * Table-based so it survives Outlook/Gmail; all styling inline.
+ */
+function buildBrandEmailShell(opts: { preheader: string; bodyHtml: string }) {
+  const b = EMAIL_BRAND;
+  return `
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
+  </head>
+  <body style="margin:0;padding:0;background:${b.pageBg};color:#ffffff;font-family:${b.fontStack};-webkit-font-smoothing:antialiased;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${b.pageBg};font-size:1px;line-height:1px;">
+      ${escapeHtml(opts.preheader)}
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${b.pageBg};">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
+            <tr>
+              <td align="center" style="padding:8px 0 22px;">
+                <img src="${b.assetBase}/logo-ghost.png" width="36" height="34" alt="" style="display:inline-block;vertical-align:middle;border:0;" />
+                <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:19px;font-weight:800;letter-spacing:-0.02em;color:#ffffff;">RPWallet</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:28px;background:${b.purpleBorder};background-image:linear-gradient(135deg,rgba(255,255,255,0.55),rgba(171,159,242,0.35) 28%,rgba(255,255,255,0.06) 54%,rgba(127,102,255,0.55));box-shadow:0 24px 70px rgba(0,0,0,0.5),0 0 44px rgba(127,102,255,0.12);">
+                  <tr><td style="padding:2px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:26px;background:${b.cardBg};background-image:${b.glassFill};box-shadow:${b.glassHighlight};overflow:hidden;">
+                      <tr><td style="padding:34px 30px 30px;">
+                        ${opts.bodyHtml}
+                      </td></tr>
+                    </table>
+                  </td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:26px 20px 8px;">
+                <p style="margin:0 0 6px;color:rgba(255,255,255,0.5);font-size:12px;line-height:1.5;">
+                  Need help? <a href="${b.telegramUrl}" style="color:${b.purple};text-decoration:none;">Message us on Telegram</a>
+                </p>
+                <p style="margin:0;color:rgba(255,255,255,0.32);font-size:11px;line-height:1.5;">
+                  &copy; RPWallet &middot; <a href="${b.siteUrl}" style="color:rgba(255,255,255,0.45);text-decoration:none;">rpwallet.app</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+/** Glossy glass CTA button (table-based for Outlook). */
+function renderEmailCta(label: string, href: string) {
+  const b = EMAIL_BRAND;
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+  <tr><td align="center" style="border-radius:16px;background:${b.accent};background:linear-gradient(180deg,${b.purple},${b.accent});box-shadow:inset 0 1px 0 rgba(255,255,255,0.45),0 12px 30px rgba(127,102,255,0.35);">
+    <a href="${escapeHtml(href)}" style="display:inline-block;padding:15px 34px;font-size:15px;font-weight:800;color:#0a0a0b;text-decoration:none;border-radius:16px;letter-spacing:-0.01em;">${escapeHtml(label)}</a>
+  </td></tr>
+</table>`;
+}
+
+/** Highlighted license-key panel in purple glass, with the 3D key icon. */
+function renderKeyPanel(licenseKey: string) {
+  const b = EMAIL_BRAND;
+  return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+  <tr><td style="padding:24px 18px;border-radius:20px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
+    <p style="margin:0 0 10px;color:${b.purple};font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">License Key</p>
+    <div style="font-family:${b.monoStack};font-size:22px;font-weight:800;letter-spacing:0.1em;color:#ffffff;word-break:break-all;">
+      ${escapeHtml(licenseKey)}
+    </div>
+  </td></tr>
+</table>`;
+}
+
+/** Two side-by-side glass badge cells. */
+function renderBadgePair(label1: string, value1: string, label2: string, value2: string) {
+  const b = EMAIL_BRAND;
+  const cell = (label: string, value: string) => `
+    <td width="50%" style="padding:0 4px;">
+      <div style="padding:13px 15px;border-radius:14px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
+        <p style="margin:0 0 3px;color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">${label}</p>
+        <p style="margin:0;color:#ffffff;font-size:15px;font-weight:700;">${escapeHtml(value)}</p>
+      </div>
+    </td>`;
+  return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
+  <tr>${cell(label1, value1)}${cell(label2, value2)}</tr>
+</table>`;
+}
+
+/** Plan + expiry badges for purchase/reminder emails. */
+function renderMetaBadges(planLabel: string, expirationDate: string) {
+  return renderBadgePair("Plan", planLabel, "Expires", expirationDate);
+}
+
+/** Three-step activation guide with 3D icons in glass tiles. */
+function renderActivationSteps() {
+  const b = EMAIL_BRAND;
+  const step = (icon: string, iconH: number, n: string, title: string, copy: string) => `
+    <tr>
+      <td width="56" valign="top" style="padding:0 16px 18px 0;">
+        ${renderGlassIconTile(icon, 48, iconH)}
+      </td>
+      <td valign="top" style="padding:2px 0 18px;">
+        <p style="margin:0 0 3px;color:#ffffff;font-size:15px;font-weight:700;">${n}. ${title}</p>
+        <p style="margin:0;color:rgba(255,255,255,0.58);font-size:13px;line-height:1.5;">${copy}</p>
+      </td>
+    </tr>`;
+  return `
+<p style="margin:0 0 14px;color:rgba(255,255,255,0.85);font-size:14px;font-weight:700;letter-spacing:-0.01em;">Activate in three steps</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
+  ${step("iphone-icon.png", 30, "1", "Open the site", `Go to <a href="${b.siteUrl}" style="color:${b.purple};text-decoration:none;">rpwallet.app</a> in Safari (iOS) or Chrome (Android) — not an in-app browser.`)}
+  ${step("download-icon.png", 30, "2", "Install the app", "Follow the on-screen prompt to add RPWallet to your device.")}
+  ${step("key-icon.png", 30, "3", "Enter your key", "Paste the license key above to unlock full access.")}
+</table>`;
+}
+
 function buildPurchaseEmailHtml(params: {
   licenseKey: string;
   planLabel: string;
   expirationDate: string;
 }) {
-  return `
-<!doctype html>
-<html>
-  <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
-      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
-        <h1 style="margin:0 0 12px;font-size:30px;line-height:1.08;letter-spacing:-0.04em;">Your license key is ready</h1>
-        <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
-          Thanks for purchasing ${escapeHtml(params.planLabel)}. Use the license key below to activate your RPWallet access.
-        </p>
-        <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
-          <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
-            ${escapeHtml(params.licenseKey)}
-          </div>
-        </div>
-        <p style="margin:0;color:rgba(255,255,255,0.62);font-size:14px;line-height:1.55;">
-          Plan: <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong><br />
-          Expires: <strong style="color:#fff;">${escapeHtml(params.expirationDate)}</strong>
-        </p>
-        <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
-          If you need help, contact support through the official RPWallet site.
-        </p>
-      </div>
-    </div>
-  </body>
-</html>`;
+  const b = EMAIL_BRAND;
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  <tr><td align="center">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+      <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("key-icon.png", 52, "margin:0 auto;")}</td></tr>
+    </table>
+  </td></tr>
+</table>
+<h1 style="margin:0 0 10px;font-size:28px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">Your license key is ready</h1>
+<p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  Thanks for purchasing <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong>. Use the key below to activate your RPWallet access.
+</p>
+${renderKeyPanel(params.licenseKey)}
+${renderMetaBadges(params.planLabel, params.expirationDate)}
+${renderActivationSteps()}
+${renderEmailCta("Activate now", b.siteUrl)}`;
+  return buildBrandEmailShell({
+    preheader: `Your ${params.planLabel} license key is inside — activate RPWallet now.`,
+    bodyHtml: body,
+  });
 }
 
 function buildLicenseReminderEmailHtml(params: {
@@ -2151,32 +2443,123 @@ function buildLicenseReminderEmailHtml(params: {
   planLabel: string;
   expirationDate: string;
 }) {
-  return `
-<!doctype html>
-<html>
-  <body style="margin:0;background:#0d0d0e;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
-      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:28px;background:#15121f;padding:28px;">
-        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.035em;">Your RPWallet key is ready</h1>
-        <p style="margin:0 0 22px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;">
-          We noticed your key has not been activated yet. Open <a href="https://rpwallet.app" style="color:#ab9ff2;text-decoration:none;">rpwallet.app</a>, install the app, then enter this key.
-        </p>
-        <div style="margin:22px 0;padding:18px;border-radius:18px;background:#0d0d0e;border:1px solid rgba(171,159,242,0.35);text-align:center;">
-          <div style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:20px;font-weight:800;letter-spacing:0.08em;color:#ffffff;">
-            ${escapeHtml(params.licenseKey)}
-          </div>
-        </div>
-        <p style="margin:0;color:rgba(255,255,255,0.62);font-size:14px;line-height:1.55;">
-          Plan: <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong><br />
-          Expires: <strong style="color:#fff;">${escapeHtml(params.expirationDate)}</strong>
-        </p>
-        <p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.45;">
-          Tip: activate directly in Safari on iOS or Chrome on Android. Avoid Telegram or other in-app browsers.
-        </p>
-      </div>
-    </div>
-  </body>
-</html>`;
+  const b = EMAIL_BRAND;
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  <tr><td align="center">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+      <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("key-icon.png", 52, "margin:0 auto;")}</td></tr>
+    </table>
+  </td></tr>
+</table>
+<h1 style="margin:0 0 10px;font-size:26px;line-height:1.14;letter-spacing:-0.035em;color:#ffffff;text-align:center;">Your key is still waiting</h1>
+<p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  We noticed your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> key has not been activated yet. It only takes a minute — here it is again.
+</p>
+${renderKeyPanel(params.licenseKey)}
+${renderMetaBadges(params.planLabel, params.expirationDate)}
+${renderActivationSteps()}
+${renderEmailCta("Activate now", b.siteUrl)}
+<p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.5;text-align:center;">
+  Tip: activate directly in Safari on iOS or Chrome on Android. Avoid Telegram or other in-app browsers.
+</p>`;
+  return buildBrandEmailShell({
+    preheader: "Your RPWallet key hasn't been activated yet — here it is again.",
+    bodyHtml: body,
+  });
+}
+
+function buildPaymentFailedEmailHtml(params: {
+  planLabel: string;
+  reason: "failed" | "expired";
+}) {
+  const b = EMAIL_BRAND;
+  const telegramUrl = b.telegramUrl;
+  const expired = params.reason === "expired";
+  const headline = expired ? "Your payment window expired" : "Your payment didn't go through";
+  const lead = expired
+    ? `Your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> invoice expired before a payment was confirmed. If you didn't finish paying, nothing was sent — just grab your access with a fresh checkout below.`
+    : `We couldn't confirm your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> payment. If you didn't complete it, no crypto left your wallet — start a fresh checkout below whenever you're ready.`;
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  <tr><td align="center">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+      <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("cart-icon.png", 50, "margin:0 auto;")}</td></tr>
+    </table>
+  </td></tr>
+</table>
+<h1 style="margin:0 0 10px;font-size:26px;line-height:1.14;letter-spacing:-0.035em;color:#ffffff;text-align:center;">${headline}</h1>
+<p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  ${lead}
+</p>
+${renderEmailCta("Try checkout again", `${b.siteUrl}/buy`)}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
+  <tr><td style="padding:16px 18px;border-radius:16px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};text-align:center;">
+    <p style="margin:0 0 4px;color:#ffffff;font-size:14px;font-weight:700;">Already paid but didn't get your license?</p>
+    <p style="margin:0 0 12px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5;">
+      Crypto payments can't be reversed, so don't start another checkout — message us on Telegram with your details and we'll get your access sorted.
+    </p>
+    <a href="${telegramUrl}" style="display:inline-block;padding:10px 20px;border-radius:12px;background:rgba(171,159,242,0.14);border:1px solid ${b.purpleBorder};color:${b.purple};font-size:14px;font-weight:700;text-decoration:none;">Contact us on Telegram</a>
+  </td></tr>
+</table>`;
+  return buildBrandEmailShell({
+    preheader: expired
+      ? "Your payment expired — nothing was charged. Grab your access, or reach us on Telegram if you already paid."
+      : "We couldn't confirm your payment. Start a new checkout, or reach us on Telegram if you already paid.",
+    bodyHtml: body,
+  });
+}
+
+function buildReferralConversionEmailHtml(params: {
+  affiliateName: string;
+  plan: string;
+  amount: string;
+  currency: string;
+  commissionAmount: string;
+  commissionRate: string;
+  buyerEmail?: string;
+  dashboardUrl: string;
+}) {
+  const b = EMAIL_BRAND;
+  const ratePct = `${Math.round(Number(params.commissionRate) * 100)}%`;
+  const buyer = params.buyerEmail ? maskEmail(params.buyerEmail) : "a new customer";
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  <tr><td align="center">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+      <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("dollar-icon.png", 50, "margin:0 auto;")}</td></tr>
+    </table>
+  </td></tr>
+</table>
+<p style="margin:0 0 6px;color:${b.purple};font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">Referral converted</p>
+<h1 style="margin:0 0 10px;font-size:27px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">You earned a commission</h1>
+<p style="margin:0 0 24px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  Nice work, ${escapeHtml(params.affiliateName)} — ${escapeHtml(buyer)} just purchased through your link.
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+  <tr><td style="padding:24px 18px;border-radius:20px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
+    <p style="margin:0 0 8px;color:${b.purple};font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">Your commission</p>
+    <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;">${escapeHtml(params.currency)} ${escapeHtml(params.commissionAmount)}</div>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.5);font-size:12px;">${ratePct} of ${escapeHtml(params.currency)} ${escapeHtml(params.amount)}</p>
+  </td></tr>
+</table>
+${renderBadgePair("Plan", params.plan, "Sale", `${params.currency} ${params.amount}`)}
+${renderEmailCta("View your dashboard", params.dashboardUrl)}
+<p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.5;text-align:center;">
+  Commission is pending until the order clears the refund window, then moves to approved for payout.
+</p>`;
+  return buildBrandEmailShell({
+    preheader: `You earned ${params.currency} ${params.commissionAmount} — a referral just converted.`,
+    bodyHtml: body,
+  });
+}
+
+/** Mask a buyer email for referrer-facing display: "jo***@gmail.com". */
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  if (!domain) return "a new customer";
+  const head = local.slice(0, 2);
+  return `${head}${"*".repeat(Math.max(1, local.length - head.length))}@${domain}`;
 }
 
 async function sendAffiliateMagicLinkEmail(
