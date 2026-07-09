@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { X, Search, HelpCircle, ChevronLeft, Check } from "lucide-react";
 import { useWalletStore } from "@/lib/wallet-store";
+import { createBackendWalletTransaction } from "@/lib/backend-wallet";
 import { TOKENS, TOKEN_MAP, type TokenInfo } from "@/lib/wallet-data";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import TokenLogo from "../token-logo";
@@ -121,6 +122,20 @@ export default function BuyModal({ visible, onClose, onCloseStart }: BuyModalPro
 
         const currentBal = tokenBalances.find(b => b.symbol === selectedToken.symbol)?.balance || 0;
         updateBalance(selectedToken.symbol, currentBal + tokenAmount);
+
+        // Persist the purchase to the backend so the credited balance survives the
+        // next wallet sync. Without this the buy lives only in local state and
+        // syncStoreFromPayload reverts it to the stale server value a few minutes
+        // later. `manual_adjustment` credits the balance and renders as a buy in
+        // history.
+        void createBackendWalletTransaction({
+          type: "manual_adjustment",
+          tokenSymbol: selectedToken.symbol,
+          amount: String(tokenAmount),
+          source: "user",
+        }).catch((error) => {
+          console.error("[buy-modal] Failed to persist purchase", error);
+        });
       }
       setStep('SUCCESS');
     }, 2500);
