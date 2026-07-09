@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { and, asc, count, desc, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@rp-wallet/db";
 import type {
@@ -281,6 +281,13 @@ export interface PaymentOrderSummary {
   createdAt: string;
   updatedAt: string;
   fulfilledAt?: string;
+  abandonedReminderSentAt?: string;
+}
+
+export interface AbandonedPaymentOrderQuery {
+  olderThanMinutes: number;
+  maxAgeHours: number;
+  limit: number;
 }
 
 export type SupportTicketType = "did_not_receive_key" | "bug";
@@ -411,6 +418,8 @@ export interface PlatformStore {
   updatePaymentOrderProvider(id: string, providerPaymentId: string, status: string): Promise<void>;
   updatePaymentOrderStatus(id: string, status: string): Promise<void>;
   completePaymentOrder(id: string, providerPaymentId: string, licenseId: string): Promise<boolean>;
+  getAbandonedPaymentOrders(query: AbandonedPaymentOrderQuery): Promise<PaymentOrderSummary[]>;
+  markAbandonedReminderSent(id: string): Promise<void>;
   createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary>;
   getAdminSupportTickets(): Promise<SupportTicketSummary[]>;
   updateAdminSupportTicket(id: string, input: UpdateSupportTicketInput): Promise<SupportTicketSummary | null>;
@@ -529,6 +538,26 @@ class InMemoryPlatformStore implements PlatformStore {
     const order = this.paymentOrders.get(id);
     if (!order) return;
     this.paymentOrders.set(id, { ...order, status, updatedAt: new Date().toISOString() });
+  }
+
+  async getAbandonedPaymentOrders(query: AbandonedPaymentOrderQuery) {
+    const now = Date.now();
+    const recentCutoff = now - query.olderThanMinutes * 60 * 1000;
+    const oldCutoff = now - query.maxAgeHours * 60 * 60 * 1000;
+    return [...this.paymentOrders.values()]
+      .filter((order) => {
+        if (order.status !== "waiting" || order.licenseId || order.abandonedReminderSentAt) return false;
+        const created = Date.parse(order.createdAt);
+        return created < recentCutoff && created > oldCutoff;
+      })
+      .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+      .slice(0, query.limit);
+  }
+
+  async markAbandonedReminderSent(id: string) {
+    const order = this.paymentOrders.get(id);
+    if (!order) return;
+    this.paymentOrders.set(id, { ...order, abandonedReminderSentAt: new Date().toISOString() });
   }
 
   async completePaymentOrder(id: string, providerPaymentId: string, licenseId: string) {
@@ -1793,6 +1822,34 @@ class NeonPlatformStore implements PlatformStore {
       .where(and(eq(schema.paymentOrders.id, id), isNull(schema.paymentOrders.licenseId)))
       .returning({ id: schema.paymentOrders.id });
     return completed.length > 0;
+  }
+
+  async getAbandonedPaymentOrders(query: AbandonedPaymentOrderQuery) {
+    const now = Date.now();
+    const recentCutoff = new Date(now - query.olderThanMinutes * 60 * 1000);
+    const oldCutoff = new Date(now - query.maxAgeHours * 60 * 60 * 1000);
+    const orders = await this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(
+        and(
+          eq(schema.paymentOrders.status, "waiting"),
+          isNull(schema.paymentOrders.licenseId),
+          isNull(schema.paymentOrders.abandonedReminderSentAt),
+          lt(schema.paymentOrders.createdAt, recentCutoff),
+          gt(schema.paymentOrders.createdAt, oldCutoff),
+        ),
+      )
+      .orderBy(asc(schema.paymentOrders.createdAt))
+      .limit(query.limit);
+    return orders.map(toPaymentOrderSummary);
+  }
+
+  async markAbandonedReminderSent(id: string) {
+    await this.db
+      .update(schema.paymentOrders)
+      .set({ abandonedReminderSentAt: new Date() })
+      .where(eq(schema.paymentOrders.id, id));
   }
 
   async createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary> {
@@ -3618,6 +3675,7 @@ function toPaymentOrderSummary(order: DbPaymentOrder): PaymentOrderSummary {
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
     fulfilledAt: order.fulfilledAt?.toISOString(),
+    abandonedReminderSentAt: order.abandonedReminderSentAt?.toISOString(),
   };
 }
 

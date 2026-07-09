@@ -71,6 +71,13 @@
       "when": 1783011600000,
       "tag": "0010_nowpayments_affiliate_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784304000000,
+      "tag": "0011_abandoned_checkout_reminder",
+      "breakpoints": true
     }
   ]
 }

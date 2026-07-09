@@ -2175,6 +2175,40 @@ async function sendPaymentFailedEmail(
   return response.json<{ id?: string }>().catch(() => undefined);
 }
 
+async function sendAbandonedCheckoutEmail(
+  env: ApiEnv,
+  params: {
+    to: string;
+    planLabel: string;
+  },
+) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[sendAbandonedCheckoutEmail] RESEND_API_KEY is not set; skipping email");
+    return;
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      html: buildAbandonedCheckoutEmailHtml(params),
+      subject: `Still want ${params.planLabel}? Your RPWallet checkout is waiting`,
+      to: params.to,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
+  }
+
+  return response.json<{ id?: string }>().catch(() => undefined);
+}
+
 /** Fire a "your referral converted" email — only for freshly-recorded conversions. */
 async function notifyReferralConversion(
   env: ApiEnv,
@@ -2510,6 +2544,32 @@ ${renderEmailCta("Try checkout again", `${b.siteUrl}/buy`)}
   });
 }
 
+function buildAbandonedCheckoutEmailHtml(params: {
+  planLabel: string;
+}) {
+  const b = EMAIL_BRAND;
+  const body = `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
+  <tr><td align="center">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+      <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("cart-icon.png", 50, "margin:0 auto;")}</td></tr>
+    </table>
+  </td></tr>
+</table>
+<h1 style="margin:0 0 10px;font-size:27px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">You left something behind</h1>
+<p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  Your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> checkout is still open but the payment wasn't finished. Pick up right where you left off — it only takes a minute.
+</p>
+${renderEmailCta("Finish your purchase", `${b.siteUrl}/buy`)}
+<p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.5;text-align:center;">
+  Ran into trouble paying? <a href="${b.telegramUrl}" style="color:${b.purple};text-decoration:none;">Message us on Telegram</a> and we'll help you finish.
+</p>`;
+  return buildBrandEmailShell({
+    preheader: `Your ${params.planLabel} checkout is still waiting — finish in a minute.`,
+    bodyHtml: body,
+  });
+}
+
 function buildReferralConversionEmailHtml(params: {
   affiliateName: string;
   plan: string;
@@ -2719,4 +2779,35 @@ function buildAffiliateLoginUrl(env: ApiEnv, token: string) {
   return url.toString();
 }
 
-export default app;
+/**
+ * Cron sweep: email people who started checkout (entered their email, invoice
+ * created) but dropped off before paying. Targets orders still in `waiting`,
+ * 30min–72h old, that haven't been reminded yet, then marks them so each buyer
+ * is nudged at most once.
+ */
+async function runAbandonedCheckoutSweep(env: ApiEnv) {
+  const store = getPlatformStore(env.DATABASE_URL);
+  const orders = await store.getAbandonedPaymentOrders({ olderThanMinutes: 30, maxAgeHours: 72, limit: 100 });
+  for (const order of orders) {
+    try {
+      await sendAbandonedCheckoutEmail(env, { to: order.email, planLabel: order.planLabel });
+      await store.markAbandonedReminderSent(order.id);
+    } catch (error) {
+      console.error(`[cron] Abandoned-checkout email failed for order ${order.id}`, error);
+    }
+  }
+  if (orders.length > 0) {
+    console.log(`[cron] Abandoned-checkout sweep processed ${orders.length} order(s)`);
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledController, env: ApiEnv, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      runAbandonedCheckoutSweep(env).catch((error) => {
+        console.error("[cron] Abandoned-checkout sweep failed", error);
+      }),
+    );
+  },
+} satisfies ExportedHandler<ApiEnv>;

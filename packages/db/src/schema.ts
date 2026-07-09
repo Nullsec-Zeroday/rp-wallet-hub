@@ -68,6 +68,7 @@ export const paymentOrders = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
+    abandonedReminderSentAt: timestamp("abandoned_reminder_sent_at", { withTimezone: true }),
   },
   (table) => [uniqueIndex("payment_orders_provider_payment_unique").on(table.provider, table.providerPaymentId)],
 );
