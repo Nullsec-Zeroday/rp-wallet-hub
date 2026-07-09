@@ -73,13 +73,23 @@ export function syncStoreFromPayload(payload: WalletBootstrapPayload, preferredA
           symbol: balance.tokenSymbol,
         }));
 
+      // If the server returns an account with no balance rows, keep whatever we
+      // already had locally rather than hard-resetting to seed defaults — a transient
+      // empty sync must not wipe balances the user set (or optimistic ones not yet
+      // persisted). Only fall back to seeds when there is nothing local either.
+      const resolvedTokenBalances = tokenBalances.length
+        ? tokenBalances
+        : previous?.tokenBalances?.length
+          ? previous.tokenBalances
+          : DEFAULT_BALANCES;
+
       return {
         avatarIconIndex: previous?.avatarIconIndex ?? profile.iconIndex,
         cashBalance: previous?.cashBalance ?? 0,
         id: account.id,
         name: account.name,
         profile,
-        tokenBalances: tokenBalances.length ? tokenBalances : DEFAULT_BALANCES,
+        tokenBalances: resolvedTokenBalances,
         transactions: mapTransactions(payload, account.id),
         walletName: account.name,
       };

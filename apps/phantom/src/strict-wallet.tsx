@@ -334,17 +334,31 @@ function WalletRouteBody() {
 
         const fromAddress = settings.senderAddress || "7x8fR9m4K5L2n3jP8hQ6vY7zB1cX0m9A8s7d6f5g4h3j";
         const toAddress = profile.walletAddress || "Your Wallet";
-        pendingTransactions.push({
+        const receiveTransaction: Omit<CreateWalletTransactionRequest, "walletAppId" | "accountId"> = {
           type: "receive",
           tokenSymbol: simulated.symbol,
           amount: String(simulated.amount),
           fromAddress,
           toAddress,
           source: "notification_simulation",
-        });
+        };
 
         const currentBalance = useWalletStore.getState().tokenBalances.find((balance) => balance.symbol === simulated.symbol)?.balance ?? 0;
         updateBalance(simulated.symbol, currentBalance + simulated.amount);
+
+        // Persist this receive to the backend immediately instead of batching to the
+        // end of the run. Otherwise the optimistic local balance above sits
+        // un-persisted for minutes, and any wallet sync (the 2.5s event poll or an
+        // applyPayload) reverts it to the stale server value. On failure we keep it
+        // queued so the end-of-run flush still retries it.
+        pendingTransactions.push(receiveTransaction);
+        try {
+          await createBackendWalletTransactionsBatch([receiveTransaction]);
+          const persistedIndex = pendingTransactions.indexOf(receiveTransaction);
+          if (persistedIndex !== -1) pendingTransactions.splice(persistedIndex, 1);
+        } catch (error) {
+          console.warn("Simulated receive persist failed; will retry on flush", error);
+        }
         addTransaction({
           type: "receive",
           token: simulated.symbol,
