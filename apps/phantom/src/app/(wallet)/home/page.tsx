@@ -161,7 +161,7 @@ export default function HomePage() {
             onClick={() => window.dispatchEvent(new CustomEvent('open-account-modal'))}
             className="flex items-center gap-1 text-[#A0A0A0] mb-1.5 active:opacity-60 transition-opacity"
           >
-            <span className="font-medium text-[17px]">
+            <span className="font-semibold text-[17px]">
               {walletName || "Account 1"}
             </span>
 

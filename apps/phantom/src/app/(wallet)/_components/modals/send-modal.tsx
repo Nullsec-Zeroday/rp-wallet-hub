@@ -106,7 +106,7 @@ interface SendModalProps {
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
 const DEMO_WALLET_ADDRESS_PATTERN = /^(?:Ph|Tw)[a-f0-9]{30}$/;
 const GENERIC_WALLET_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,64}$/;
-const OPTIMISTIC_SUCCESS_DELAY_MS = 1000;
+const getOptimisticSuccessDelay = () => 1500 + Math.random() * 500;
 
 function getRecipientAddressError(value: string, ownAddress: string) {
   const trimmed = value.trim();
@@ -317,7 +317,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     optimisticSuccessTimerRef.current = window.setTimeout(() => {
       setStep("SUCCESS");
       optimisticSuccessTimerRef.current = null;
-    }, OPTIMISTIC_SUCCESS_DELAY_MS);
+    }, getOptimisticSuccessDelay());
 
     try {
       await persistBackendWalletState({
