@@ -283,7 +283,7 @@ export default function LandingContent() {
             <>
               The #1{" "}
               <span className="bg-gradient-to-r from-[#e9d5ff] via-[#c084fc] to-[#8b5cf6] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(139,92,246,0.45)]">
-                LARP crypto <br /> wallet app.
+                fake crypto <br /> wallet app.
               </span>
             </>
           </motion.h1>
