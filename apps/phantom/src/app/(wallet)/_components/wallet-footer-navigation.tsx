@@ -315,7 +315,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
               <input
                 autoFocus
                 type="text"
-                placeholder="Search Ph4ntom"
+                placeholder="Search Phantom"
                 className="bg-transparent flex-1 text-white outline-none text-[16px]"
               />
             </div>
