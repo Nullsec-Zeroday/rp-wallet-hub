@@ -9,7 +9,6 @@ import type {
 import { applyDemoRestrictions, writeCachedBootstrap } from "@rp-wallet/wallet-core";
 import { appEnv } from "../app-env";
 import { syncStoreFromPayload } from "./backend-sync";
-import { logWalletDebug } from "./wallet-debug";
 import { useWalletStore } from "./wallet-store";
 
 const api = new RpWalletApiClient(appEnv.apiBaseUrl);
@@ -54,14 +53,6 @@ export async function createBackendWalletTransaction(input: Omit<CreateWalletTra
   const account = getCurrentBackendAccount();
   if (!account) throw new Error("No wallet account is available.");
 
-  logWalletDebug("send:start", {
-    amount: input.amount,
-    fromAddress: input.fromAddress,
-    toAddress: input.toAddress,
-    tokenSymbol: input.tokenSymbol,
-    type: input.type,
-  });
-
   const response = await api.createWalletTransaction({
     walletAppId: "phantom",
     accountId: account.id,
@@ -69,13 +60,6 @@ export async function createBackendWalletTransaction(input: Omit<CreateWalletTra
   });
 
   const payload = applyPayload(response.payload);
-  logWalletDebug("send:result", {
-    delivery: response.delivery,
-    recipientFound: response.recipientFound,
-    counterpartWalletAppId: response.counterpartTransaction?.walletAppId,
-    transactionId: response.transaction.id,
-    type: response.transaction.type,
-  });
 
   return {
     ...response,
@@ -121,6 +105,22 @@ export async function updateBackendWalletState(input: Omit<UpdateWalletStateRequ
     ...input,
   });
 
+  return applyPayload(payload);
+}
+
+export async function persistBackendWalletState(input: Omit<UpdateWalletStateRequest, "walletAppId" | "accountId">) {
+  const account = getCurrentBackendAccount();
+  if (!account) throw new Error("No wallet account is available.");
+
+  return api.updateWalletState({
+    walletAppId: "phantom",
+    accountId: account.id,
+    ...input,
+  });
+}
+
+export async function refreshBackendWalletState() {
+  const payload = await api.getWalletState("phantom");
   return applyPayload(payload);
 }
 

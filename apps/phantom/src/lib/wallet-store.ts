@@ -139,7 +139,8 @@ interface WalletStore {
   setAvatarIcon: (index: number) => void;
   updateProfile: (profile: UserProfile) => void;
   updateCashBalance: (balance: number) => void;
-  addTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'>) => void;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'timestamp'>) => string;
+  rollbackOptimisticSend: (accountId: string, transactionId: string, tokenSymbol: string, amount: number) => void;
   setIsOnboarded: (val: boolean) => void;
   setIsKeyVerified: (val: boolean) => void;
   setPwaModalOpen: (val: boolean) => void;
@@ -422,6 +423,35 @@ export const useWalletStore = create<WalletStore>()(
         }
         
         set({ transactions: newTransactions, accounts: newAccounts });
+        return newTx.id;
+      },
+
+      rollbackOptimisticSend: (accountId, transactionId, tokenSymbol, amount) => {
+        const { accounts, currentAccountIndex } = get();
+        const accountIndex = accounts.findIndex((account) => account.id === accountId);
+        if (accountIndex < 0) return;
+
+        const account = accounts[accountIndex];
+        if (!account.transactions.some((transaction) => transaction.id === transactionId)) return;
+
+        const hasTokenBalance = account.tokenBalances.some((balance) => balance.symbol === tokenSymbol);
+        const tokenBalances = hasTokenBalance
+          ? account.tokenBalances.map((balance) => balance.symbol === tokenSymbol
+            ? { ...balance, balance: balance.balance + amount }
+            : balance)
+          : [...account.tokenBalances, { symbol: tokenSymbol, balance: amount }];
+        const transactions = account.transactions.filter((transaction) => transaction.id !== transactionId);
+        const nextAccounts = [...accounts];
+        nextAccounts[accountIndex] = {
+          ...account,
+          tokenBalances,
+          transactions,
+        };
+
+        set({
+          accounts: nextAccounts,
+          ...(accountIndex === currentAccountIndex ? { tokenBalances, transactions } : {}),
+        });
       },
 
       deleteTransaction: (id) => {

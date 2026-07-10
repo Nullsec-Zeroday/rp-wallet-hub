@@ -10,7 +10,7 @@ import TokenLogo from "../token-logo";
 import { toast } from "sonner";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../rive-asset-provider";
-import { createBackendWalletTransaction, updateBackendWalletState } from "@/lib/backend-wallet";
+import { createBackendWalletTransaction, persistBackendWalletState, refreshBackendWalletState } from "@/lib/backend-wallet";
 import { logWalletDebug } from "@/lib/wallet-debug";
 
 const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => void, onDelete: () => void }) => {
@@ -106,7 +106,7 @@ interface SendModalProps {
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
 const DEMO_WALLET_ADDRESS_PATTERN = /^(?:Ph|Tw)[a-f0-9]{30}$/;
 const GENERIC_WALLET_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,64}$/;
-const getOptimisticConfirmationDelay = () => 1000 + Math.random() * 500;
+const OPTIMISTIC_SUCCESS_DELAY_MS = 1000;
 
 function getRecipientAddressError(value: string, ownAddress: string) {
   const trimmed = value.trim();
@@ -282,21 +282,45 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     setStep("SENDING");
     addRecentAddress(normalizedRecipientAddress);
 
-    if (optimisticSuccessTimerRef.current !== null) {
-      window.clearTimeout(optimisticSuccessTimerRef.current);
-    }
-    optimisticSuccessTimerRef.current = window.setTimeout(() => {
-      logWalletDebug("send:ui-optimistic-success", {
+    const latestState = useWalletStore.getState();
+    const account = latestState.accounts[latestState.currentAccountIndex];
+    if (!account) {
+      logWalletDebug("send:failure", {
+        message: "No wallet account is available.",
         toAddress: normalizedRecipientAddress,
         tokenSymbol: selectedToken.symbol,
       });
+      setStep("CONFIRM");
+      return;
+    }
+
+    const latestTokenBalance = latestState.tokenBalances.find((balance) => balance.symbol === selectedToken.symbol)?.balance ?? 0;
+    if (numAmount > latestTokenBalance) {
+      logWalletDebug("send:failure", {
+        message: "Insufficient balance for this transfer.",
+        toAddress: normalizedRecipientAddress,
+        tokenSymbol: selectedToken.symbol,
+      });
+      setStep("AMOUNT");
+      return;
+    }
+
+    latestState.updateBalance(selectedToken.symbol, latestTokenBalance - numAmount);
+    const optimisticTransactionId = latestState.addTransaction({
+      type: "send",
+      token: selectedToken.symbol,
+      amount: numAmount,
+      status: "confirmed",
+      from: profile.walletAddress,
+      to: normalizedRecipientAddress,
+    });
+    optimisticSuccessTimerRef.current = window.setTimeout(() => {
       setStep("SUCCESS");
       optimisticSuccessTimerRef.current = null;
-    }, getOptimisticConfirmationDelay());
+    }, OPTIMISTIC_SUCCESS_DELAY_MS);
 
     try {
-      const latestState = useWalletStore.getState();
-      await updateBackendWalletState({
+      await persistBackendWalletState({
         accountAddress: latestState.profile.walletAddress,
         accountName: latestState.walletName,
         balances: latestState.tokenBalances.map((balance) => ({
@@ -309,28 +333,38 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         },
       });
 
-      const result = await createBackendWalletTransaction({
+      await createBackendWalletTransaction({
         type: "send",
         tokenSymbol: selectedToken.symbol,
         amount: String(numAmount),
         fromAddress: profile.walletAddress,
         toAddress: normalizedRecipientAddress,
       });
-
-      logWalletDebug("send:ui-success", {
-        delivery: result.delivery,
-        recipientFound: result.recipientFound,
-        transactionId: result.transaction.id,
-      });
     } catch (error) {
       const message = error instanceof Error
         ? error.message.replace(/^RPWallet API request failed:\s*\d+:?\s*/i, "")
         : "Transaction failed. Check your balance and try again.";
-      logWalletDebug("send:ui-error", {
+      logWalletDebug("send:failure", {
         message,
         toAddress: normalizedRecipientAddress,
         tokenSymbol: selectedToken.symbol,
       });
+      if (optimisticSuccessTimerRef.current !== null) {
+        window.clearTimeout(optimisticSuccessTimerRef.current);
+        optimisticSuccessTimerRef.current = null;
+      }
+      setStep("CONFIRM");
+
+      try {
+        await refreshBackendWalletState();
+      } catch {
+        useWalletStore.getState().rollbackOptimisticSend(
+          account.id,
+          optimisticTransactionId,
+          selectedToken.symbol,
+          numAmount,
+        );
+      }
     }
   };
 
