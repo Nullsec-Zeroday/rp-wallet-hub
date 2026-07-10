@@ -328,7 +328,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
               className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#343434]/80 backdrop-blur-md border-[0.5px] border-[#3a3a3a]/80 rounded-full active:scale-[0.98] transition-transform"
             >
               <Search size={20} className="text-white" />
-              <span className="text-[#929292] text-[16px]">Search Ph4ntom</span>
+              <span className="text-[#929292] text-[16px]">Search Phantom</span>
             </button>
           )}
 
