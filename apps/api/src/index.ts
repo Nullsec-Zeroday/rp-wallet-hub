@@ -2271,25 +2271,33 @@ async function sendReferralConversionEmail(
   return response.json<{ id?: string }>().catch(() => undefined);
 }
 
+/* Solo Leveling "System window" email theme — deep violet panels, lavender
+   glow borders, mono System tags. Mirrors the marketing site redesign. */
 const EMAIL_BRAND = {
   assetBase: "https://rpwallet.app/email",
   siteUrl: "https://rpwallet.app",
   telegramUrl: "https://t.me/RPWallet_support_bot",
-  purple: "#ab9ff2",
-  accent: "#7f66ff",
-  pageBg: "#0a0a0b",
-  cardBg: "#141218",
-  keyBg: "#0d0d0e",
-  border: "rgba(255,255,255,0.08)",
-  purpleBorder: "rgba(171,159,242,0.35)",
+  purple: "#c084fc",
+  accent: "#8b5cf6",
+  pageBg: "#0a0714",
+  cardBg: "#150e2e",
+  keyBg: "#0e0822",
+  border: "rgba(139,92,246,0.28)",
+  purpleBorder: "rgba(167,139,250,0.5)",
   fontStack: "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif",
   monoStack: "ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace",
-  glassFill: "linear-gradient(155deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02) 55%,rgba(255,255,255,0.05))",
-  glassPurpleFill: "linear-gradient(155deg,rgba(171,159,242,0.22),rgba(127,102,255,0.06) 55%,rgba(171,159,242,0.10))",
-  glassBorder: "rgba(255,255,255,0.12)",
-  glassHighlight: "inset 0 1px 0 rgba(255,255,255,0.22),0 10px 30px rgba(0,0,0,0.35)",
-  glassPurpleGlow: "inset 0 1px 0 rgba(255,255,255,0.25),0 0 0 1px rgba(171,159,242,0.10),0 14px 40px rgba(127,102,255,0.22)",
+  glassFill: "linear-gradient(180deg,rgba(46,30,90,0.55),rgba(19,12,42,0.85))",
+  glassPurpleFill: "linear-gradient(180deg,rgba(139,92,246,0.22),rgba(88,52,180,0.08) 55%,rgba(139,92,246,0.12))",
+  glassBorder: "rgba(139,92,246,0.35)",
+  glassHighlight: "inset 0 1px 0 rgba(196,181,253,0.18),0 10px 30px rgba(0,0,0,0.4)",
+  glassPurpleGlow: "inset 0 1px 0 rgba(196,181,253,0.25),0 0 0 1px rgba(139,92,246,0.15),0 14px 40px rgba(124,58,237,0.3)",
 };
+
+/** Mono "[ SYSTEM ]"-style eyebrow tag used above email headlines. */
+function renderSystemTag(label: string) {
+  const b = EMAIL_BRAND;
+  return `<p style="margin:0 0 10px;color:${b.purple};font-family:${b.monoStack};font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;text-align:center;">[ ${escapeHtml(label)} ]</p>`;
+}
 
 /** Natural aspect (w/h) of each email icon so we never squish. */
 const EMAIL_ICON_ASPECT: Record<string, number> = {
@@ -2307,10 +2315,10 @@ function renderIcon(file: string, height: number, extraStyle = "") {
   return `<img src="${EMAIL_BRAND.assetBase}/${file}" width="${width}" height="${height}" alt="" style="display:block;border:0;${extraStyle}" />`;
 }
 
-/** Fixed square glass tile with an aspect-correct icon centered inside. */
+/** Fixed square System-window tile with an aspect-correct icon centered inside. */
 function renderGlassIconTile(file: string, tile: number, iconHeight: number) {
   const b = EMAIL_BRAND;
-  return `<table role="presentation" width="${tile}" height="${tile}" cellpadding="0" cellspacing="0" style="width:${tile}px;height:${tile}px;border-radius:${Math.round(tile / 3.2)}px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
+  return `<table role="presentation" width="${tile}" height="${tile}" cellpadding="0" cellspacing="0" style="width:${tile}px;height:${tile}px;border-radius:8px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
   <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon(file, iconHeight, "margin:0 auto;")}</td></tr>
 </table>`;
 }
@@ -2340,16 +2348,21 @@ function buildBrandEmailShell(opts: { preheader: string; bodyHtml: string }) {
         <td align="center" style="padding:32px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;">
             <tr>
-              <td align="center" style="padding:8px 0 22px;">
+              <td align="center" style="padding:8px 0 14px;">
                 <img src="${b.assetBase}/logo-ghost.png" width="36" height="34" alt="" style="display:inline-block;vertical-align:middle;border:0;" />
-                <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:19px;font-weight:800;letter-spacing:-0.02em;color:#ffffff;">RPWallet</span>
+                <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:20px;font-weight:800;letter-spacing:0.01em;color:#ffffff;">RP<span style="color:${b.purple};">Wallet</span></span>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:0 0 16px;">
+                <span style="display:inline-block;padding:4px 14px;border:1px solid ${b.purpleBorder};border-radius:3px;background:${b.keyBg};color:${b.purple};font-family:${b.monoStack};font-size:10px;font-weight:700;letter-spacing:0.3em;text-transform:uppercase;box-shadow:0 0 14px rgba(139,92,246,0.35);">System&nbsp;Message</span>
               </td>
             </tr>
             <tr>
               <td style="padding:0;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:28px;background:${b.purpleBorder};background-image:linear-gradient(135deg,rgba(255,255,255,0.55),rgba(171,159,242,0.35) 28%,rgba(255,255,255,0.06) 54%,rgba(127,102,255,0.55));box-shadow:0 24px 70px rgba(0,0,0,0.5),0 0 44px rgba(127,102,255,0.12);">
-                  <tr><td style="padding:2px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:26px;background:${b.cardBg};background-image:${b.glassFill};box-shadow:${b.glassHighlight};overflow:hidden;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:12px;background:${b.purpleBorder};background-image:linear-gradient(180deg,rgba(192,132,252,0.6),rgba(139,92,246,0.3) 45%,rgba(192,132,252,0.5));box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 44px rgba(124,58,237,0.22);">
+                  <tr><td style="padding:1px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius:11px;background:${b.cardBg};background-image:${b.glassFill};box-shadow:${b.glassHighlight};overflow:hidden;">
                       <tr><td style="padding:34px 30px 30px;">
                         ${opts.bodyHtml}
                       </td></tr>
@@ -2376,13 +2389,13 @@ function buildBrandEmailShell(opts: { preheader: string; bodyHtml: string }) {
 </html>`;
 }
 
-/** Glossy glass CTA button (table-based for Outlook). */
+/** Angular System CTA button (table-based for Outlook). */
 function renderEmailCta(label: string, href: string) {
   const b = EMAIL_BRAND;
   return `
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
-  <tr><td align="center" style="border-radius:16px;background:${b.accent};background:linear-gradient(180deg,${b.purple},${b.accent});box-shadow:inset 0 1px 0 rgba(255,255,255,0.45),0 12px 30px rgba(127,102,255,0.35);">
-    <a href="${escapeHtml(href)}" style="display:inline-block;padding:15px 34px;font-size:15px;font-weight:800;color:#0a0a0b;text-decoration:none;border-radius:16px;letter-spacing:-0.01em;">${escapeHtml(label)}</a>
+  <tr><td align="center" style="border-radius:4px;border:1px solid rgba(196,181,253,0.6);background:${b.accent};background-image:linear-gradient(180deg,#9b7bff 0%,#7c3aed 45%,#5b21b6 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),0 0 24px rgba(139,92,246,0.45),0 12px 30px rgba(88,28,180,0.35);">
+    <a href="${escapeHtml(href)}" style="display:inline-block;padding:15px 34px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:4px;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(label)}</a>
   </td></tr>
 </table>`;
 }
@@ -2392,8 +2405,8 @@ function renderKeyPanel(licenseKey: string) {
   const b = EMAIL_BRAND;
   return `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-  <tr><td style="padding:24px 18px;border-radius:20px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
-    <p style="margin:0 0 10px;color:${b.purple};font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">License Key</p>
+  <tr><td style="padding:24px 18px;border-radius:8px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
+    <p style="margin:0 0 10px;color:${b.purple};font-family:${b.monoStack};font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;">[ License Key ]</p>
     <div style="font-family:${b.monoStack};font-size:22px;font-weight:800;letter-spacing:0.1em;color:#ffffff;word-break:break-all;">
       ${escapeHtml(licenseKey)}
     </div>
@@ -2406,8 +2419,8 @@ function renderBadgePair(label1: string, value1: string, label2: string, value2:
   const b = EMAIL_BRAND;
   const cell = (label: string, value: string) => `
     <td width="50%" style="padding:0 4px;">
-      <div style="padding:13px 15px;border-radius:14px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
-        <p style="margin:0 0 3px;color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">${label}</p>
+      <div style="padding:13px 15px;border-radius:6px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};">
+        <p style="margin:0 0 3px;color:${b.purple};font-family:${b.monoStack};font-size:10px;letter-spacing:0.18em;text-transform:uppercase;">${label}</p>
         <p style="margin:0;color:#ffffff;font-size:15px;font-weight:700;">${escapeHtml(value)}</p>
       </div>
     </td>`;
@@ -2436,7 +2449,7 @@ function renderActivationSteps() {
       </td>
     </tr>`;
   return `
-<p style="margin:0 0 14px;color:rgba(255,255,255,0.85);font-size:14px;font-weight:700;letter-spacing:-0.01em;">Activate in three steps</p>
+<p style="margin:0 0 14px;color:${b.purple};font-family:${b.monoStack};font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;">[ Activation quest ]</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 26px;">
   ${step("iphone-icon.png", 30, "1", "Open the site", `Go to <a href="${b.siteUrl}" style="color:${b.purple};text-decoration:none;">rpwallet.app</a> in Safari (iOS) or Chrome (Android) — not an in-app browser.`)}
   ${step("download-icon.png", 30, "2", "Install the app", "Follow the on-screen prompt to add RPWallet to your device.")}
@@ -2453,11 +2466,12 @@ function buildPurchaseEmailHtml(params: {
   const body = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr><td align="center">
-    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:10px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
       <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("key-icon.png", 52, "margin:0 auto;")}</td></tr>
     </table>
   </td></tr>
 </table>
+${renderSystemTag("New item acquired")}
 <h1 style="margin:0 0 10px;font-size:28px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">Your license key is ready</h1>
 <p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   Thanks for purchasing <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong>. Use the key below to activate your RPWallet access.
@@ -2481,11 +2495,12 @@ function buildLicenseReminderEmailHtml(params: {
   const body = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr><td align="center">
-    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:10px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
       <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("key-icon.png", 52, "margin:0 auto;")}</td></tr>
     </table>
   </td></tr>
 </table>
+${renderSystemTag("Quest pending")}
 <h1 style="margin:0 0 10px;font-size:26px;line-height:1.14;letter-spacing:-0.035em;color:#ffffff;text-align:center;">Your key is still waiting</h1>
 <p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   We noticed your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> key has not been activated yet. It only takes a minute — here it is again.
@@ -2517,23 +2532,24 @@ function buildPaymentFailedEmailHtml(params: {
   const body = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr><td align="center">
-    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:10px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
       <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("cart-icon.png", 50, "margin:0 auto;")}</td></tr>
     </table>
   </td></tr>
 </table>
+${renderSystemTag(expired ? "Quest expired" : "Quest failed")}
 <h1 style="margin:0 0 10px;font-size:26px;line-height:1.14;letter-spacing:-0.035em;color:#ffffff;text-align:center;">${headline}</h1>
 <p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   ${lead}
 </p>
 ${renderEmailCta("Try checkout again", `${b.siteUrl}/buy`)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
-  <tr><td style="padding:16px 18px;border-radius:16px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};text-align:center;">
+  <tr><td style="padding:16px 18px;border-radius:8px;background:${b.cardBg};background-image:${b.glassFill};border:1px solid ${b.glassBorder};box-shadow:${b.glassHighlight};text-align:center;">
     <p style="margin:0 0 4px;color:#ffffff;font-size:14px;font-weight:700;">Already paid but didn't get your license?</p>
     <p style="margin:0 0 12px;color:rgba(255,255,255,0.6);font-size:13px;line-height:1.5;">
       Crypto payments can't be reversed, so don't start another checkout — message us on Telegram with your details and we'll get your access sorted.
     </p>
-    <a href="${telegramUrl}" style="display:inline-block;padding:10px 20px;border-radius:12px;background:rgba(171,159,242,0.14);border:1px solid ${b.purpleBorder};color:${b.purple};font-size:14px;font-weight:700;text-decoration:none;">Contact us on Telegram</a>
+    <a href="${telegramUrl}" style="display:inline-block;padding:10px 20px;border-radius:4px;background:rgba(139,92,246,0.16);border:1px solid ${b.purpleBorder};color:${b.purple};font-size:13px;font-weight:700;letter-spacing:0.04em;text-decoration:none;">Contact us on Telegram</a>
   </td></tr>
 </table>`;
   return buildBrandEmailShell({
@@ -2551,11 +2567,12 @@ function buildAbandonedCheckoutEmailHtml(params: {
   const body = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr><td align="center">
-    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:10px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
       <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("cart-icon.png", 50, "margin:0 auto;")}</td></tr>
     </table>
   </td></tr>
 </table>
+${renderSystemTag("Quest paused")}
 <h1 style="margin:0 0 10px;font-size:27px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">You left something behind</h1>
 <p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   Your <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong> checkout is still open but the payment wasn't finished. Pick up right where you left off — it only takes a minute.
@@ -2586,19 +2603,19 @@ function buildReferralConversionEmailHtml(params: {
   const body = `
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px;">
   <tr><td align="center">
-    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:26px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
+    <table role="presentation" width="92" height="92" cellpadding="0" cellspacing="0" style="width:92px;height:92px;margin:0 auto;border-radius:10px;background:${b.cardBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};">
       <tr><td align="center" valign="middle" style="text-align:center;">${renderIcon("dollar-icon.png", 50, "margin:0 auto;")}</td></tr>
     </table>
   </td></tr>
 </table>
-<p style="margin:0 0 6px;color:${b.purple};font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">Referral converted</p>
+${renderSystemTag("Reward earned")}
 <h1 style="margin:0 0 10px;font-size:27px;line-height:1.12;letter-spacing:-0.04em;color:#ffffff;text-align:center;">You earned a commission</h1>
 <p style="margin:0 0 24px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   Nice work, ${escapeHtml(params.affiliateName)} — ${escapeHtml(buyer)} just purchased through your link.
 </p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-  <tr><td style="padding:24px 18px;border-radius:20px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
-    <p style="margin:0 0 8px;color:${b.purple};font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;">Your commission</p>
+  <tr><td style="padding:24px 18px;border-radius:8px;background:${b.keyBg};background-image:${b.glassPurpleFill};border:1px solid ${b.purpleBorder};box-shadow:${b.glassPurpleGlow};text-align:center;">
+    <p style="margin:0 0 8px;color:${b.purple};font-family:${b.monoStack};font-size:11px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;">[ Your commission ]</p>
     <div style="font-size:34px;font-weight:800;letter-spacing:-0.03em;color:#ffffff;">${escapeHtml(params.currency)} ${escapeHtml(params.commissionAmount)}</div>
     <p style="margin:8px 0 0;color:rgba(255,255,255,0.5);font-size:12px;">${ratePct} of ${escapeHtml(params.currency)} ${escapeHtml(params.amount)}</p>
   </td></tr>
@@ -2659,27 +2676,21 @@ function buildAffiliateMagicLinkHtml(params: {
   affiliateName: string;
   loginUrl: string;
 }) {
-  return `
-<!doctype html>
-<html>
-  <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="max-width:560px;margin:0 auto;padding:40px 22px;">
-      <div style="border:1px solid #e2e8f0;border-radius:24px;background:#ffffff;padding:28px;box-shadow:0 18px 60px rgba(15,23,42,0.08);">
-        <p style="margin:0 0 8px;color:#64748b;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">RPWallet Affiliate</p>
-        <h1 style="margin:0 0 12px;font-size:28px;line-height:1.1;letter-spacing:-0.04em;">Sign in to your dashboard</h1>
-        <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.55;">
-          Hi ${escapeHtml(params.affiliateName)}, use this secure link to view your clicks, conversions, commissions, and payout status.
-        </p>
-        <a href="${escapeHtml(params.loginUrl)}" style="display:inline-block;border-radius:14px;background:#0f172a;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 18px;">
-          Open affiliate dashboard
-        </a>
-        <p style="margin:24px 0 0;color:#64748b;font-size:12px;line-height:1.45;">
-          This link expires in 15 minutes. If you did not request it, you can ignore this email.
-        </p>
-      </div>
-    </div>
-  </body>
-</html>`;
+  const b = EMAIL_BRAND;
+  const body = `
+${renderSystemTag("Access granted")}
+<h1 style="margin:0 0 12px;font-size:26px;line-height:1.14;letter-spacing:-0.035em;color:#ffffff;text-align:center;">Sign in to your dashboard</h1>
+<p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
+  Hi ${escapeHtml(params.affiliateName)}, use this secure link to view your clicks, conversions, commissions, and payout status.
+</p>
+${renderEmailCta("Open affiliate dashboard", params.loginUrl)}
+<p style="margin:22px 0 0;color:rgba(255,255,255,0.42);font-size:12px;line-height:1.5;text-align:center;">
+  This link expires in 15 minutes. If you did not request it, you can ignore this email.
+</p>`;
+  return buildBrandEmailShell({
+    preheader: "Your affiliate dashboard login link — expires in 15 minutes.",
+    bodyHtml: body,
+  });
 }
 
 function escapeHtml(value: string) {

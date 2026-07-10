@@ -42,7 +42,7 @@ export default function TryFreeButton({
   return (
     <motion.div whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97, y: 1 }} className={wrapperClassName}>
       {/* Outer glow wrapper for the spinning border shine */}
-      <div className="relative w-full rounded-[28px] p-[2px] group/btn">
+      <div className="relative w-full group/btn">
         {/* Animated spinning border shine */}
         {/* <div
           className="absolute inset-[-1px] rounded-[28px] z-0 opacity-60 group-hover/btn:opacity-100 transition-opacity duration-500"
@@ -57,16 +57,10 @@ export default function TryFreeButton({
         <Link
           href={href}
           onClick={handleClick}
-          className={`relative z-10 overflow-hidden w-full h-12 md:h-14 px-4 sm:px-8 rounded-[26px] flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white whitespace-nowrap transition-all duration-200 group ${className || ""}`}
-          style={{
-            background: "linear-gradient(180deg, #9b7bff 0%, #7c3aed 40%, #6d28d9 100%)",
-
-          }}
+          className={`sl-btn relative z-10 overflow-hidden w-full h-12 md:h-14 px-4 sm:px-8 flex cursor-pointer items-center justify-center gap-2.5 text-[15px] sm:text-[17px] font-bold text-white whitespace-nowrap transition-all duration-200 group ${className || ""}`}
         >
-          {/* Top highlight edge */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           {/* Inner top glow */}
-          <div className="absolute inset-x-4 top-0 h-6 bg-gradient-to-b from-white/[0.12] to-transparent rounded-t-[26px] pointer-events-none" />
+          <div className="absolute inset-x-4 top-0 h-6 bg-gradient-to-b from-white/[0.12] to-transparent pointer-events-none" />
 
           {/* Shimmer sweep */}
           <motion.div

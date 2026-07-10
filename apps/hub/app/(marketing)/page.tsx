@@ -54,7 +54,7 @@ export default function HomePage() {
   const faqJsonLd = buildFaqSchema(homepageFaq);
 
   return (
-    <div className="min-h-vh relative text-white font-sans selection:bg-ph4ntom-purple/30">
+    <div className="min-h-vh relative text-white selection:bg-ph4ntom-purple/30">
       <main className="relative z-10 flex w-full flex-col items-center">
         <LandingContent />
       </main>

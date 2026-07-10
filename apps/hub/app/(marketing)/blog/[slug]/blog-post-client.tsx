@@ -52,7 +52,7 @@ export default function BlogPostClient({
   }, []);
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-[#ab9ff2] selection:text-white pb-32">
+    <div className="min-h-screen text-white selection:bg-[#ab9ff2] selection:text-white pb-32">
       {/* Reading Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent z-[60] origin-left"

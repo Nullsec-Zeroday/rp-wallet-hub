@@ -101,7 +101,7 @@ export function PaymentResultPage({ kind }: PaymentResultPageProps) {
       };
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24 pt-16 flex flex-col items-center justify-center">
+    <div className="min-h-screen text-white selection:bg-[#9c8df6]/30 relative pb-24 pt-16 flex flex-col items-center justify-center">
       {/* Background glow matching the accent color */}
       <div className={`absolute top-[10%] left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] pointer-events-none ${accentClasses.halo}`} />
 

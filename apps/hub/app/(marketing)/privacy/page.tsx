@@ -7,7 +7,7 @@ import { FadeIn } from "@/components/marketing/fade-in";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#0C0814] text-white font-sans overflow-x-hidden selection:bg-[#8B5CF6] selection:text-white relative flex flex-col items-center">
+    <div className="min-h-screen bg-[#0C0814] text-white overflow-x-hidden selection:bg-[#8B5CF6] selection:text-white relative flex flex-col items-center">
       
       {/* ── FIXED BACKGROUND: BLOBS & GRAIN ── */}
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">

@@ -17,6 +17,23 @@ const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
 const STICKY_CHECKOUT_HIDE_DISTANCE = 160;
 
+function Corners({ className = "" }: { className?: string }) {
+  return (
+    <>
+      <span className={`sl-corner left-0 top-0 border-l-2 border-t-2 ${className}`} />
+      <span className={`sl-corner right-0 top-0 border-r-2 border-t-2 ${className}`} />
+      <span className={`sl-corner bottom-0 left-0 border-b-2 border-l-2 ${className}`} />
+      <span className={`sl-corner bottom-0 right-0 border-b-2 border-r-2 ${className}`} />
+    </>
+  );
+}
+
+const PLAN_RANKS: Record<string, { label: string; color: string }> = {
+  starter: { label: "C-Rank Hunter", color: "#a8b6d8" },
+  popular: { label: "A-Rank Hunter", color: "#c084fc" },
+  yearly: { label: "S-Rank Monarch", color: "#fde047" },
+};
+
 export default function BuyPage() {
   return (
     <Suspense fallback={<div className="min-h-screen" />}>
@@ -178,7 +195,7 @@ function BuyContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-[#9c8df6]/30 relative pb-24">
+    <div className="min-h-screen text-white selection:bg-[#9c8df6]/30 relative pb-24">
       {isExpired && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-red-500/10 border-b border-red-500/20 backdrop-blur-md py-3 px-6 flex justify-center items-center">
           <p className="text-red-400 text-sm font-medium">Your license key has expired. Please choose a new plan to continue.</p>
@@ -191,8 +208,11 @@ function BuyContent() {
             <span className="w-2 h-2 rounded-full bg-[#9c8df6] animate-pulse shadow-[0_0_8px_#9c8df6]"></span>
             Instant key delivery
           </div> */}
-          <h1 className="font-display text-4xl md:text-5xl tracking-tight font-medium text-white mb-3">
-            Choose Your Plan
+          <p className="mb-3 sl-font text-[11px] font-bold uppercase tracking-[0.35em] text-[#c084fc] drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]">
+            [ Select your rank ]
+          </p>
+          <h1 className="font-display text-4xl md:text-5xl tracking-tight font-semibold text-white mb-3">
+            Choose Your <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">Plan</span>
           </h1>
           <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
             Complete checkout, receive unique key and unlock instant access - no subscriptions.
@@ -211,21 +231,23 @@ function BuyContent() {
 
             const bgGradient = isSelected
               ? isYearly
-                ? "linear-gradient(135deg, rgba(253,224,71,0.12) 0%, rgba(255,255,255,0.03) 50%, rgba(253,224,71,0.08) 100%)"
-                : "linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(255,255,255,0.03) 50%, rgba(139,92,246,0.08) 100%)"
-              : "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)";
+                ? "linear-gradient(180deg, rgba(253,224,71,0.12) 0%, rgba(8,10,26,0.92) 55%)"
+                : "linear-gradient(180deg, rgba(139,92,246,0.16) 0%, rgba(8,10,26,0.92) 55%)"
+              : "linear-gradient(180deg, rgba(28,17,58,0.6) 0%, rgba(13,8,30,0.9) 100%)";
 
             const borderColor = isSelected
               ? isYearly
-                ? "rgba(253,224,71,0.45)"
-                : "rgba(139,92,246,0.45)"
-              : "rgba(255,255,255,0.12)";
+                ? "rgba(253,224,71,0.5)"
+                : "rgba(167,139,250,0.55)"
+              : "rgba(139,92,246,0.2)";
 
             const glowShadow = isSelected
               ? isYearly
                 ? "0 0 50px rgba(253,224,71,0.25)"
                 : "0 0 50px rgba(139,92,246,0.3)"
               : "0 4px 24px rgba(0,0,0,0.25)";
+
+            const rank = PLAN_RANKS[plan.id];
 
             return (
               <div
@@ -241,26 +263,19 @@ function BuyContent() {
                     });
                   }
                 }}
-                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${!isSelected && "opacity-70"}`}
+                className={`backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[8px] outline-none group/glass-card ${checkoutLocked ? "cursor-wait pointer-events-none opacity-50 saturate-50" : "cursor-pointer"} ${!isSelected && "opacity-70"}`}
                 style={{
                   background: bgGradient,
                   border: `1px solid ${borderColor}`,
                   boxShadow: [
-                    "inset 0 1px 1px rgba(255,255,255,0.15)",
-                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "inset 0 1px 0 rgba(148,197,253,0.15)",
+                    "inset 0 0 48px rgba(59,130,246,0.04)",
                     "0 4px 24px rgba(0,0,0,0.25)",
-                    "0 1px 3px rgba(0,0,0,0.15)",
-                    "0 0 0 0.5px rgba(255,255,255,0.08)",
                     glowShadow,
                   ].join(", "),
                 }}
               >
-                {/* Top specular highlight edge */}
-                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                {/* Bottom subtle dark edge */}
-                <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-                {/* Inner refraction glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
+                {isSelected && <Corners className={isYearly ? "!border-[#fde047]/60" : "!border-[#c4b5fd]/60"} />}
 
                 {/* Mobile-friendly selection indicator */}
                 <div className="absolute top-5 right-5 flex h-6 w-6 items-center justify-center rounded-full transition-all duration-300 z-10">
@@ -274,17 +289,25 @@ function BuyContent() {
                 </div>
 
                 {isPopular && (
-                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded-full whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]" : "bg-white/10 text-white/60"}`}>
+                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 sl-font text-[10px] font-bold tracking-[0.25em] uppercase rounded-[4px] whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "border border-[#c4b5fd]/50 bg-[#8b5cf6] text-white shadow-[0_0_20px_rgba(139,92,246,0.5)]" : "border border-white/10 bg-white/10 text-white/60"}`}>
                     Most Popular
                   </div>
                 )}
                 {isYearly && (
-                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 text-[11px] font-bold tracking-wider uppercase rounded-full whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black shadow-[0_5px_15px_rgba(212,175,55,0.4)]" : "bg-white/10 text-white/60"}`}>
+                  <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 sl-font text-[10px] font-bold tracking-[0.25em] uppercase rounded-[4px] whitespace-nowrap transition-all duration-300 z-20 ${isSelected ? "bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black shadow-[0_5px_15px_rgba(212,175,55,0.4)]" : "border border-white/10 bg-white/10 text-white/60"}`}>
                     Best Value
                   </div>
                 )}
 
-                <div className="relative z-10 text-white/80 font-medium text-lg mb-4 text-center">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</div>
+                <div className="relative z-10 mb-4 flex flex-col items-center gap-1.5 text-center">
+                  <span
+                    className="sl-font text-[11px] font-bold uppercase tracking-[0.3em]"
+                    style={isSelected ? { color: rank.color, textShadow: `0 0 12px ${rank.color}66` } : { color: "rgba(255,255,255,0.4)" }}
+                  >
+                    {rank.label}
+                  </span>
+                  <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
+                </div>
 
                 <div className="relative z-10 flex min-h-[60px] flex-col items-center justify-start mb-6 transition-all duration-300">
                   <div className="flex items-baseline justify-center gap-1">
@@ -329,13 +352,13 @@ function BuyContent() {
                   if (emailError) setEmailError("");
                 }}
                 placeholder="you@example.com"
-                className="relative z-10 w-full rounded-xl px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:ring-2 focus:ring-[#9c8df6]/20"
+                className="relative z-10 w-full rounded-xl px-4 py-3.5 text-white outline-none transition placeholder:text-white/25 focus:ring-2 focus:ring-[#c084fc]/30"
                 style={{
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  background: "rgba(21, 14, 46, 0.6)",
+                  border: "1px solid rgba(139, 92, 246, 0.35)",
                   boxShadow: [
-                    "inset 0 1px 1px rgba(255,255,255,0.05)",
-                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "inset 0 1px 0 rgba(196,181,253,0.1)",
+                    "inset 0 0 24px rgba(139,92,246,0.06)",
                     "0 1px 2px rgba(0,0,0,0.1)",
                   ].join(", "),
                 }}
@@ -353,47 +376,15 @@ function BuyContent() {
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
-            className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden cursor-pointer hover:scale-[1.02] ${!selectedPlanId
-              ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
+            className={`relative z-10 w-full py-4 px-6 font-semibold transition-all flex justify-center items-center gap-2 text-lg cursor-pointer hover:scale-[1.02] ${!selectedPlanId
+              ? "rounded-[6px] bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
               : checkoutPhase === "error"
-                ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                ? "rounded-[6px] bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                 : selectedPlanId === "yearly"
-                  ? "text-black animate-pulse"
-                  : "text-white"
+                  ? "sl-btn sl-btn-gold text-black animate-pulse"
+                  : "sl-btn text-white"
               }`}
-            style={
-              !selectedPlanId || checkoutPhase === "error"
-                ? undefined
-                : selectedPlanId === "yearly"
-                  ? {
-                    background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
-                    boxShadow: [
-                      "inset 0 1px 1px rgba(255,255,255,0.4)",
-                      "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                      "0 4px 15px rgba(253,224,71,0.35)",
-                      "0 0 0 0.5px rgba(255,255,255,0.2)",
-                    ].join(", "),
-                  }
-                  : {
-                    background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
-                    boxShadow: [
-                      "inset 0 1px 1px rgba(255,255,255,0.25)",
-                      "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                      "0 4px 15px rgba(139,92,246,0.4)",
-                      "0 0 0 0.5px rgba(255,255,255,0.1)",
-                    ].join(", "),
-                  }
-            }
           >
-            {selectedPlanId && checkoutPhase !== "error" && (
-              <>
-                {selectedPlanId === "yearly" ? (
-                  <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
-                ) : (
-                  <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
-                )}
-              </>
-            )}
             {checkoutPhase === "error" ? (
               <>Checkout Failed - Try Again <X size={20} /></>
             ) : checkoutLocked ? (
@@ -420,7 +411,7 @@ function BuyContent() {
           )}
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
-            <Lock size={14} className="text-[#ab9ff2]" />
+            <Lock size={14} className="text-[#c084fc]" />
             <span>Secure checkout secured by NOWPayments</span>
           </div>
 
@@ -435,21 +426,8 @@ function BuyContent() {
         {/* <SupportTicketForm defaultEmail={normalizedEmail} /> */}
 
         {/* ── S U P P O R T  &  Q U E R I E S ── */}
-        <div
-          className="w-full max-w-[500px] mt-4 px-8 py-8 rounded-[2rem] backdrop-blur-xl relative overflow-hidden text-center mb-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: [
-              "inset 0 1px 1px rgba(255,255,255,0.1)",
-              "0 4px 20px rgba(0,0,0,0.15)",
-            ].join(", "),
-          }}
-        >
-          {/* Top specular highlight edge */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-          {/* Inner refraction glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-transparent to-transparent pointer-events-none rounded-[2rem]" />
+        <div className="sl-window w-full max-w-[500px] mt-4 px-8 py-8 rounded-[8px] relative text-center mb-10">
+          <Corners className="!border-[#a78bfa]/40" />
           <p className="text-white/45 text-[14px] leading-relaxed relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
             Need help or want to use a different cryptocurrency or network? Message{" "}
             <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="text-[#9c8df6] hover:text-[#aba0f7] transition-colors">
@@ -472,13 +450,13 @@ function BuyContent() {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 left-0 right-0 z-50 p-4 backdrop-blur-2xl"
             style={{
-              background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0%, rgba(13, 13, 14, 0.96) 100%)",
-              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-              boxShadow: "0 -4px 30px rgba(0,0,0,0.4)",
+              background: "linear-gradient(to bottom, rgba(46, 30, 90, 0.35) 0%, rgba(10, 7, 20, 0.97) 100%)",
+              borderTop: "1px solid rgba(139, 92, 246, 0.35)",
+              boxShadow: "0 -4px 30px rgba(0,0,0,0.5), 0 0 40px rgba(124,58,237,0.12)",
             }}
           >
-            {/* Top specular highlight edge for the sticky bar */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+            {/* Top glow edge for the sticky bar */}
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#c084fc]/50 to-transparent pointer-events-none" />
             <div className="max-w-[440px] mx-auto">
               <label className="mb-3 block">
                 <span className="sr-only">Email for license delivery</span>
@@ -493,13 +471,13 @@ function BuyContent() {
                       if (emailError) setEmailError("");
                     }}
                     placeholder="Email for license delivery"
-                    className="relative z-10 w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:ring-2 focus:ring-[#9c8df6]/20"
+                    className="relative z-10 w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:ring-2 focus:ring-[#c084fc]/30"
                     style={{
-                      background: "rgba(255, 255, 255, 0.04)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      background: "rgba(21, 14, 46, 0.6)",
+                      border: "1px solid rgba(139, 92, 246, 0.35)",
                       boxShadow: [
-                        "inset 0 1px 1px rgba(255,255,255,0.05)",
-                        "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                        "inset 0 1px 0 rgba(196,181,253,0.1)",
+                        "inset 0 0 24px rgba(139,92,246,0.06)",
                         "0 1px 2px rgba(0,0,0,0.1)",
                       ].join(", "),
                     }}
@@ -516,47 +494,15 @@ function BuyContent() {
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
-                className={`relative z-10 w-full py-4 px-6 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 text-lg overflow-hidden cursor-pointer hover:scale-[1.02] ${!selectedPlanId
-                  ? "bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
+                className={`relative z-10 w-full py-4 px-6 font-semibold transition-all flex justify-center items-center gap-2 text-lg cursor-pointer hover:scale-[1.02] ${!selectedPlanId
+                  ? "rounded-[6px] bg-white/5 text-white/40 border border-white/10 pointer-events-none cursor-not-allowed"
                   : checkoutPhase === "error"
-                    ? "bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
+                    ? "rounded-[6px] bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                     : selectedPlanId === "yearly"
-                      ? "text-black"
-                      : "text-white"
+                      ? "sl-btn sl-btn-gold text-black"
+                      : "sl-btn text-white"
                   }`}
-                style={
-                  !selectedPlanId || checkoutPhase === "error"
-                    ? undefined
-                    : selectedPlanId === "yearly"
-                      ? {
-                        background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
-                        boxShadow: [
-                          "inset 0 1px 1px rgba(255,255,255,0.4)",
-                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                          "0 4px 15px rgba(253,224,71,0.35)",
-                          "0 0 0 0.5px rgba(255,255,255,0.2)",
-                        ].join(", "),
-                      }
-                      : {
-                        background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
-                        boxShadow: [
-                          "inset 0 1px 1px rgba(255,255,255,0.25)",
-                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                          "0 4px 15px rgba(139,92,246,0.4)",
-                          "0 0 0 0.5px rgba(255,255,255,0.1)",
-                        ].join(", "),
-                      }
-                }
               >
-                {selectedPlanId && checkoutPhase !== "error" && (
-                  <>
-                    {selectedPlanId === "yearly" ? (
-                      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent pointer-events-none" />
-                    ) : (
-                      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
-                    )}
-                  </>
-                )}
                 {checkoutPhase === "error" ? (
                   <>Checkout Failed - Try Again <X size={20} /></>
                 ) : checkoutLocked ? (
@@ -583,7 +529,7 @@ function BuyContent() {
               )}
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
-                <Lock size={12} className="text-[#ab9ff2]" />
+                <Lock size={12} className="text-[#c084fc]" />
                 <span>Secure checkout via NOWPayments</span>
               </div>
             </div>

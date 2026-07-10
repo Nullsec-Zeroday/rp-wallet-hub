@@ -203,6 +203,235 @@ body {
   animation: nav-slide-down 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
+/* === Solo Leveling "System" theme === */
+:root {
+  --sl-primary: #a78bfa;
+  --sl-bright: #c084fc;
+  --sl-violet: #8b5cf6;
+  --sl-gold: #fde047;
+}
+
+.sl-font {
+  font-family: var(--font-chakra), ui-monospace, SFMono-Regular, monospace;
+}
+
+.sl-window {
+  background: linear-gradient(180deg, rgba(28, 17, 58, 0.85) 0%, rgba(13, 8, 30, 0.92) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  box-shadow:
+    0 0 32px rgba(124, 58, 237, 0.14),
+    inset 0 0 48px rgba(124, 58, 237, 0.06),
+    inset 0 1px 0 rgba(196, 181, 253, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.sl-label {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 14px;
+  background: #120a2a;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  color: #d8b4fe;
+  font-family: var(--font-chakra), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 20;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.4);
+}
+
+.sl-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(192, 132, 252, 0.75);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.sl-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(192, 132, 252, 0.05), transparent);
+  animation: sl-scan 6s linear infinite;
+  pointer-events: none;
+}
+
+.sl-particle {
+  position: absolute;
+  bottom: 0;
+  border-radius: 9999px;
+  background: var(--sl-bright);
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.9), 0 0 22px rgba(139, 92, 246, 0.5);
+  animation: sl-rise linear infinite;
+  pointer-events: none;
+}
+
+/* Angular "System" buttons — clipped corners + purple glow */
+.sl-btn {
+  position: relative;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  background: linear-gradient(180deg, #9b7bff 0%, #7c3aed 45%, #5b21b6 100%);
+  filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.5));
+  transition: filter 0.3s ease;
+}
+
+.sl-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sl-btn:hover {
+  filter: drop-shadow(0 0 24px rgba(167, 139, 250, 0.8));
+}
+
+/* Ghost: the element itself is the border (purple gradient); ::after re-clips
+   1px inside with the dark fill so the border follows the angled corners. */
+.sl-btn-ghost {
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.75) 0%, rgba(139, 92, 246, 0.4) 100%);
+  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+}
+
+.sl-btn-ghost::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  clip-path: polygon(13px 0, 100% 0, 100% calc(100% - 13px), calc(100% - 13px) 100%, 0 100%, 0 13px);
+  background: linear-gradient(180deg, rgba(40, 26, 78, 0.97) 0%, rgba(18, 11, 40, 0.98) 100%);
+  pointer-events: none;
+}
+
+.sl-btn-ghost:hover {
+  filter: drop-shadow(0 0 18px rgba(167, 139, 250, 0.55));
+}
+
+.sl-btn-ghost:hover::after {
+  background: linear-gradient(180deg, rgba(52, 34, 100, 0.97) 0%, rgba(26, 16, 56, 0.98) 100%);
+}
+
+.sl-btn-gold {
+  background: linear-gradient(135deg, #fde047 0%, #ca8a04 100%);
+  filter: drop-shadow(0 0 14px rgba(253, 224, 71, 0.45));
+}
+
+.sl-btn-gold:hover {
+  filter: drop-shadow(0 0 24px rgba(253, 224, 71, 0.7));
+}
+
+.sl-clip {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+/* Small clipped chip with a border that follows the angled corners. */
+.sl-chip {
+  position: relative;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  background: linear-gradient(180deg, rgba(192, 132, 252, 0.65) 0%, rgba(139, 92, 246, 0.35) 100%);
+}
+
+.sl-chip::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+  background: linear-gradient(180deg, rgba(40, 26, 78, 0.95) 0%, rgba(18, 11, 40, 0.97) 100%);
+  pointer-events: none;
+}
+
+.sl-body {
+  font-family: var(--font-exo), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+@keyframes sl-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes sl-spin-rev {
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes sl-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0.65;
+  }
+  46% {
+    opacity: 0.95;
+  }
+  52% {
+    opacity: 0.55;
+  }
+  58% {
+    opacity: 1;
+  }
+}
+
+@keyframes sl-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-480px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes sl-scan {
+  0% {
+    top: -30%;
+  }
+  100% {
+    top: 130%;
+  }
+}
+
+.animate-sl-spin {
+  animation: sl-spin 26s linear infinite;
+}
+
+.animate-sl-spin-rev {
+  animation: sl-spin-rev 40s linear infinite;
+}
+
+.animate-sl-flicker {
+  animation: sl-flicker 3.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sl-spin,
+  .animate-sl-spin-rev,
+  .animate-sl-flicker,
+  .sl-particle,
+  .sl-scanline {
+    animation: none;
+  }
+}
+
 .shell {
   width: min(960px, calc(100vw - 32px));
   margin: 0 auto;

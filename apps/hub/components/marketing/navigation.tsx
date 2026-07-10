@@ -30,8 +30,8 @@ export default function Navigation() {
                 className="h-full w-full object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <span className="text-[20px] font-medium tracking-tight text-white md:text-2xl">
-              RP<span className="text-[#ab9ff2]">Wallet</span>
+            <span className="font-display text-[22px] font-bold tracking-tight text-white md:text-[26px]">
+              RP<span className="text-[#c084fc]">Wallet</span>
             </span>
           </Link>
 
@@ -47,7 +47,7 @@ export default function Navigation() {
             </Link>
             <Link
               href="/dashboard"
-              className="group relative overflow-hidden rounded-full border border-white/10 bg-white/[0.03] px-6 py-2 text-[14px] font-medium text-white backdrop-blur-md transition-all hover:bg-white/[0.08] hover:border-[#ab9ff2]/40 hover:shadow-[0_0_20px_rgba(171,159,242,0.15)] hover:-translate-y-0.5 active:scale-95"
+              className="sl-btn sl-btn-ghost group relative px-6 py-2 text-[14px] font-medium text-white transition-all hover:-translate-y-0.5 active:scale-95"
             >
               <span className="relative z-10 tracking-wide">Log In</span>
             </Link>
@@ -60,27 +60,10 @@ export default function Navigation() {
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "relative overflow-hidden h-7 px-3 rounded-full flex items-center justify-center gap-1.5 text-[12px] font-semibold text-white backdrop-blur-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap cursor-pointer mr-2 shadow-lg duration-200",
+                "sl-chip relative h-7 px-3 flex items-center justify-center gap-1.5 text-[12px] font-semibold text-white transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap cursor-pointer mr-2 duration-200",
                 isMobileMenuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
               )}
-              style={{
-                background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: [
-                  "inset 0 1px 1px rgba(255,255,255,0.15)",
-                  "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                  "0 4px 12px rgba(0,0,0,0.25)",
-                  "0 0 0 0.5px rgba(255,255,255,0.08)",
-                ].join(", "),
-              }}
             >
-              {/* Top specular highlight edge */}
-              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-              {/* Bottom subtle dark edge */}
-              <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent pointer-events-none" />
-              {/* Inner refraction glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-full" />
-
               <span className="relative z-10 font-semibold tracking-wide">Join Telegram</span>
               <ArrowUpRight size={13} className="text-white/60 relative z-10" />
             </a>

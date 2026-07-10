@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, X, Bell, Send, Zap, ShoppingCart, Key, Smartphone, ArrowUpRight } from "lucide-react";
+import { Check, ArrowRight, X, Send, ArrowUpRight, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,71 @@ const VOUCHES = [
   { src: "/vouches/mia-g.webp", name: "Telegram User" },
 ] as const;
 
+// Static values — random values would mismatch between server and client render.
+const PARTICLES = [
+  { left: "6%", size: 3, duration: 9, delay: 0 },
+  { left: "16%", size: 2, duration: 12, delay: 2.5 },
+  { left: "28%", size: 4, duration: 10, delay: 1 },
+  { left: "41%", size: 2, duration: 14, delay: 4 },
+  { left: "55%", size: 3, duration: 11, delay: 0.5 },
+  { left: "67%", size: 2, duration: 13, delay: 3 },
+  { left: "78%", size: 4, duration: 9.5, delay: 5 },
+  { left: "88%", size: 2, duration: 12.5, delay: 1.5 },
+  { left: "95%", size: 3, duration: 10.5, delay: 6 },
+] as const;
+
+const SKILLS = [
+  { icon: "/3d-icons/11.webp", alt: "Pixel-perfect icon", title: "Pixel-Perfect Copy", rank: "S", imgClass: "w-14 h-14 md:w-16 md:h-16 saturate-[0.8]" },
+  { icon: "/3d-icons/live token.webp", alt: "Live token prices icon", title: "Live Token Prices", rank: "A", imgClass: "w-15 aspect-auto md:w-20 saturate-[0.8]" },
+  { icon: "/3d-icons/p2p.webp", alt: "P2P transaction icon", title: "P2P Transaction", rank: "S", imgClass: "w-18 aspect-auto md:w-20 saturate-[1.5]" },
+  { icon: "/3d-icons/dollar.webp", alt: "Set any balance icon", title: "Set Any Balance", rank: "A", imgClass: "w-14 h-14 md:w-16 md:h-16 saturate-[0.8]" },
+  { icon: "/3d-icons/user.webp", alt: "No sign up icon", title: "Private by Default", rank: "B", imgClass: "w-14 h-14 md:w-16 md:h-16 saturate-[0.8]" },
+  { icon: "/3d-icons/download.webp", alt: "Nothing to download icon", title: "Instant Web App", rank: "B", imgClass: "w-14 h-14 md:w-16 md:h-16 saturate-[0.8]" },
+] as const;
+
+const RANK_STYLES: Record<string, { color: string; border: string; glow: string }> = {
+  S: { color: "#fde047", border: "rgba(253,224,71,0.5)", glow: "rgba(253,224,71,0.3)" },
+  A: { color: "#c084fc", border: "rgba(192,132,252,0.5)", glow: "rgba(139,92,246,0.35)" },
+  B: { color: "#a8b6d8", border: "rgba(148,163,184,0.45)", glow: "rgba(148,163,184,0.25)" },
+};
+
+function Corners({ className = "" }: { className?: string }) {
+  return (
+    <>
+      <span className={`sl-corner left-0 top-0 border-l-2 border-t-2 ${className}`} />
+      <span className={`sl-corner right-0 top-0 border-r-2 border-t-2 ${className}`} />
+      <span className={`sl-corner bottom-0 left-0 border-b-2 border-l-2 ${className}`} />
+      <span className={`sl-corner bottom-0 right-0 border-b-2 border-r-2 ${className}`} />
+    </>
+  );
+}
+
+function RankChip({ rank }: { rank: string }) {
+  const style = RANK_STYLES[rank] ?? RANK_STYLES.B;
+  return (
+    <span
+      className="absolute right-3 top-3 z-20 flex size-7 items-center justify-center rounded-[4px] sl-font text-[13px] font-bold"
+      style={{
+        color: style.color,
+        border: `1px solid ${style.border}`,
+        background: "rgba(8,10,26,0.8)",
+        boxShadow: `0 0 12px ${style.glow}`,
+        textShadow: `0 0 8px ${style.glow}`,
+      }}
+    >
+      {rank}
+    </span>
+  );
+}
+
+function SectionEyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-3 sl-font text-[11px] font-bold uppercase tracking-[0.35em] text-[#c084fc] drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]">
+      {children}
+    </p>
+  );
+}
+
 function ProductImageSwiper() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -50,6 +115,25 @@ function ProductImageSwiper() {
       className="relative z-0 mt-6 flex w-full flex-col items-center px-2 md:mt-8"
     >
       <div className="relative h-[480px] w-full max-w-[310px] md:h-[640px] md:max-w-[410px]">
+        {/* Summoning gate glow + rotating rune rings behind the phone */}
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#8b5cf6]/15 blur-[80px] md:size-[460px]" />
+        <div aria-hidden className="animate-sl-spin pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[340px] rounded-full border border-dashed border-[#a78bfa]/30 md:size-[540px]" style={{ transform: "translate(-50%, -50%)" }} />
+        <div aria-hidden className="animate-sl-spin-rev pointer-events-none absolute left-1/2 top-1/2 -z-10 size-[400px] rounded-full border border-dotted border-[#8b5cf6]/30 md:size-[630px]" style={{ transform: "translate(-50%, -50%)" }} />
+
+        {/* Floating system chips */}
+        <div className="sl-window animate-float-8 absolute -left-4 top-16 z-20 hidden rounded-[4px] px-3 py-2 md:-left-36 md:block">
+          <Corners />
+          <p className="sl-font text-[10px] font-bold uppercase tracking-[0.2em] text-[#c084fc]">
+            <span className="animate-sl-flicker mr-1.5 inline-block text-[#fde047]">!</span>Level up!
+          </p>
+          <p className="mt-0.5 sl-font text-[12px] font-bold text-white drop-shadow-[0_0_8px_rgba(192,132,252,0.6)]">+$2,828,041.75</p>
+        </div>
+        <div className="sl-window animate-float-10 absolute -right-4 bottom-28 z-20 hidden rounded-[4px] px-3 py-2 md:-right-40 md:block">
+          <Corners />
+          <p className="sl-font text-[10px] font-bold uppercase tracking-[0.2em] text-[#c4b5fd]">Skill activated</p>
+          <p className="mt-0.5 sl-font text-[12px] font-bold text-white drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">Stealth Mode</p>
+        </div>
+
         <AnimatePresence initial={false} mode="popLayout">
           <motion.div
             key={currentIndex}
@@ -66,7 +150,7 @@ function ProductImageSwiper() {
               height={852}
               priority={currentIndex === 0}
               sizes="(min-width: 768px) 410px, 310px"
-              className="h-full w-full object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.48)]"
+              className="h-full w-full object-contain drop-shadow-[0_24px_60px_rgba(124,58,237,0.3)]"
             />
           </motion.div>
         </AnimatePresence>
@@ -74,7 +158,6 @@ function ProductImageSwiper() {
     </motion.div>
   );
 }
-
 
 export default function LandingContent() {
   const router = useRouter();
@@ -131,85 +214,94 @@ export default function LandingContent() {
   };
 
   return (
-    <div className="w-full overflow-visible pb-12 pt-2 md:pb-0">
+    <div className="relative w-full overflow-visible pb-12 pt-2 md:pb-0">
+      {/* Holographic grid backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(167,139,250,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(167,139,250,0.06) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
+          maskImage: "linear-gradient(to bottom, black 30%, transparent 95%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 30%, transparent 95%)",
+        }}
+      />
+
       <motion.section
         initial={isMobile ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="py-2 md:py-6 flex flex-col items-center px-4 relative"
+        className="relative flex flex-col items-center px-4 py-2 md:py-6"
       >
-        {/* 3D Badge with spinning border shine */}
+        {/* Mana particles */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 top-24 overflow-hidden">
+          {PARTICLES.map((p, i) => (
+            <span
+              key={i}
+              className="sl-particle"
+              style={{
+                left: p.left,
+                width: p.size,
+                height: p.size,
+                animationDuration: `${p.duration}s`,
+                animationDelay: `${p.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* System notification badge */}
         <motion.div
           initial={isMobile ? false : { opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="relative z-10 group/badge"
+          className="sl-window relative z-10 rounded-[4px]"
         >
-          {/* Glow behind badge */}
-          {/* <div className="absolute inset-0 rounded-full z-0 blur-lg opacity-20 group-hover/badge:opacity-40 transition-opacity duration-500 bg-ph4ntom-purple" /> */}
-
-          <div
-            className="relative z-10 flex items-center gap-1 md:gap-2 rounded-full py-1.5 px-4 pl-2 text-xs md:text-sm font-medium text-ph4ntom-light"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(0,0,0,0.05) 100%)",
-              boxShadow: [
-                // "inset 0 1px 0 rgba(255,255,255,0.15)",
-                "inset 0 -1px 2px rgba(0,0,0,0.25)",
-                "0 1px 0 0 rgba(0,0,0,0.4)",
-                "0 2px 0 0 rgba(0,0,0,0.2)",
-                "0 4px 12px rgba(0,0,0,0.3)",
-                "0 1px 8px rgba(124,58,237,0.15)",
-              ].join(", "),
-            }}
-          >
-            {/* Top highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] rounded-full bg-black/20" />
-
-            <div className="relative flex h-2 w-2 mx-1">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ph4ntom-green opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-ph4ntom-green"></span>
-            </div>
-            <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">Used by 800+ Creators & Larpers</span>
+          <Corners />
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[4px]">
+            <div className="sl-scanline" />
           </div>
-
-          {/* <style jsx global>{`
-            @property --badge-shine-angle {
-              syntax: "<angle>";
-              initial-value: 0deg;
-              inherits: false;
-            }
-            @keyframes badge-border-spin {
-              to {
-                --badge-shine-angle: 360deg;
-              }
-            }
-          `}</style> */}
+          <div className="relative z-10 flex items-center gap-2 whitespace-nowrap px-3 py-2 sl-font text-[9px] font-bold uppercase tracking-[0.12em] text-[#cbb8ff] md:px-4 md:text-[11px] md:tracking-[0.22em]">
+            {/* <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c084fc] opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#c084fc]"></span>
+            </span> */}
+            <span className="text-[#c084fc] drop-shadow-[0_0_8px_rgba(192,132,252,0.7)]">[ System ]</span>
+            <span>Used by 800+ creators &amp; larpers</span>
+          </div>
         </motion.div>
 
-        <div className="relative z-10 flex flex-col items-center mt-4 md:mt-6">
+        <div className="relative z-10 mt-5 flex flex-col items-center md:mt-7">
+          <motion.p
+            initial={isMobile ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-4 whitespace-nowrap sl-font text-[10px] font-bold uppercase tracking-[0.2em] text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
+          >
+            ✦ New quest available: daily flex ✦
+          </motion.p>
           <motion.h1
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display text-[2.5rem] md:text-6xl lg:text-7xl font-medium tracking-tight text-center max-w-5xl leading-none"
+            className="font-display max-w-5xl text-center text-[2.5rem] font-bold leading-none tracking-tight md:text-6xl lg:text-7xl"
           >
             <>
-              The #1 <span className="text-transparent bg-clip-text bg-gradient-to-r from-ph4ntom-purple to-ph4ntom-accent">LARP crypto wallet app.</span>
+              The #1{" "}
+              <span className="bg-gradient-to-r from-[#e9d5ff] via-[#c084fc] to-[#8b5cf6] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(139,92,246,0.45)]">
+                LARP crypto wallet app.
+              </span>
             </>
           </motion.h1>
           <motion.div
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-ph4ntom-light/80 text-base md:text-xl text-center max-w-3xl my-4 md:my-8 font-medium leading-relaxed flex flex-col gap-2"
+            className="my-4 flex max-w-3xl flex-col gap-2 text-center text-base font-medium leading-relaxed text-ph4ntom-light/80 md:my-8 md:text-xl"
           >
-            {/* <span className="text-white/90">
-              Available on iOS & Android.
-            </span> */}
             <p>
-              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom & Trust Wallet. Create content online or prank your friends - no real crypto involved.
+              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom &amp; Trust Wallet. Create content online or prank your friends - no real crypto involved.
             </p>
           </motion.div>
         </div>
@@ -218,334 +310,115 @@ export default function LandingContent() {
           initial={isMobile ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="relative z-10 w-full flex flex-col items-center justify-center mt-2 md:mt-0"
+          className="relative z-10 mt-2 flex w-full flex-col items-center justify-center md:mt-0"
         >
           <HeroButtons onOpenDemo={() => setIsDemoModalOpen(true)} />
         </motion.div>
 
-
         <ProductImageSwiper />
       </motion.section>
 
-      {/* <section id="features" className="py-12 px-6 max-w-[1040px] mx-auto relative">
-        <motion.div
-          variants={fadeInUp}
-          initial="initial"
-          whileInView="whileInView"
-          viewport={{ once: true }}
-          className="text-center mb-10 md:mb-12"
-        >
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-3">
-            A full fake crypto wallet app,
-            <br />
-            <span className="text-[#ab9ff2]">not a screenshot editor.</span>
-          </h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-            RPWallet gives you a realistic wallet simulator with editable balances, custom tokens, simulated sends, activity history and much more.
-          </p>
-        </motion.div>
-
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              title: "Live wallet simulation",
-              body: "Use a full fake crypto wallet app with balances, token lists, wallet names, and activity that behave like a real mobile wallet interface.",
-            },
-            {
-              title: "Phantom and Trust",
-              body: "Show realistic Phantom or Trust-style screens for content, demos, pranks, screenshots, and short videos.",
-            },
-            {
-              title: "LARP wallet app",
-              body: "Run the simulator on iPhone or Android with a PWA that never connects to real wallets, seed phrases, or funds.",
-            },
-          ].map((item) => (
-            <motion.div
-              key={item.title}
-              variants={fadeInUp}
-              className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 md:p-7 shadow-xl backdrop-blur-md"
-            >
-              <h3 className="font-medium text-white/90 text-lg mb-3">{item.title}</h3>
-              <p className="text-white/55 text-[14px] leading-relaxed font-medium">{item.body}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section> */}
-
-      <section className="py-12 px-6 max-w-[1000px] mx-auto relative overflow-hidden">
-        <div className="text-center mb-10 md:mb-14">
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
+      <section className="relative mx-auto max-w-[1000px] overflow-hidden px-6 py-12">
+        <div className="mb-10 text-center md:mb-14">
+          <SectionEyebrow>[ Skill tree unlocked ]</SectionEyebrow>
+          <h2 className="font-display mb-2 text-3xl font-semibold tracking-tight text-white md:text-5xl">
             Built to be
             <br />
-            <span className="text-[#ab9ff2]">indistinguishable.</span>
+            <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">indistinguishable.</span>
           </h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-lg mx-auto leading-relaxed mt-4">
+          <p className="mx-auto mt-4 max-w-lg text-base font-medium leading-relaxed text-white/60 md:text-lg">
             Set any balance, add any token, get the perfect LARP experience you can get.
           </p>
         </div>
 
-        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="grid grid-cols-2 gap-4 md:gap-6 max-w-3xl mx-auto relative">
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        <motion.div variants={staggerContainer} initial="initial" whileInView="whileInView" viewport={{ once: true }} className="relative mx-auto grid max-w-3xl grid-cols-2 gap-4 md:gap-6">
+          {SKILLS.map((skill) => (
+            <motion.div
+              key={skill.title}
+              variants={fadeInUp}
+              className="sl-window group/skill relative flex cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-[6px] p-6 text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(167,139,250,0.25)] md:p-8"
+            >
+              <Corners />
+              <div className="sl-scanline" />
+              <RankChip rank={skill.rank} />
+              {/* Hover shine sweep */}
+              <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-[#c084fc]/10 to-transparent transition-transform duration-1000 ease-out group-hover/skill:translate-x-full" />
 
-            <Image src={getAssetUrl("/3d-icons/11.webp")} alt="Pixel-perfect icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Pixel-Perfect Copy</h3>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            <Image src={getAssetUrl("/3d-icons/live token.webp")} alt="Live token prices icon" width={64} height={64} className="relative z-10 w-15 aspect-auto md:w-20 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Live Token Prices</h3>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            <Image src={getAssetUrl("/3d-icons/p2p.webp")} alt="P2P transaction icon" width={64} height={64} className="relative z-10 w-18 aspect-auto md:w-20 object-contain saturate-[1.5] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">P2P Transaction</h3>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            <Image src={getAssetUrl("/3d-icons/dollar.webp")} alt="Set any balance icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Set Any Balance</h3>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            <Image src={getAssetUrl("/3d-icons/user.webp")} alt="No sign up icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Private by Default</h3>
-          </motion.div>
-
-          <motion.div
-            variants={fadeInUp}
-            className="backdrop-blur-xl p-6 md:p-8 rounded-3xl flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 relative overflow-hidden group/glass-card shadow-xl hover:shadow-2xl hover:scale-[1.03] cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-3xl" />
-            {/* Hover shine sweep effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/glass-card:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-            {/* Hover ambient highlight overlay */}
-            <div className="absolute inset-0 bg-white/[0.03] opacity-0 group-hover/glass-card:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            <Image src={getAssetUrl("/3d-icons/download.webp")} alt="Nothing to download icon" width={64} height={64} className="relative z-10 w-14 h-14 md:w-16 md:h-16 object-contain saturate-[0.8] transition-transform duration-300 group-hover/glass-card:scale-110" />
-            <h3 className="relative z-10 font-medium text-white/90 text-sm md:text-base drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Instant Web App</h3>
-          </motion.div>
+              <Image
+                src={getAssetUrl(skill.icon)}
+                alt={skill.alt}
+                width={64}
+                height={64}
+                className={`relative z-10 object-contain transition-transform duration-300 group-hover/skill:scale-110 ${skill.imgClass}`}
+              />
+              <h3 className="relative z-10 text-sm font-medium text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] md:text-base">{skill.title}</h3>
+            </motion.div>
+          ))}
         </motion.div>
       </section>
 
       {!demoEnabled && (
-        <section id="installation" className="pb-12 scroll-mt-6 px-6 max-w-[1000px] mx-auto relative">
+        <section id="installation" className="relative mx-auto max-w-[1000px] scroll-mt-6 px-6 pb-12">
           <motion.div
-
             variants={fadeInUp}
             initial="initial"
             whileInView="whileInView"
             viewport={{ once: true }}
-            className="backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] flex flex-col items-center text-center relative overflow-hidden"
-            style={{
-              background: "linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0.05) 100%)",
-              border: "1px solid rgba(255,255,255,0.13)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.2)",
-                "inset 0 -1px 2px rgba(0,0,0,0.12)",
-                "0 8px 40px rgba(0,0,0,0.3)",
-                "0 2px 6px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-                "0 0 60px rgba(171,159,242,0.08)",
-              ].join(", "),
-            }}
+            className="sl-window relative flex flex-col items-center rounded-[8px] p-8 pt-10 text-center md:p-12"
           >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-            {/* Bottom subtle dark edge for depth */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Left edge highlight */}
-            <div className="absolute inset-y-0 left-0 w-[1px] bg-gradient-to-b from-white/20 via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2.5rem]" />
-            {/* Subtle purple inner glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-ph4ntom-purple/8 blur-[120px] rounded-full pointer-events-none" />
+            <span className="sl-label">Quest info</span>
+            <Corners />
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[8px]">
+              <div className="sl-scanline" />
+            </div>
+            {/* Inner mana glow */}
+            <div className="pointer-events-none absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#8b5cf6]/10 blur-[120px] md:h-[600px] md:w-[600px]" />
 
-            {/* Centered Column */}
-            <div className="relative z-10 w-full flex flex-col items-center">
-              {/* <div className="mb-6">
-                <Image src={getAssetUrl("/3d-icons/access.webp")} alt="Get Access" width={80} height={80} className="size-16 drop-shadow-2xl object-contain" />
-              </div> */}
-              <h2 className="font-display text-3xl md:text-4xl font-medium tracking-tight text-white mb-10 leading-tight">
-                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">get access.</span>
+            <div className="relative z-10 flex w-full flex-col items-center">
+              <p className="mb-3 sl-font text-[11px] font-bold uppercase tracking-[0.35em] text-[#fde047]">
+                <span className="animate-sl-flicker mr-2 inline-block">!</span>New quest arrived
+              </p>
+              <h2 className="font-display mb-10 text-3xl font-semibold leading-tight tracking-tight text-white md:text-4xl">
+                How to <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">get access.</span>
               </h2>
-              {/* <p className="text-white/60 text-[15px] md:text-[17px] leading-relaxed mb-10 max-w-lg mx-auto">
-              Get set up in less than 2 minutes. No complicated installations.
-            </p> */}
 
-              <div className="relative flex flex-col md:flex-row gap-8 md:gap-6 mb-10 w-full max-w-sm md:max-w-3xl mx-auto text-left md:text-center">
-                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="absolute left-[10px] top-[32px] h-[calc(100%-8px)] w-[4px] md:hidden z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
-                  <div className="hidden md:block absolute top-[10px] left-[calc(50%+20px)] w-[calc(100%-40px)] h-[4px] z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
+              <div className="relative mx-auto mb-8 flex w-full max-w-sm flex-col gap-8 text-left md:max-w-3xl md:flex-row md:gap-6 md:text-center">
+                <div className="relative flex flex-row items-start gap-5 md:flex-1 md:flex-col md:items-center">
+                  <div className="absolute left-[10px] top-[32px] z-0 h-[calc(100%-8px)] w-[4px] md:hidden" style={{ backgroundImage: "radial-gradient(circle, rgba(192,132,252,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
+                  <div className="absolute left-[calc(50%+20px)] top-[10px] z-0 hidden h-[4px] w-[calc(100%-40px)] md:block" style={{ backgroundImage: "radial-gradient(circle, rgba(192,132,252,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
                   <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
-                    <Image src={getAssetUrl("/3d-icons/Shopping Cart Icon.webp")} alt="Purchase" width={48} height={48} className="w-full h-full object-contain" />
+                    <Image src={getAssetUrl("/3d-icons/Shopping Cart Icon.webp")} alt="Purchase" width={48} height={48} className="h-full w-full object-contain" />
                   </div>
                   <div className="flex flex-col md:pt-4">
-                    <h4 className="text-white font-semibold text-[16px] mb-1">Purchase a License</h4>
-                    <p className="text-white/50 text-[14px] leading-snug">Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
+                    <p className="mb-1 sl-font text-[10px] font-bold uppercase tracking-[0.3em] text-[#c084fc]/70">Objective 01</p>
+                    <h4 className="mb-1 text-[16px] font-semibold text-white">Purchase a License</h4>
+                    <p className="text-[14px] leading-snug text-white/50">Grab RPWallet in the Pricing section below. Choose the plan that works for you, no hidden fees.</p>
                   </div>
                 </div>
 
-                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
-                  <div className="absolute left-[10px] top-[32px] h-[calc(100%-8px)] w-[4px] md:hidden z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
-                  <div className="hidden md:block absolute top-[10px] left-[calc(50%+20px)] w-[calc(100%-40px)] h-[4px] z-0" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
-                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl saturate-[2] brightness-[0.7]">
-                    <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={48} height={48} className="w-full h-full object-contain" />
+                <div className="relative flex flex-row items-start gap-5 md:flex-1 md:flex-col md:items-center">
+                  <div className="absolute left-[10px] top-[32px] z-0 h-[calc(100%-8px)] w-[4px] md:hidden" style={{ backgroundImage: "radial-gradient(circle, rgba(192,132,252,0.4) 2px, transparent 2px)", backgroundSize: "100% 12px" }} />
+                  <div className="absolute left-[calc(50%+20px)] top-[10px] z-0 hidden h-[4px] w-[calc(100%-40px)] md:block" style={{ backgroundImage: "radial-gradient(circle, rgba(192,132,252,0.4) 2px, transparent 2px)", backgroundSize: "12px 100%" }} />
+                  <div className="relative z-10 size-6 shrink-0 drop-shadow-xl brightness-[0.7] saturate-[2]">
+                    <Image src={getAssetUrl("/3d-icons/Key Icon.webp")} alt="License key" width={48} height={48} className="h-full w-full object-contain" />
                   </div>
                   <div className="flex flex-col md:pt-4">
-                    <h4 className="text-white font-semibold text-[16px] mb-1">Receive Your Key</h4>
-                    <p className="text-white/50 text-[14px] leading-snug">After payment, you'll receive a unique license key in your email. Keep it safe.</p>
+                    <p className="mb-1 sl-font text-[10px] font-bold uppercase tracking-[0.3em] text-[#c084fc]/70">Objective 02</p>
+                    <h4 className="mb-1 text-[16px] font-semibold text-white">Receive Your Key</h4>
+                    <p className="text-[14px] leading-snug text-white/50">After payment, you&apos;ll receive a unique license key in your email. Keep it safe.</p>
                   </div>
                 </div>
 
-                <div className="relative flex flex-row md:flex-col items-start md:items-center gap-5 md:flex-1">
+                <div className="relative flex flex-row items-start gap-5 md:flex-1 md:flex-col md:items-center">
                   <div className="relative z-10 size-6 shrink-0 drop-shadow-xl">
-                    <Image src={getAssetUrl("/3d-icons/iPhone Icon.webp")} alt="Install" width={48} height={48} className="w-full h-full object-contain" />
+                    <Image src={getAssetUrl("/3d-icons/iPhone Icon.webp")} alt="Install" width={48} height={48} className="h-full w-full object-contain" />
                   </div>
                   <div className="flex flex-col md:pt-4">
-                    <h4 className="text-white font-semibold text-[16px] mb-1">Activate, Install & Flex</h4>
-                    <p className="text-white/50 text-[14px] leading-snug">
+                    <p className="mb-1 sl-font text-[10px] font-bold uppercase tracking-[0.3em] text-[#c084fc]/70">Objective 03</p>
+                    <h4 className="mb-1 text-[16px] font-semibold text-white">Activate, Install &amp; Flex</h4>
+                    <p className="text-[14px] leading-snug text-white/50">
                       Enter your license key,{" "}
-                      <Link href="/dashboard" className="text-[#ab9ff2] hover:text-white underline underline-offset-2 transition-colors">
+                      <Link href="/dashboard" className="text-[#c084fc] underline underline-offset-2 transition-colors hover:text-white">
                         install the app
                       </Link>
                       , follow the steps. Time to larp.
@@ -554,71 +427,49 @@ export default function LandingContent() {
                 </div>
               </div>
 
-              <p className="text-white/60 text-[13px] mt-4 font-medium text-center">
+              <div className="mb-2 flex items-center gap-2 rounded-[4px] border border-[#fde047]/30 bg-[#fde047]/5 px-4 py-2 sl-font text-[11px] font-bold uppercase tracking-[0.2em] text-[#fde047]">
+                <Zap size={12} className="shrink-0" />
+                Reward: Unlimited LARP power
+              </div>
+
+              <p className="mt-4 text-center text-[13px] font-medium text-white/60">
                 Have any questions? We respond within a few hours, contact us on{" "}
-                <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-white transition-colors">
+                <a href="https://t.me/RPWallet_support_bot" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 transition-colors hover:text-white">
                   telegram
                 </a>
                 .
               </p>
             </div>
           </motion.div>
-          <div
-            className="mt-6 max-w-[26rem] mx-auto p-2 pl-6 rounded-full flex flex-row items-center justify-between gap-3 backdrop-blur-xl relative overflow-hidden group/glass"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              boxShadow: [
-                "inset 0 1px 1px rgba(255,255,255,0.15)",
-                "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                "0 4px 24px rgba(0,0,0,0.25)",
-                "0 1px 3px rgba(0,0,0,0.15)",
-                "0 0 0 0.5px rgba(255,255,255,0.08)",
-              ].join(", "),
-            }}
-          >
-            {/* Top specular highlight edge */}
-            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* Bottom subtle dark edge for depth */}
-            <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-            {/* Inner refraction glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-full" />
 
-            <span className="relative z-10 text-white/85 text-[15px] font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Already have a license key?</span>
+          <div className="sl-window relative mx-auto mt-6 flex max-w-[26rem] flex-row items-center justify-between gap-3 overflow-hidden rounded-[6px] p-2 pl-6">
+            <Corners />
+            <span className="relative z-10 text-[15px] font-medium text-white/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">Already have a license key?</span>
             <Link
               href="/dashboard"
-              className="relative z-10 text-white text-[15px] font-medium py-2 px-6 rounded-full transition-all hover:scale-105 whitespace-nowrap overflow-hidden"
-              style={{
-                background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
-                boxShadow: [
-                  "inset 0 1px 1px rgba(255,255,255,0.25)",
-                  "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                  "0 2px 8px rgba(139,92,246,0.4)",
-                  "0 0 0 0.5px rgba(255,255,255,0.1)",
-                ].join(", "),
-              }}
+              className="sl-btn sl-clip relative z-10 whitespace-nowrap px-7 py-2 text-[15px] font-semibold text-white transition-all hover:scale-105"
             >
-              <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
               Log In
             </Link>
           </div>
         </section>
       )}
 
-      <section id="vouches" className="pb-12 md:pb-20 relative">
+      <section id="vouches" className="relative pb-12 md:pb-20">
         <motion.div
           variants={fadeInUp}
           initial="initial"
           whileInView="whileInView"
           viewport={{ once: true }}
-          className="text-center mb-8 md:mb-12 px-6"
+          className="mb-8 px-6 text-center md:mb-12"
         >
-          <h2 className="font-display text-3xl md:text-5xl font-medium tracking-tight text-white mb-2">
+          <SectionEyebrow>[ Hunter records ]</SectionEyebrow>
+          <h2 className="font-display mb-2 text-3xl font-semibold tracking-tight text-white md:text-5xl">
             Don&apos;t take our word.
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">Take theirs.</span>
+            <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">Take theirs.</span>
           </h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
+          <p className="mx-auto mt-4 max-w-md text-base font-medium leading-relaxed text-white/60 md:text-lg">
             Vouches straight from our Telegram support chats.
           </p>
         </motion.div>
@@ -634,30 +485,16 @@ export default function LandingContent() {
             maskImage: "linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent)",
           }}
         >
-          <div className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory px-6 pb-4 md:px-[max(1.5rem,calc((100vw-1200px)/2))]">
+          <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:gap-5 md:px-[max(1.5rem,calc((100vw-1200px)/2))]">
             {VOUCHES.map((vouch) => (
               <motion.div
                 key={vouch.src}
                 variants={fadeInUp}
-                className="relative w-[240px] md:w-[280px] shrink-0 snap-center backdrop-blur-xl p-2.5 rounded-[1.9rem] overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: [
-                    "inset 0 1px 1px rgba(255,255,255,0.15)",
-                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                    "0 4px 24px rgba(0,0,0,0.25)",
-                    "0 1px 3px rgba(0,0,0,0.15)",
-                    "0 0 0 0.5px rgba(255,255,255,0.08)",
-                  ].join(", "),
-                }}
+                className="sl-window relative w-[240px] shrink-0 snap-center overflow-hidden rounded-[8px] p-2.5 md:w-[280px]"
               >
-                {/* Top specular highlight edge */}
-                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                {/* Inner refraction glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[1.9rem]" />
+                <Corners className="!border-[#a78bfa]/40" />
 
-                <div className="relative z-10 overflow-hidden rounded-[1.35rem] border border-white/10">
+                <div className="relative z-10 overflow-hidden rounded-[5px] border border-[#a78bfa]/20">
                   <Image
                     src={getAssetUrl(vouch.src)}
                     alt={`Telegram vouch from ${vouch.name}`}
@@ -665,22 +502,13 @@ export default function LandingContent() {
                     height={1044}
                     loading="lazy"
                     sizes="(min-width: 768px) 280px, 240px"
-                    className="w-full h-auto object-cover"
+                    className="h-auto w-full object-cover"
                   />
                 </div>
 
-                <div className="relative z-10 flex items-center gap-2.5 px-2 pt-2.5 pb-1">
-                  {/* <div
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(0,136,204,0.9) 0%, rgba(0,172,238,0.95) 100%)",
-                      boxShadow: "inset 0 1px 1px rgba(255,255,255,0.25), 0 1px 4px rgba(0,136,204,0.35)",
-                    }}
-                  >
-                    <Send size={11} strokeWidth={2.5} className="text-white" />
-                  </div> */}
-                  <span className="text-white/90 text-[13px] font-medium">{vouch.name}</span>
-                  <span className="ml-auto flex items-center gap-1.5 text-[11px] font-medium text-white/45">
+                <div className="relative z-10 flex items-center gap-2.5 px-2 pb-1 pt-2.5">
+                  <span className="text-[13px] font-medium text-white/90">{vouch.name}</span>
+                  <span className="ml-auto flex items-center gap-1.5 sl-font text-[10px] font-medium uppercase tracking-[0.15em] text-[#c084fc]/70">
                     <span className="flex size-3.5 items-center justify-center rounded-full bg-ph4ntom-green">
                       <Check size={9} strokeWidth={3.5} className="text-white" />
                     </span>
@@ -696,24 +524,11 @@ export default function LandingContent() {
               target="_blank"
               rel="noopener noreferrer"
               variants={fadeInUp}
-              className="relative w-[240px] md:w-[280px] shrink-0 snap-center backdrop-blur-xl p-2.5 rounded-[1.9rem] overflow-hidden flex flex-col items-center justify-center gap-4 group cursor-pointer transition-all hover:scale-[1.02]"
-              style={{
-                background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                boxShadow: [
-                  "inset 0 1px 1px rgba(255,255,255,0.15)",
-                  "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                  "0 4px 24px rgba(0,0,0,0.25)",
-                  "0 1px 3px rgba(0,0,0,0.15)",
-                  "0 0 0 0.5px rgba(255,255,255,0.08)",
-                ].join(", "),
-                minHeight: "320px",
-              }}
+              className="sl-window group relative flex w-[240px] shrink-0 cursor-pointer snap-center flex-col items-center justify-center gap-4 overflow-hidden rounded-[8px] p-2.5 transition-all hover:scale-[1.02] md:w-[280px]"
+              style={{ minHeight: "320px" }}
             >
-              {/* Top specular highlight edge */}
-              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              {/* Inner refraction glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[1.9rem]" />
+              <Corners />
+              <div className="sl-scanline" />
 
               <div
                 className="flex size-14 items-center justify-center rounded-full transition-transform group-hover:scale-110"
@@ -724,12 +539,12 @@ export default function LandingContent() {
               >
                 <Send size={22} strokeWidth={2} className="text-white" />
               </div>
-              <div className="text-center px-4">
-                <p className="text-white/90 text-[15px] font-semibold mb-1">View More Vouches</p>
-                <p className="text-white/50 text-[12px] leading-relaxed">Join our Telegram to see hundreds more reviews from real users</p>
+              <div className="px-4 text-center">
+                <p className="mb-1 text-[15px] font-semibold text-white/90">View More Vouches</p>
+                <p className="text-[12px] leading-relaxed text-white/50">Join our Telegram to see hundreds more reviews from real users</p>
               </div>
               <div
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-semibold text-white transition-all group-hover:gap-3"
+                className="sl-clip flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white transition-all group-hover:gap-3"
                 style={{
                   background: "linear-gradient(135deg, rgba(0,136,204,0.8) 0%, rgba(0,172,238,0.85) 100%)",
                   boxShadow: "0 2px 8px rgba(0,136,204,0.3)",
@@ -743,22 +558,22 @@ export default function LandingContent() {
         </motion.div>
       </section>
 
-      <section id="pricing" className="pb-12 md:pb-24 max-w-[1200px] mx-auto px-6 relative">
-        <div className="text-center mb-10">
+      <section id="pricing" className="relative mx-auto max-w-[1200px] px-6 pb-12 md:pb-24">
+        <div className="mb-10 text-center">
           {demoEnabled ? (
             <>
-              <p className="mb-3 text-[13px] font-bold uppercase tracking-[0.28em] text-[#ab9ff2]">Pricing</p>
-              <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3 leading-tight">
+              <SectionEyebrow>[ Select your rank ]</SectionEyebrow>
+              <h2 className="font-display mb-3 text-3xl font-semibold leading-tight tracking-tight text-white md:text-5xl">
                 <>Try it for free.<br />Pay when you&apos;re ready.</>
               </h2>
-              {/* <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
-                Open a timed demo session first. Upgrade only when you want unlimited wallet access.
-              </p> */}
             </>
           ) : (
             <>
-              <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-3">Pricing</h2>
-              <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed">
+              <SectionEyebrow>[ Select your rank ]</SectionEyebrow>
+              <h2 className="font-display mb-3 text-3xl font-semibold tracking-tight text-white md:text-5xl">
+                Choose your <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">power.</span>
+              </h2>
+              <p className="mx-auto max-w-md text-base font-medium leading-relaxed text-white/60 md:text-lg">
                 Crypto-only payments with secure checkout powered by NOWPayments.
               </p>
             </>
@@ -766,10 +581,9 @@ export default function LandingContent() {
         </div>
 
         {demoEnabled && (
-          <div className="mx-auto mb-12 max-w-[860px] rounded-[2rem] border border-[#ab9ff2]/30 bg-[#161618]/90 p-8 text-center shadow-[0_0_50px_rgba(171,159,242,0.12)] md:p-10">
-            <div className="mx-auto mb-6 inline-flex rounded-full bg-[#ab9ff2]/10 px-4 py-1.5 text-[12px] font-bold uppercase text-[#c9c1ff]">
-              Free Trial
-            </div>
+          <div className="sl-window relative mx-auto mb-12 max-w-[860px] rounded-[8px] p-8 pt-10 text-center md:p-10">
+            <span className="sl-label">Free trial</span>
+            <Corners />
             <h3 className="font-display text-2xl font-semibold tracking-tight text-white md:text-4xl">
               Try the wallet before buying.
             </h3>
@@ -778,7 +592,7 @@ export default function LandingContent() {
             </p>
             <Link
               href="/dashboard"
-              className="mx-auto mt-8 inline-flex h-12 min-w-[210px] items-center justify-center gap-2 rounded-2xl bg-[#ab9ff2] px-7 text-[16px] font-medium text-[#0f0f10] transition-all hover:scale-[1.02] hover:bg-[#b9aff6] active:scale-[0.98]"
+              className="sl-btn mx-auto mt-8 inline-flex h-12 min-w-[210px] items-center justify-center gap-2 px-7 text-[16px] font-semibold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               Open App <ArrowUpRight size={20} />
             </Link>
@@ -791,7 +605,7 @@ export default function LandingContent() {
           </p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch relative">
+        <div className="relative grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
           {Object.values(PRICING_PLANS).map((plan) => {
             const isStarter = plan.id === "starter";
             const isPopular = plan.id === "popular";
@@ -799,80 +613,82 @@ export default function LandingContent() {
             const displayPrice = plan.price;
             const showOriginalPrice = Boolean(isYearly && plan.originalPrice);
 
+            const rankLabel = isStarter ? "C-Rank Hunter" : isPopular ? "A-Rank Hunter" : "S-Rank Monarch";
+            const rankColor = isStarter ? "#a8b6d8" : isPopular ? "#c084fc" : "#fde047";
+
             const bgGradient = isPopular
-              ? "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(255,255,255,0.02) 50%, rgba(139,92,246,0.06) 100%)"
+              ? "linear-gradient(180deg, rgba(139,92,246,0.16) 0%, rgba(8,10,26,0.92) 55%)"
               : isYearly
-                ? "linear-gradient(135deg, rgba(253,224,71,0.12) 0%, rgba(255,255,255,0.02) 50%, rgba(253,224,71,0.08) 100%)"
-                : "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)";
+                ? "linear-gradient(180deg, rgba(253,224,71,0.12) 0%, rgba(8,10,26,0.92) 55%)"
+                : "linear-gradient(180deg, rgba(59,130,246,0.12) 0%, rgba(8,10,26,0.92) 55%)";
 
             const borderColor = isPopular
-              ? "rgba(139,92,246,0.35)"
+              ? "rgba(139,92,246,0.45)"
               : isYearly
                 ? "rgba(253,224,71,0.45)"
-                : "rgba(255,255,255,0.12)";
+                : "rgba(167,139,250,0.3)";
 
             const glowShadow = isPopular
-              ? "0 0 40px rgba(139,92,246,0.15)"
+              ? "0 0 40px rgba(139,92,246,0.2)"
               : isYearly
-                ? "0 0 40px rgba(253,224,71,0.25)"
-                : "0 4px 24px rgba(0,0,0,0.25)";
+                ? "0 0 40px rgba(253,224,71,0.22)"
+                : "0 0 32px rgba(59,130,246,0.12)";
 
             return (
               <div
                 key={plan.id}
-                className="backdrop-blur-xl p-10 flex flex-col relative transition-all duration-300 rounded-[2rem] outline-none group/glass-card cursor-pointer"
+                className="group/plan relative flex cursor-pointer flex-col rounded-[8px] p-10 outline-none backdrop-blur-xl transition-all duration-300 hover:scale-[1.01]"
                 onClick={() => handleCheckout(plan)}
                 style={{
                   background: bgGradient,
                   border: `1px solid ${borderColor}`,
                   boxShadow: [
-                    "inset 0 1px 1px rgba(255,255,255,0.15)",
-                    "inset 0 -1px 1px rgba(0,0,0,0.1)",
+                    "inset 0 1px 0 rgba(148,197,253,0.15)",
+                    "inset 0 0 48px rgba(59,130,246,0.04)",
                     "0 4px 24px rgba(0,0,0,0.25)",
-                    "0 1px 3px rgba(0,0,0,0.15)",
-                    "0 0 0 0.5px rgba(255,255,255,0.08)",
                     glowShadow,
                   ].join(", "),
                 }}
               >
-                {/* Top specular highlight edge */}
-                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                {/* Bottom subtle dark edge */}
-                <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
-                {/* Inner refraction glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2rem]" />
+                <Corners className={isYearly ? "!border-[#fde047]/60" : isPopular ? "!border-[#c4b5fd]/60" : ""} />
 
                 {isPopular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 bg-[#8b5cf6] text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-[0_0_20px_rgba(139,92,246,0.4)] whitespace-nowrap z-20">
+                  <div className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-[4px] border border-[#c4b5fd]/50 bg-[#8b5cf6] px-4 py-1.5 sl-font text-[10px] font-bold uppercase tracking-[0.25em] text-white shadow-[0_0_20px_rgba(139,92,246,0.5)]">
                     Most Popular
                   </div>
                 )}
                 {isYearly && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] text-black text-[11px] font-bold tracking-wider uppercase rounded-full shadow-[0_5px_15px_rgba(212,175,55,0.4)] whitespace-nowrap z-20">
+                  <div className="absolute -top-3.5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-gradient-to-r from-[#fde047] via-[#d4af37] to-[#ca8a04] px-3 py-1 sl-font text-[10px] font-bold uppercase tracking-[0.25em] text-black shadow-[0_5px_15px_rgba(212,175,55,0.4)]">
                     Best Value
                   </div>
                 )}
 
-                <div className="relative z-10 flex flex-col items-center text-center mb-4 mt-2">
-                  <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
+                <div className="relative z-10 mb-4 mt-2 flex flex-col items-center gap-1.5 text-center">
+                  <span
+                    className="sl-font text-[11px] font-bold uppercase tracking-[0.3em]"
+                    style={{ color: rankColor, textShadow: `0 0 12px ${rankColor}66` }}
+                  >
+                    {rankLabel}
+                  </span>
+                  <span className="text-lg font-medium text-white/80">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
                 </div>
 
-                <div className="relative z-10 flex min-h-[60px] flex-col items-center justify-start mb-6 transition-all duration-300">
+                <div className="relative z-10 mb-6 flex min-h-[60px] flex-col items-center justify-start transition-all duration-300">
                   <div className="flex items-baseline justify-center gap-1">
-                    {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
-                    <span className="text-5xl md:text-6xl font-display font-bold text-white tracking-tight">{displayPrice}</span>
+                    {showOriginalPrice && <span className="font-display relative mr-1.5 text-2xl font-medium text-white/40 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500 md:text-3xl">{plan.originalPrice}</span>}
+                    <span className="font-display text-5xl font-bold tracking-tight text-white md:text-6xl">{displayPrice}</span>
                   </div>
                 </div>
 
-                <ul className="relative z-10 flex flex-col gap-6 mb-12 flex-grow text-[15px] text-white/70">
+                <ul className="relative z-10 mb-12 flex flex-grow flex-col gap-6 text-[15px] text-white/70">
                   {plan.features.map((feat, idx) => (
-                    <li key={idx} className={`flex gap-3 items-start ${!feat.included ? "opacity-35" : ""}`}>
+                    <li key={idx} className={`flex items-start gap-3 ${!feat.included ? "opacity-35" : ""}`}>
                       {feat.included ? (
-                        <div className={`flex size-5 shrink-0 items-center justify-center rounded-full mt-0.5 ${isYearly ? "bg-gradient-to-br from-[#fde047] to-[#ca8a04]" : "bg-[#9c8df6]"}`}>
+                        <div className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${isYearly ? "bg-gradient-to-br from-[#fde047] to-[#ca8a04]" : isPopular ? "bg-[#9c8df6]" : "bg-[#8b5cf6]"}`}>
                           <Check size={13} strokeWidth={3} className={isYearly ? "text-black" : "text-white"} />
                         </div>
                       ) : (
-                        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 mt-0.5">
+                        <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10">
                           <X size={12} strokeWidth={2.5} className="text-white/60" />
                         </div>
                       )}
@@ -881,55 +697,16 @@ export default function LandingContent() {
                   ))}
                 </ul>
 
-
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCheckout(plan);
                   }}
-                  className={`relative z-10 w-full py-4 rounded-xl font-semibold transition-all flex justify-center items-center gap-2 overflow-hidden hover:scale-[1.02] cursor-pointer ${isPopular
-                    ? "text-white"
-                    : isYearly
-                      ? "text-black"
-                      : "text-white"
-                    }`}
-                  style={
-                    isPopular
-                      ? {
-                        background: "linear-gradient(135deg, rgba(139,92,246,0.85) 0%, rgba(124,58,237,0.9) 100%)",
-                        boxShadow: [
-                          "inset 0 1px 1px rgba(255,255,255,0.25)",
-                          "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                          "0 2px 8px rgba(139,92,246,0.4)",
-                          "0 0 0 0.5px rgba(255,255,255,0.1)",
-                        ].join(", "),
-                      }
-                      : isYearly
-                        ? {
-                          background: "linear-gradient(135deg, rgba(253,224,71,0.95) 0%, rgba(202,138,4,1) 100%)",
-                          boxShadow: [
-                            "inset 0 1px 1px rgba(255,255,255,0.4)",
-                            "inset 0 -1px 1px rgba(0,0,0,0.15)",
-                            "0 4px 15px rgba(253,224,71,0.35)",
-                            "0 0 0 0.5px rgba(255,255,255,0.2)",
-                          ].join(", "),
-                        }
-                        : {
-                          background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          boxShadow: [
-                            "inset 0 1px 1px rgba(255,255,255,0.15)",
-                            "inset 0 -1px 1px rgba(0,0,0,0.1)",
-                            "0 2px 8px rgba(0,0,0,0.1)",
-                            "0 0 0 0.5px rgba(255,255,255,0.08)",
-                          ].join(", "),
-                        }
-                  }
+                  className={`sl-btn relative z-10 flex w-full cursor-pointer items-center justify-center gap-2 py-4 font-semibold transition-all hover:scale-[1.02] ${isYearly ? "sl-btn-gold text-black" : isPopular ? "text-white" : "sl-btn-ghost text-white"}`}
                 >
-                  {!isPopular && !isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent" />}
-                  {isPopular && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent" />}
-                  {isYearly && <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/65 to-transparent" />}
-                  Buy <ArrowRight size={18} />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Get Access <ArrowRight size={18} />
+                  </span>
                 </button>
               </div>
             );
@@ -937,38 +714,22 @@ export default function LandingContent() {
         </div>
       </section>
 
-      <section className="pb-12 max-w-[760px] mx-auto px-6 relative">
-        <div className="absolute inset-0 bg-ph4ntom-purple/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <section className="relative mx-auto max-w-[760px] px-6 pb-12">
+        <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[#8b5cf6]/5 blur-[120px]" />
 
-        <div className="text-center mb-10 md:mb-14">
-          <h2 className="font-display text-3xl md:text-5xl tracking-tight font-medium text-white mb-2">
-            Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ab9ff2] to-ph4ntom-accent">Questions.</span>
+        <div className="mb-10 text-center md:mb-14">
+          <SectionEyebrow>[ System archive ]</SectionEyebrow>
+          <h2 className="font-display mb-2 text-3xl font-semibold tracking-tight text-white md:text-5xl">
+            Frequently Asked <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">Questions.</span>
           </h2>
-          <p className="text-white/60 text-base md:text-lg font-medium max-w-md mx-auto leading-relaxed mt-4">
+          <p className="mx-auto mt-4 max-w-md text-base font-medium leading-relaxed text-white/60 md:text-lg">
             Everything you need to know about RPWallet.
           </p>
         </div>
 
-        <div
-          className="backdrop-blur-xl p-6 md:p-10 rounded-[2.5rem] max-w-2xl mx-auto flex flex-col relative z-10 overflow-hidden shadow-xl"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0.06) 100%)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: [
-              "inset 0 1px 1px rgba(255,255,255,0.15)",
-              "inset 0 -1px 1px rgba(0,0,0,0.1)",
-              "0 8px 40px rgba(0,0,0,0.3)",
-              "0 2px 6px rgba(0,0,0,0.15)",
-              "0 0 0 0.5px rgba(255,255,255,0.08)",
-            ].join(", "),
-          }}
-        >
-          {/* Top specular highlight edge */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-          {/* Bottom subtle dark edge */}
-          <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/[0.06] to-transparent pointer-events-none" />
-          {/* Inner refraction glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-white/[0.02] pointer-events-none rounded-[2.5rem]" />
+        <div className="sl-window relative z-10 mx-auto flex max-w-2xl flex-col rounded-[8px] p-6 pt-8 md:p-10">
+          <span className="sl-label">Info</span>
+          <Corners />
 
           {[
             ...homepageFaq.map((item) => ({ q: item.question, a: item.answer })),
@@ -1006,21 +767,21 @@ export default function LandingContent() {
               <div
                 key={i}
                 onClick={() => setOpenFaqIndex(isOpen ? null : i)}
-                className="py-5 border-b border-white/5 last:border-b-0 text-left cursor-pointer transition-all duration-300 relative group select-none"
+                className="group relative cursor-pointer select-none border-b border-[#a78bfa]/10 py-5 text-left transition-all duration-300 last:border-b-0"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <h3 className={`font-medium text-base md:text-[17px] transition-colors duration-300 relative z-10 ${isOpen ? "text-[#ab9ff2]" : "text-white group-hover:text-[#ab9ff2]/80"}`}>
+                  <h3 className={`relative z-10 text-base font-medium transition-colors duration-300 md:text-[17px] ${isOpen ? "text-[#c084fc]" : "text-white group-hover:text-[#c084fc]/80"}`}>
                     {item.q}
                   </h3>
-                  <div className={`size-8 rounded-full bg-white/[0.02] border border-white/5 flex items-center justify-center shrink-0 transition-all duration-300 relative z-10 group-hover:bg-white/[0.06] ${isOpen ? "rotate-180 bg-[#ab9ff2]/10 border-[#ab9ff2]/30" : ""}`}>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-300 ${isOpen ? "text-[#ab9ff2]" : "text-white/40"}`}>
+                  <div className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-[4px] border border-[#a78bfa]/15 bg-white/[0.02] transition-all duration-300 group-hover:bg-white/[0.06] ${isOpen ? "rotate-180 border-[#c084fc]/40 bg-[#c084fc]/10" : ""}`}>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-colors duration-300 ${isOpen ? "text-[#c084fc]" : "text-white/40"}`}>
                       <path d="m1 1 4 4 4-4" />
                     </svg>
                   </div>
                 </div>
 
                 <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"}`}>
-                  <div className="pt-3.5 text-white/50 text-[14px] leading-relaxed font-medium pr-8 pb-1 relative z-10">{item.a}</div>
+                  <div className="relative z-10 pb-1 pr-8 pt-3.5 text-[14px] font-medium leading-relaxed text-white/50">{item.a}</div>
                 </div>
               </div>
             );
@@ -1028,27 +789,13 @@ export default function LandingContent() {
         </div>
       </section>
 
-      <section className="pb-14 px-6 max-w-[980px] mx-auto relative">
-        <div
-          className="rounded-[2rem] p-6 md:p-8 text-center backdrop-blur-xl relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: [
-              "inset 0 1px 1px rgba(255,255,255,0.08)",
-              "0 4px 20px rgba(0,0,0,0.15)",
-              "0 0 0 0.5px rgba(255,255,255,0.05)",
-            ].join(", "),
-          }}
-        >
-          {/* Top specular highlight edge */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-          {/* Inner refraction glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] via-transparent to-transparent pointer-events-none rounded-[2rem]" />
-          <p className="mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35 relative z-10">
+      <section className="relative mx-auto max-w-[980px] px-6 pb-14">
+        <div className="sl-window relative overflow-hidden rounded-[8px] p-6 text-center md:p-8">
+          <Corners className="!border-[#a78bfa]/30" />
+          <p className="relative z-10 mx-auto mt-3 max-w-2xl text-[13px] leading-relaxed text-white/35">
             RPWallet is built for people searching for a fake crypto wallet app, crypto wallet simulator, fake Phantom wallet, fake Phantom wallet balance, LARP wallet app, fake crypto wallet screen, fake crypto wallet screenshot, Phantom LARP wallet, Trust simulator, fake crypto balance, crypto LARP app, and realistic wallet app for entertainment, demos, pranks, and creator content.
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2 relative z-10">
+          <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-2">
             {[
               "fake crypto wallet app",
               "crypto wallet simulator",
@@ -1061,15 +808,8 @@ export default function LandingContent() {
             ].map((term) => (
               <span
                 key={term}
-                className="relative rounded-full px-3 py-1.5 text-[12px] font-medium text-white/40 backdrop-blur-md overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.05)",
-                }}
+                className="relative overflow-hidden rounded-[4px] border border-[#a78bfa]/15 bg-[#a78bfa]/[0.04] px-3 py-1.5 sl-font text-[11px] font-medium text-white/40"
               >
-                {/* Top shine reflection */}
-                <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
                 {term}
               </span>
             ))}

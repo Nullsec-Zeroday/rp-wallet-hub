@@ -125,7 +125,7 @@ export default function PhantomWalletSimulatorPage() {
   ].filter(Boolean);
 
   return (
-    <div className="w-full overflow-x-hidden pb-20 text-white font-sans selection:bg-ph4ntom-purple/30">
+    <div className="w-full overflow-x-hidden pb-20 text-white selection:bg-ph4ntom-purple/30">
       <main className="relative z-10 w-full flex flex-col items-center px-4 pt-28 md:px-6 md:pt-36">
         {/* Hero */}
         <FadeIn direction="up" className="w-full">

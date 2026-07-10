@@ -9,7 +9,7 @@ export default function BlogPage() {
   );
 
   return (
-    <div className="min-h-screen text-white font-sans overflow-x-hidden selection:bg-[#ab9ff2] selection:text-white relative pb-32">
+    <div className="min-h-screen text-white overflow-x-hidden selection:bg-[#ab9ff2] selection:text-white relative pb-32">
       {/* Subtle background glow */}
       <div className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-ph4ntom-purple/10 blur-[120px] rounded-full" />
