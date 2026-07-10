@@ -30,7 +30,7 @@ export default function Navigation() {
                 className="h-full w-full object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <span className="font-display text-[22px] font-bold tracking-tight text-white md:text-[26px]">
+            <span className="font-display text-[22px] font-semibold tracking-tight text-white md:text-[26px]">
               RP<span className="text-[#c084fc]">Wallet</span>
             </span>
           </Link>

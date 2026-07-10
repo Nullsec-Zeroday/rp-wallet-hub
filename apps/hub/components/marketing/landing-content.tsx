@@ -273,24 +273,17 @@ export default function LandingContent() {
         </motion.div>
 
         <div className="relative z-10 mt-5 flex flex-col items-center md:mt-7">
-          <motion.p
-            initial={isMobile ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-4 whitespace-nowrap sl-font text-[10px] font-bold uppercase tracking-[0.2em] text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
-          >
-            ✦ New quest available: daily flex ✦
-          </motion.p>
+
           <motion.h1
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display max-w-5xl text-center text-[2.5rem] font-bold leading-none tracking-tight md:text-6xl lg:text-7xl"
+            className="font-display max-w-5xl text-center text-[2.5rem] font-semibold leading-none tracking-tight md:text-6xl lg:text-7xl"
           >
             <>
               The #1{" "}
               <span className="bg-gradient-to-r from-[#e9d5ff] via-[#c084fc] to-[#8b5cf6] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(139,92,246,0.45)]">
-                LARP crypto wallet app.
+                LARP crypto <br /> wallet app.
               </span>
             </>
           </motion.h1>
@@ -300,8 +293,16 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="my-4 flex max-w-3xl flex-col gap-2 text-center text-base font-medium leading-relaxed text-ph4ntom-light/80 md:my-8 md:text-xl"
           >
+            <motion.p
+              initial={isMobile ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-4 whitespace-nowrap sl-font text-[12px] font-bold uppercase tracking-[0.2em] text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
+            >
+              <span className="text-lg leading-0">✦</span> Available on iOS and Android <span className="text-lg leading-0">✦</span>
+            </motion.p>
             <p>
-              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom &amp; Trust Wallet. Create content online or prank your friends - no real crypto involved.
+              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom &amp; Trust Wallet. Flex online, prank others or create content - with no real crypto involved.
             </p>
           </motion.div>
         </div>
@@ -506,7 +507,7 @@ export default function LandingContent() {
                   />
                 </div>
 
-                <div className="relative z-10 flex items-center gap-2.5 px-2 pb-1 pt-2.5">
+                {/* <div className="relative z-10 flex items-center gap-2.5 px-2 pb-1 pt-2.5">
                   <span className="text-[13px] font-medium text-white/90">{vouch.name}</span>
                   <span className="ml-auto flex items-center gap-1.5 sl-font text-[10px] font-medium uppercase tracking-[0.15em] text-[#c084fc]/70">
                     <span className="flex size-3.5 items-center justify-center rounded-full bg-ph4ntom-green">
@@ -514,7 +515,7 @@ export default function LandingContent() {
                     </span>
                     Verified
                   </span>
-                </div>
+                </div> */}
               </motion.div>
             ))}
 
@@ -541,7 +542,7 @@ export default function LandingContent() {
               </div>
               <div className="px-4 text-center">
                 <p className="mb-1 text-[15px] font-semibold text-white/90">View More Vouches</p>
-                <p className="text-[12px] leading-relaxed text-white/50">Join our Telegram to see hundreds more reviews from real users</p>
+                <p className="text-[12px] leading-relaxed text-white/50">Join our Telegram to see more reviews from our users</p>
               </div>
               <div
                 className="sl-clip flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white transition-all group-hover:gap-3"
@@ -574,7 +575,7 @@ export default function LandingContent() {
                 Choose your <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">power.</span>
               </h2>
               <p className="mx-auto max-w-md text-base font-medium leading-relaxed text-white/60 md:text-lg">
-                Crypto-only payments with secure checkout powered by NOWPayments.
+                Secure checkout powered by NOWPayments.
               </p>
             </>
           )}
@@ -676,7 +677,7 @@ export default function LandingContent() {
                 <div className="relative z-10 mb-6 flex min-h-[60px] flex-col items-center justify-start transition-all duration-300">
                   <div className="flex items-baseline justify-center gap-1">
                     {showOriginalPrice && <span className="font-display relative mr-1.5 text-2xl font-medium text-white/40 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500 md:text-3xl">{plan.originalPrice}</span>}
-                    <span className="font-display text-5xl font-bold tracking-tight text-white md:text-6xl">{displayPrice}</span>
+                    <span className="font-display text-6xl font-semibold tracking-tight text-white md:text-6xl">{displayPrice}</span>
                   </div>
                 </div>
 
