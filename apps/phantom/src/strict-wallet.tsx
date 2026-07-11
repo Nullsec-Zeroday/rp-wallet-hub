@@ -14,6 +14,7 @@ import HomePage from "./app/(wallet)/home/page";
 import TokensPage from "./app/(wallet)/tokens/page";
 import BrowserPage from "./app/(wallet)/browser/page";
 import SwapPage from "./app/(wallet)/swap/page";
+import PredictPage from "./app/(wallet)/predict/page";
 import { appEnv } from "./app-env";
 import SendModal from "./app/(wallet)/_components/modals/send-modal";
 import ReceiveModal from "./app/(wallet)/_components/modals/receive-modal";
@@ -111,7 +112,8 @@ function WalletRouteBody() {
   const getRouteIndex = React.useCallback((path: string) => {
     if (path === "/home" || path === "/") return 0;
     if (path === "/swap") return 1;
-    if (path === "/browser") return 2;
+    if (path === "/predict") return 2;
+    if (path === "/browser") return 3;
     return -1;
   }, []);
 
@@ -651,6 +653,8 @@ function WalletRouteBody() {
     <BrowserPage />
   ) : pathname === "/swap" ? (
     <SwapPage />
+  ) : pathname === "/predict" ? (
+    <PredictPage />
   ) : pathname === "/settings" ? (
     <SettingsPage />
   ) : pathname === "/settings/edit-profile" ? (
@@ -749,7 +753,7 @@ function WalletRouteBody() {
           ref={scrollRef}
           className={`min-h-0 flex-1 wallet-scroll relative ${isSettingsPage
               ? "overflow-y-auto overscroll-y-contain pb-0 pt-0"
-              : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(60px+env(safe-area-inset-top))] md:pt-[60px]"
+              : "overflow-y-auto overscroll-y-contain pb-[75px] pt-[calc(70px+env(safe-area-inset-top))] md:pt-[70px]"
           }`}
           onScroll={(event) => {
             const nextScrolled = event.currentTarget.scrollTop > 10;
@@ -786,7 +790,7 @@ function WalletRouteBody() {
             ref={scrollbarRef}
             scrollRef={scrollRef}
             style={{
-              top: isSettingsPage ? 0 : "calc(60px + env(safe-area-inset-top))",
+              top: isSettingsPage ? 0 : "calc(70px + env(safe-area-inset-top))",
               bottom: isSettingsPage ? "calc(env(safe-area-inset-bottom, 0px))" : "calc(65px + env(safe-area-inset-bottom, 0px))",
             }}
           />
