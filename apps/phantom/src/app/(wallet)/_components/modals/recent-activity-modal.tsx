@@ -364,7 +364,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                     {selectedTx.type === 'swap' ? (
                       <div className="relative w-[90px] h-[72px] flex items-center justify-center">
                         <div className="absolute left-0 z-0">
-                          <div className="bg-black rounded-full p-0 border-[3px] border-[#111111]">
+                          <div className="bg-black rounded-full p-0">
                             <TokenLogo
                               token={getTokenInfo(selectedTx.token)}
                               size={52}
@@ -374,7 +374,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                           </div>
                         </div>
                         <div className="absolute right-0 z-10">
-                          <div className="bg-black rounded-full p-0 border-[3px] border-[#111111]">
+                          <div className="bg-black rounded-full p-0">
                             <TokenLogo
                               token={getTokenInfo(selectedTx.toToken || "USDC")}
                               size={52}

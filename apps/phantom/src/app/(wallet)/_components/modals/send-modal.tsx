@@ -532,8 +532,11 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       value={recipientAddress}
                       onChange={(e) => setRecipientAddress(e.target.value)}
                       onPaste={(e) => {
-                        e.preventDefault();
-                        setRecipientAddress(e.clipboardData.getData("text").trim());
+                        const text = e.clipboardData?.getData("text");
+                        if (text) {
+                          e.preventDefault();
+                          setRecipientAddress(text.trim());
+                        }
                       }}
                       onBlur={() => setTimeout(() => window.scrollTo(0, 0), 100)}
                       autoCapitalize="none"

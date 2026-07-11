@@ -14,6 +14,25 @@ import { useWalletStore } from '@/lib/wallet-store';
 const STORAGE_KEY = 'phantom_live_prices';
 const STORAGE_TS_KEY = 'phantom_live_prices_ts';
 
+// CoinGecko's free tier only refreshes prices every 1–5 min, so consecutive polls
+// usually return identical values and the portfolio total looks frozen — unlike a
+// real account that ticks constantly. Between real fetches we apply a tiny synthetic
+// jitter so the value visibly fluctuates. Each tick is anchored to the last REAL
+// price (not compounded), so it oscillates in a tight band and never drifts away
+// from the true value. Display-only — localStorage always holds the real prices.
+const PRICE_JITTER_PCT = 0.0005; // ±0.05% micro-fluctuation per tick
+const PRICE_JITTER_INTERVAL_MS = 2500;
+
+function applyPriceJitter(anchor: LivePrices): LivePrices {
+  const jittered: LivePrices = {};
+  for (const symbol in anchor) {
+    const entry = anchor[symbol];
+    const noise = 1 + (Math.random() * 2 - 1) * PRICE_JITTER_PCT;
+    jittered[symbol] = { ...entry, usd: entry.usd * noise };
+  }
+  return jittered;
+}
+
 interface UseLivePricesReturn {
   prices: LivePrices;
   isLoading: boolean;
@@ -120,6 +139,19 @@ export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn 
     };
     window.addEventListener('prices-updated', handleRefresh);
     return () => window.removeEventListener('prices-updated', handleRefresh);
+  }, []);
+
+  // Synthetic micro-fluctuation between real fetches so the total value ticks like a
+  // live account. Anchored to lastPricesRef (updated by every real fetch and
+  // pull-to-refresh), so it re-centers on the true price and cannot drift.
+  useEffect(() => {
+    const handle = setInterval(() => {
+      const anchor = lastPricesRef.current;
+      if (anchor && Object.keys(anchor).length > 0) {
+        setPrices(applyPriceJitter(anchor));
+      }
+    }, PRICE_JITTER_INTERVAL_MS);
+    return () => clearInterval(handle);
   }, []);
 
   return { prices, isLoading, lastUpdated, error, refetch: doFetch };
