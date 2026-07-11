@@ -20,14 +20,20 @@ const STORAGE_TS_KEY = 'phantom_live_prices_ts';
 // jitter so the value visibly fluctuates. Each tick is anchored to the last REAL
 // price (not compounded), so it oscillates in a tight band and never drifts away
 // from the true value. Display-only — localStorage always holds the real prices.
-const PRICE_JITTER_PCT = 0.0005; // ±0.05% micro-fluctuation per tick
+//
+// Amplitude is randomized per token per tick within [MIN, MAX] (with random sign),
+// so movement looks organic — some ticks barely move, others jump more.
+const PRICE_JITTER_MIN_PCT = 0.0002; // ±0.02% floor
+const PRICE_JITTER_MAX_PCT = 0.0012; // ±0.12% ceiling
 const PRICE_JITTER_INTERVAL_MS = 2500;
 
 function applyPriceJitter(anchor: LivePrices): LivePrices {
   const jittered: LivePrices = {};
   for (const symbol in anchor) {
     const entry = anchor[symbol];
-    const noise = 1 + (Math.random() * 2 - 1) * PRICE_JITTER_PCT;
+    const magnitude = PRICE_JITTER_MIN_PCT + Math.random() * (PRICE_JITTER_MAX_PCT - PRICE_JITTER_MIN_PCT);
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const noise = 1 + sign * magnitude;
     jittered[symbol] = { ...entry, usd: entry.usd * noise };
   }
   return jittered;
