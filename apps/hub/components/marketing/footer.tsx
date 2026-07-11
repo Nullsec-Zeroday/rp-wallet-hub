@@ -47,6 +47,7 @@ export default function Footer() {
             <div className="flex flex-col gap-4">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Socials</span>
               <Link href="https://t.me/rpwalletTG" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">Telegram</Link>
+              <Link href="https://partners.rpwallet.app" target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">Affiliate Program</Link>
             </div>
             <div className="flex flex-col gap-4 col-span-2 sm:col-span-1">
               <span className="text-white/80 font-bold uppercase tracking-widest text-[11px]">Legal</span>

@@ -24,6 +24,7 @@ export default function AdminKeysPage() {
   const [allowedDevices, setAllowedDevices] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [supportKey, setSupportKey] = useState("");
   const [supportLoading, setSupportLoading] = useState<"lookup" | "devices" | "sessions" | "reset" | null>(null);
   const [supportError, setSupportError] = useState("");
@@ -60,6 +61,7 @@ export default function AdminKeysPage() {
     event.preventDefault();
     setLoading(true);
     setError("");
+    setNotice("");
     setCreated(null);
 
     try {
@@ -72,6 +74,11 @@ export default function AdminKeysPage() {
         allowedDevices: Number(allowedDevices) || preset.allowedDevices,
       });
       setCreated(response);
+      if (response.emailSent) {
+        setNotice(`License key created and emailed to ${email.trim()}.`);
+      } else if (response.emailError) {
+        setError(response.emailError);
+      }
     } catch {
       setError("Unable to create key. Check the admin token, expiry date, and API deployment.");
     } finally {
@@ -261,6 +268,7 @@ export default function AdminKeysPage() {
               </div>
 
               {error && <div className="mt-4 rounded-lg border border-red-900/50 bg-red-950/20 p-4 text-sm font-medium text-red-500">{error}</div>}
+              {notice && <div className="mt-4 rounded-lg border border-emerald-900/50 bg-emerald-950/20 p-4 text-sm font-medium text-emerald-400">{notice}</div>}
 
               <button
                 disabled={loading || !adminToken.trim()}

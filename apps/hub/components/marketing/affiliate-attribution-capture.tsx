@@ -2,7 +2,9 @@
 
 import { useEffect } from "react";
 import {
+  type AffiliateAttribution,
   getAffiliateCodeFromSearch,
+  getLegacyStoredAttribution,
   getOrCreateVisitorId,
   getStoredAttribution,
   storeAttribution,
@@ -12,17 +14,31 @@ import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 export default function AffiliateAttributionCapture() {
   useEffect(() => {
     const url = new URL(window.location.href);
+    const referralToken = url.searchParams.get("rid");
+    const claimCode = url.searchParams.get("claim");
+    if (referralToken || claimCode) {
+      claimAttribution({ referralToken, claimCode }).then((attribution) => {
+        if (!attribution) return;
+        storeAttribution(attribution);
+      });
+      return;
+    }
+
     const affiliateCode = getAffiliateCodeFromSearch(url.searchParams);
-    if (!affiliateCode) return;
+    if (!affiliateCode) {
+      const stored = getStoredAttribution();
+      if (stored) return;
+      const legacy = getLegacyStoredAttribution();
+      if (legacy) {
+        claimAttribution({ referralToken: null, claimCode: legacy.clickId }).then((attribution) => {
+          if (!attribution) return;
+          storeAttribution(attribution);
+        });
+      }
+      return;
+    }
 
     const visitorId = getOrCreateVisitorId();
-    const expiresAt = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString();
-
-    storeAttribution({
-      affiliateCode,
-      visitorId,
-      expiresAt,
-    });
 
     fetch(`${HUB_API_BASE_URL}/affiliate/click`, {
       method: "POST",
@@ -36,15 +52,25 @@ export default function AffiliateAttributionCapture() {
       }),
     })
       .then((response) => (response.ok ? response.json() : null))
-      .then((result: { accepted?: boolean; attribution?: { clickId?: string; expiresAt?: string } } | null) => {
-        if (!result?.accepted) return;
-        const current = getStoredAttribution();
-        if (!current || current.affiliateCode !== affiliateCode) return;
-        storeAttribution({
-          ...current,
-          clickId: result.attribution?.clickId || current.clickId,
-          expiresAt: result.attribution?.expiresAt || current.expiresAt,
-        });
+      .then((result: {
+        accepted?: boolean;
+        referralToken?: string;
+        claimCode?: string;
+        attribution?: { clickId?: string; expiresAt?: string; affiliateDisplayName?: string };
+      } | null) => {
+        if (!result?.accepted || !result.referralToken || !result.claimCode || !result.attribution?.clickId || !result.attribution.expiresAt) return;
+        const attribution: AffiliateAttribution = {
+          affiliateCode,
+          affiliateDisplayName: result.attribution.affiliateDisplayName,
+          visitorId,
+          clickId: result.attribution.clickId,
+          referralToken: result.referralToken,
+          claimCode: result.claimCode,
+          expiresAt: result.attribution.expiresAt,
+        };
+        storeAttribution(attribution);
+        url.searchParams.set("rid", result.referralToken);
+        window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
       })
       .catch(() => {
         // Attribution should never interrupt the buying flow.
@@ -52,6 +78,24 @@ export default function AffiliateAttributionCapture() {
   }, []);
 
   return null;
+}
+
+async function claimAttribution(input: { referralToken: string | null; claimCode: string | null }) {
+  try {
+    const response = await fetch(`${HUB_API_BASE_URL}/affiliate/claim`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        referralToken: input.referralToken || undefined,
+        claimCode: input.claimCode || undefined,
+      }),
+    });
+    if (!response.ok) return null;
+    const result = await response.json() as { accepted?: boolean; attribution?: AffiliateAttribution };
+    return result.accepted && result.attribution ? result.attribution : null;
+  } catch {
+    return null;
+  }
 }
 
 function inferSource(referrer: string, userAgent: string) {

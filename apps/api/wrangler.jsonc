@@ -28,7 +28,7 @@
     "TRUST_ORIGIN": "https://app3.rpwallet.us",
     "PHANTOM_ENABLED": "true",
     "TRUST_ENABLED": "true",
-    // Set NOWPAYMENTS_API_KEY and NOWPAYMENTS_IPN_SECRET with `wrangler secret put`.
+    // Set NOWPAYMENTS_API_KEY, NOWPAYMENTS_IPN_SECRET, and REFERRAL_SIGNING_SECRET with `wrangler secret put`.
     "SELLAUTH_SHOP_ID": "234704",
     "SELLAUTH_STARTER_PRODUCT_ID": "700824",
     "SELLAUTH_MONTHLY_PRODUCT_ID": "700825",

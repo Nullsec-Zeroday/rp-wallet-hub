@@ -1,5 +1,6 @@
 DATABASE_URL=
 RESEND_API_KEY=
+REFERRAL_SIGNING_SECRET=replace-with-a-long-random-secret
 SESSION_COOKIE_NAME=rp_session
 HUB_ORIGIN=http://localhost:3000
 PHANTOM_ORIGIN=http://localhost:5173

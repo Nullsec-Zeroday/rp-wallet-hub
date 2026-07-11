@@ -161,9 +161,7 @@ export class RpWalletApiClient {
   }
 
   async createAffiliateCheckoutIntent(body: {
-    affiliateCode: string;
-    visitorId: string;
-    clickId?: string;
+    referralToken: string;
     plan: string;
     productId?: string | number;
     variantId?: string | number;
@@ -175,13 +173,39 @@ export class RpWalletApiClient {
     });
   }
 
+  async applyCreatorCode(body: { creatorCode: string; visitorId: string; landingPath: string }) {
+    return this.request<{
+      accepted: boolean;
+      referralToken?: string;
+      claimCode?: string;
+      attribution?: { affiliateCode: string; affiliateDisplayName?: string; clickId: string; expiresAt: string };
+    }>("/affiliate/click", {
+      method: "POST",
+      body: JSON.stringify({
+        affiliateCode: body.creatorCode,
+        visitorId: body.visitorId,
+        landingPath: body.landingPath,
+        source: "creator_code",
+      }),
+    });
+  }
+
+  async recoverCreatorOffer(body: { email: string; visitorId: string; landingPath: string }) {
+    return this.request<{
+      accepted: boolean;
+      referralToken?: string;
+      claimCode?: string;
+      attribution?: { affiliateCode: string; affiliateDisplayName?: string; clickId: string; expiresAt: string };
+    }>("/affiliate/recover", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
   async createNowPaymentsCheckout(body: {
     planId: string;
     email: string;
-    affiliateCode?: string;
-    affiliateCheckoutIntentId?: string;
-    affiliateVisitorId?: string;
-    affiliateClickId?: string;
+    referralToken?: string;
   }) {
     return this.request<{ checkoutUrl: string; orderId: string }>("/payments/nowpayments/checkout", {
       method: "POST",
@@ -294,6 +318,18 @@ export class RpWalletApiClient {
     });
   }
 
+  async updateAffiliateConversionStatus(
+    adminToken: string,
+    id: string,
+    status: "approved" | "rejected" | "paid",
+  ) {
+    return this.request<{ conversion: { id: string; status: string } }>(`/admin/affiliate-conversions/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ status }),
+    });
+  }
+
   async createAdminLicenseKey(
     adminToken: string,
     body: {
@@ -313,6 +349,8 @@ export class RpWalletApiClient {
         status: "active" | "expired" | "revoked";
         allowedDevices: number;
       };
+      emailSent: boolean;
+      emailError?: string;
     }>("/admin/keys", {
       method: "POST",
       headers: {

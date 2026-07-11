@@ -15,10 +15,12 @@ import type {
   WalletBootstrapPayload,
 } from "@rp-wallet/types";
 import { walletRegistry } from "@rp-wallet/wallet-core";
+import { getReferralBonusDays } from "@rp-wallet/config";
 import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
 import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore, isSupportTicketStatus, isSupportTicketType } from "./platform-store";
-import type { AffiliateConversionSummary, AffiliateSummary } from "./platform-store";
+import type { AffiliateAttributionSummary, AffiliateConversionSummary, AffiliateSummary, PlatformStore } from "./platform-store";
+import { createReferralToken, verifyReferralToken } from "./referral-token";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
 const AFFILIATE_SESSION_COOKIE = "rp_affiliate_session";
@@ -284,6 +286,34 @@ app.get("/token-info", async (c) => {
 
 app.get("/demo/config", (c) => c.json(getDemoConfig(c.env)));
 
+app.get("/affiliate/redirect/:code", async (c) => {
+  const affiliateCode = c.req.param("code");
+  const hubUrl = new URL("/", getPublicHubOrigin(c.env));
+  const userAgent = c.req.header("user-agent") || "";
+  if (isLinkPreviewBot(userAgent)) return c.redirect(hubUrl.toString(), 302);
+  const requestedVisitorId = normalizeBoundedString(c.req.query("v"), 64);
+  const visitorId = requestedVisitorId && /^afv_[a-f0-9]{18}$/.test(requestedVisitorId)
+    ? requestedVisitorId
+    : createReferralVisitorId();
+
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const result = await store.recordAffiliateClick({
+    affiliateCode,
+    visitorId,
+    landingPath: `/r/${encodeURIComponent(affiliateCode)}`,
+    referrer: normalizeBoundedString(c.req.header("referer"), 2048),
+    source: inferReferralSource(c.req.header("referer") || "", userAgent),
+    userAgent,
+    ipAddress: getClientIp(c),
+  });
+  const trustedAttribution = result.click ? await store.getAffiliateAttributionByClickId(result.click.id) : null;
+  const referralToken = result.accepted && result.click && result.attribution && trustedAttribution
+    ? await issueReferralToken(c.env, result.click.id, result.attribution.expiresAt)
+    : null;
+  if (referralToken) hubUrl.searchParams.set("rid", referralToken);
+  return c.redirect(hubUrl.toString(), 302);
+});
+
 app.post("/affiliate/click", async (c) => {
   const body = await c.req.json<{
     affiliateCode?: string;
@@ -293,42 +323,117 @@ app.post("/affiliate/click", async (c) => {
     source?: string;
   }>();
 
-  if (!body.affiliateCode?.trim() || !body.visitorId?.trim()) {
+  if (!body.affiliateCode?.trim() || !body.visitorId?.trim() || !/^afv_[a-f0-9]{18}$/.test(body.visitorId.trim())) {
     return c.json({ accepted: false });
   }
 
-  const result = await getPlatformStore(c.env.DATABASE_URL).recordAffiliateClick({
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const result = await store.recordAffiliateClick({
     affiliateCode: body.affiliateCode,
     visitorId: body.visitorId,
-    landingPath: body.landingPath || "/",
-    referrer: body.referrer,
-    source: body.source,
+    landingPath: normalizeBoundedString(body.landingPath, 2048) || "/",
+    referrer: normalizeBoundedString(body.referrer, 2048),
+    source: normalizeBoundedString(body.source, 64),
     userAgent: c.req.header("user-agent") || undefined,
     ipAddress: getClientIp(c),
   });
 
-  return c.json(result);
+  const trustedAttribution = result.click ? await store.getAffiliateAttributionByClickId(result.click.id) : null;
+  const referralToken = result.accepted && result.click && result.attribution && trustedAttribution
+    ? await issueReferralToken(c.env, result.click.id, result.attribution.expiresAt)
+    : null;
+  return c.json({
+    ...result,
+    attribution: result.attribution && trustedAttribution
+      ? { ...result.attribution, affiliateDisplayName: trustedAttribution.affiliateDisplayName }
+      : result.attribution,
+    referralToken: referralToken || undefined,
+    claimCode: referralToken ? result.click?.id : undefined,
+  });
+});
+
+app.post("/affiliate/claim", async (c) => {
+  const body = await c.req.json<{ referralToken?: string; claimCode?: string }>();
+  let referralToken = normalizeBoundedString(body.referralToken, 1024);
+  let attribution = referralToken
+    ? await resolveReferralToken(getPlatformStore(c.env.DATABASE_URL), c.env, referralToken)
+    : null;
+
+  const claimCode = normalizeBoundedString(body.claimCode, 64);
+  if (!attribution && claimCode && /^afc_[a-f0-9]{18}$/.test(claimCode)) {
+    attribution = await getPlatformStore(c.env.DATABASE_URL).getAffiliateAttributionByClickId(claimCode);
+    referralToken = attribution ? await issueReferralToken(c.env, attribution.clickId, attribution.expiresAt) || undefined : undefined;
+  }
+  if (!attribution || !referralToken) return c.json({ accepted: false });
+
+  return c.json({
+    accepted: true,
+    attribution: {
+      ...attribution,
+      referralToken,
+      claimCode: attribution.clickId,
+    },
+  });
+});
+
+app.post("/affiliate/recover", async (c) => {
+  const body = await c.req.json<{ email?: string; visitorId?: string; landingPath?: string }>();
+  const email = normalizePayloadString(body.email)?.toLowerCase();
+  const visitorId = normalizePayloadString(body.visitorId);
+  if (!email || !isValidEmail(email) || !visitorId || !/^afv_[a-f0-9]{18}$/.test(visitorId)) {
+    return c.json({ accepted: false });
+  }
+
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const recovered = await store.getAffiliateAttributionByBuyerEmail(email);
+  if (!recovered) return c.json({ accepted: false });
+  const result = await store.recordAffiliateClick({
+    affiliateCode: recovered.affiliateCode,
+    visitorId,
+    landingPath: normalizeBoundedString(body.landingPath, 2048) || "/buy",
+    source: "email_recovery",
+    userAgent: c.req.header("user-agent") || undefined,
+    ipAddress: getClientIp(c),
+  });
+  const trusted = result.click ? await store.getAffiliateAttributionByClickId(result.click.id) : null;
+  const referralToken = result.accepted && result.click && result.attribution && trusted
+    ? await issueReferralToken(c.env, result.click.id, result.attribution.expiresAt)
+    : null;
+  if (!referralToken || !result.click || !result.attribution || !trusted) return c.json({ accepted: false });
+  return c.json({
+    accepted: true,
+    referralToken,
+    claimCode: result.click.id,
+    attribution: {
+      affiliateCode: trusted.affiliateCode,
+      affiliateDisplayName: trusted.affiliateDisplayName,
+      clickId: trusted.clickId,
+      expiresAt: trusted.expiresAt,
+    },
+  });
 });
 
 app.post("/affiliate/checkout-intent", async (c) => {
   const body = await c.req.json<{
-    affiliateCode?: string;
-    visitorId?: string;
-    clickId?: string;
+    referralToken?: string;
     plan?: string;
     productId?: string | number;
     variantId?: string | number;
     buyerEmail?: string;
   }>();
 
-  if (!body.affiliateCode?.trim() || !body.visitorId?.trim() || !body.plan?.trim()) {
+  if (!body.referralToken?.trim() || !body.plan?.trim()) {
     return c.json({ accepted: false });
   }
 
-  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateCheckoutIntent({
-    affiliateCode: body.affiliateCode,
-    visitorId: body.visitorId,
-    clickId: body.clickId,
+  const store = getPlatformStore(c.env.DATABASE_URL);
+  const attribution = await resolveReferralToken(store, c.env, body.referralToken);
+  if (!attribution) return c.json({ accepted: false });
+
+  const result = await store.createAffiliateCheckoutIntent({
+    affiliateCode: attribution.affiliateCode,
+    visitorId: attribution.visitorId,
+    clickId: attribution.clickId,
     plan: body.plan,
     productId: body.productId?.toString(),
     variantId: body.variantId?.toString(),
@@ -422,6 +527,17 @@ app.post("/admin/affiliates", async (c) => {
   return c.json(affiliate);
 });
 
+app.patch("/admin/affiliate-conversions/:id", async (c) => {
+  if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
+  const body = await c.req.json<{ status?: "pending" | "approved" | "rejected" | "paid" }>();
+  if (!body.status || !["pending", "approved", "rejected", "paid"].includes(body.status)) {
+    return c.json({ error: "Invalid conversion status" }, 400);
+  }
+  const conversion = await getPlatformStore(c.env.DATABASE_URL).updateAffiliateConversionStatus(c.req.param("id"), body.status);
+  if (!conversion) return c.json({ error: "Conversion not found or status transition is not allowed" }, 409);
+  return c.json({ conversion });
+});
+
 app.post("/admin/keys", async (c) => {
   if (!isAffiliateAdminRequest(c)) return c.json({ error: "Unauthorized" }, 401);
   const body = await c.req.json<{
@@ -445,9 +561,30 @@ app.post("/admin/keys", async (c) => {
     allowedDevices: getAdminAllowedDevices(plan, body.allowedDevices),
   });
 
+  let emailSent = false;
+  let emailError: string | undefined;
+  const email = normalizePayloadString(body.email);
+  if (email) {
+    try {
+      const result = await sendPurchaseEmail(c.env, {
+        to: email,
+        licenseKey,
+        planLabel: plan,
+        expirationDate: expiresAt.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
+      });
+      emailSent = Boolean(result?.id);
+      if (!emailSent) emailError = "Email service is not configured.";
+    } catch (error) {
+      console.error("[admin-keys] License created, but delivery email failed", error);
+      emailError = "The key was created, but the email could not be sent.";
+    }
+  }
+
   return c.json({
     license,
     licenseKey,
+    emailSent,
+    emailError,
   });
 });
 
@@ -593,10 +730,7 @@ app.post("/payments/nowpayments/checkout", async (c) => {
     const body = await c.req.json<{
       planId?: string;
       email?: string;
-      affiliateCode?: string;
-      affiliateCheckoutIntentId?: string;
-      affiliateVisitorId?: string;
-      affiliateClickId?: string;
+      referralToken?: string;
     }>();
     const planId = normalizePayloadString(body.planId)?.toLowerCase();
     const email = normalizePayloadString(body.email)?.toLowerCase();
@@ -607,15 +741,37 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       planId: planId || null,
       hasEmail: Boolean(email),
       emailDomain: email?.split("@")[1] || null,
-      hasAffiliate: Boolean(body.affiliateCode),
+      hasReferralToken: Boolean(body.referralToken),
       storage: c.env.DATABASE_URL ? "neon" : "memory",
     });
 
     if (!plan) return c.json({ error: "Invalid plan", requestId }, 400);
     if (!email || !isValidEmail(email)) return c.json({ error: "A valid email address is required", requestId }, 400);
 
-    const priceAmount = plan.priceAmount;
     const store = getPlatformStore(c.env.DATABASE_URL);
+    const referralAttribution = body.referralToken
+      ? await resolveReferralToken(store, c.env, body.referralToken)
+      : null;
+    const emailAttribution = referralAttribution
+      ? null
+      : await store.getAffiliateAttributionByBuyerEmail(email);
+    const affiliateIntent = referralAttribution
+      ? await store.createAffiliateCheckoutIntent({
+          affiliateCode: referralAttribution.affiliateCode,
+          visitorId: referralAttribution.visitorId,
+          clickId: referralAttribution.clickId,
+          plan: plan.id,
+          buyerEmail: email,
+        })
+      : null;
+    const trustedAttribution: { attribution: AffiliateAttributionSummary; intent: { id: string }; source: "current" | "email" } | null =
+      affiliateIntent?.accepted && affiliateIntent.intent
+        ? { attribution: referralAttribution!, intent: affiliateIntent.intent, source: "current" }
+        : emailAttribution
+          ? { attribution: emailAttribution, intent: { id: emailAttribution.checkoutIntentId }, source: "email" }
+          : null;
+    const referralBonusDays = referralAttribution || emailAttribution ? getReferralBonusDays(plan.id) : 0;
+    const priceAmount = plan.priceAmount;
     console.log("[nowpayments-checkout] Creating payment order", { requestId, planId: plan.id });
     const order = await store.createPaymentOrder({
       provider: "nowpayments",
@@ -624,14 +780,19 @@ app.post("/payments/nowpayments/checkout", async (c) => {
       planLabel: plan.label,
       priceAmount,
       priceCurrency: "USD",
-      durationDays: plan.durationDays,
+      durationDays: plan.durationDays + referralBonusDays,
       allowedDevices: plan.allowedDevices,
-      affiliateCode: normalizePayloadString(body.affiliateCode)?.toLowerCase(),
-      affiliateCheckoutIntentId: normalizePayloadString(body.affiliateCheckoutIntentId),
-      affiliateVisitorId: normalizePayloadString(body.affiliateVisitorId),
-      affiliateClickId: normalizePayloadString(body.affiliateClickId),
+      affiliateCode: trustedAttribution?.attribution.affiliateCode,
+      affiliateCheckoutIntentId: trustedAttribution?.intent.id,
+      affiliateVisitorId: trustedAttribution?.attribution.visitorId,
+      affiliateClickId: trustedAttribution?.attribution.clickId,
     });
-    console.log("[nowpayments-checkout] Payment order created", { requestId, orderId: order.id });
+    console.log("[nowpayments-checkout] Payment order created", {
+      requestId,
+      orderId: order.id,
+      referralBonusDays,
+      referralSource: trustedAttribution?.source || null,
+    });
 
     const apiOrigin = new URL(c.req.url).origin;
     const hubOrigin = c.env.HUB_ORIGIN || "http://localhost:3000";
@@ -790,6 +951,7 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
         }),
         licenseKey,
         planLabel: order.planLabel,
+        referralBonusDays: Math.max(0, order.durationDays - (PAYMENT_PLANS[order.planId]?.durationDays || order.durationDays)),
         to: order.email,
       }),
       store
@@ -2074,6 +2236,7 @@ async function sendPurchaseEmail(
     licenseKey: string;
     planLabel: string;
     expirationDate: string;
+    referralBonusDays?: number;
   },
 ) {
   if (!env.RESEND_API_KEY) {
@@ -2099,6 +2262,8 @@ async function sendPurchaseEmail(
     const detail = await response.text().catch(() => "");
     throw new Error(`Resend API error: ${response.status}${detail ? ` ${detail}` : ""}`);
   }
+
+  return response.json<{ id?: string }>().catch((): { id?: string } => ({}));
 }
 
 async function sendLicenseReminderEmail(
@@ -2461,6 +2626,7 @@ function buildPurchaseEmailHtml(params: {
   licenseKey: string;
   planLabel: string;
   expirationDate: string;
+  referralBonusDays?: number;
 }) {
   const b = EMAIL_BRAND;
   const body = `
@@ -2476,6 +2642,7 @@ ${renderSystemTag("New item acquired")}
 <p style="margin:0 0 26px;color:rgba(255,255,255,0.66);font-size:15px;line-height:1.55;text-align:center;">
   Thanks for purchasing <strong style="color:#fff;">${escapeHtml(params.planLabel)}</strong>. Use the key below to activate your RPWallet access.
 </p>
+${params.referralBonusDays ? `<p style="margin:-12px 0 24px;color:#86efac;font-size:14px;font-weight:700;text-align:center;">Creator offer applied: +${params.referralBonusDays} bonus days included.</p>` : ""}
 ${renderKeyPanel(params.licenseKey)}
 ${renderMetaBadges(params.planLabel, params.expirationDate)}
 ${renderActivationSteps()}
@@ -2766,6 +2933,53 @@ function getClientIp(c: Context<HonoEnv>) {
     c.req.header("x-real-ip") ||
     undefined
   );
+}
+
+function getReferralSigningSecret(env: ApiEnv) {
+  return env.REFERRAL_SIGNING_SECRET || "";
+}
+
+async function issueReferralToken(env: ApiEnv, clickId: string, expiresAt: string) {
+  const secret = getReferralSigningSecret(env);
+  if (!secret) {
+    console.error("[referral] REFERRAL_SIGNING_SECRET is not configured");
+    return null;
+  }
+  return createReferralToken({ clickId, expiresAt }, secret);
+}
+
+async function resolveReferralToken(store: PlatformStore, env: ApiEnv, token: string) {
+  const secret = getReferralSigningSecret(env);
+  if (!secret) return null;
+  const payload = await verifyReferralToken(token, secret);
+  if (!payload) return null;
+  const attribution = await store.getAffiliateAttributionByClickId(payload.clickId);
+  if (!attribution || attribution.expiresAt !== payload.expiresAt) return null;
+  return attribution;
+}
+
+function createReferralVisitorId() {
+  return `afv_${crypto.randomUUID().replace(/-/g, "").slice(0, 18)}`;
+}
+
+function normalizeBoundedString(value: string | null | undefined, maxLength: number) {
+  const normalized = value?.trim();
+  return normalized ? normalized.slice(0, maxLength) : undefined;
+}
+
+function isLinkPreviewBot(userAgent: string) {
+  return /bot|crawler|spider|preview|facebookexternalhit|twitterbot|slackbot|discordbot|whatsapp/i.test(userAgent);
+}
+
+function inferReferralSource(referrer: string, userAgent: string) {
+  const value = `${referrer} ${userAgent}`.toLowerCase();
+  if (value.includes("instagram")) return "instagram";
+  if (value.includes("tiktok")) return "tiktok";
+  if (value.includes("youtube") || value.includes("youtu.be")) return "youtube";
+  if (value.includes("facebook") || value.includes("fbav") || value.includes("fban")) return "facebook";
+  if (value.includes("crios") || value.includes("chrome")) return "chrome";
+  if (value.includes("safari")) return "safari";
+  return "direct";
 }
 
 function getPublicHubOrigin(env: ApiEnv) {

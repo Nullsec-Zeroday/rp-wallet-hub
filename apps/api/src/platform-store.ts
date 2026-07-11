@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { and, asc, count, desc, eq, gt, inArray, isNull, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, lt, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@rp-wallet/db";
 import type {
@@ -29,7 +29,6 @@ import { getDemoBalances, listWalletApps, walletRegistry } from "@rp-wallet/wall
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
 const AFFILIATE_ATTRIBUTION_TTL_MS = 45 * 24 * 60 * 60 * 1000;
-const AFFILIATE_CHECKOUT_MATCH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const AFFILIATE_MAGIC_LINK_TTL_MS = 15 * 60 * 1000;
 const AFFILIATE_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_WALLET_USERNAME = "RPWallet";
@@ -206,6 +205,18 @@ export interface AffiliateConversionInput {
   variantId?: string;
 }
 
+export interface AffiliateAttributionSummary {
+  affiliateCode: string;
+  affiliateDisplayName: string;
+  visitorId: string;
+  clickId: string;
+  expiresAt: string;
+}
+
+export interface AffiliateEmailAttributionSummary extends AffiliateAttributionSummary {
+  checkoutIntentId: string;
+}
+
 export interface AffiliateAdminSnapshot {
   affiliates: AffiliateSummary[];
   clicks: AffiliateClickSummary[];
@@ -232,9 +243,9 @@ export interface AffiliateDashboardSummary {
     paidCommission: string;
     totalCommission: string;
   };
-  recentClicks: AffiliateClickSummary[];
-  recentCheckoutIntents: AffiliateCheckoutIntentSummary[];
-  recentConversions: AffiliateConversionSummary[];
+  recentClicks: Array<{ id: string; landingPath: string; source?: string; createdAt: string }>;
+  recentCheckoutIntents: Array<{ id: string; plan: string; productId?: string; createdAt: string }>;
+  recentConversions: Array<{ id: string; plan: string; amount: string; currency: string; commissionAmount: string; status: AffiliateConversionSummary["status"]; createdAt: string }>;
 }
 
 export interface ActivationInput {
@@ -431,8 +442,11 @@ export interface PlatformStore {
   resetAdminLicenseAccess(licenseKey: string): Promise<AdminLicenseResetResult | null>;
   createAffiliate(input: { code: string; displayName: string; email?: string; commissionRate?: string; payoutInfoJson?: string }): Promise<AffiliateSummary>;
   recordAffiliateClick(input: AffiliateClickInput): Promise<{ accepted: boolean; click?: AffiliateClickSummary; attribution?: { affiliateCode: string; clickId: string; expiresAt: string } }>;
+  getAffiliateAttributionByClickId(clickId: string): Promise<AffiliateAttributionSummary | null>;
+  getAffiliateAttributionByBuyerEmail(email: string): Promise<AffiliateEmailAttributionSummary | null>;
   createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput): Promise<{ accepted: boolean; intent?: AffiliateCheckoutIntentSummary }>;
   createAffiliateConversion(input: AffiliateConversionInput): Promise<{ accepted: boolean; conversion?: AffiliateConversionSummary; affiliate?: AffiliateSummary; created?: boolean }>;
+  updateAffiliateConversionStatus(id: string, status: AffiliateConversionSummary["status"]): Promise<AffiliateConversionSummary | null>;
   getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot>;
   createAffiliateMagicLink(email: string): Promise<{ accepted: boolean; token?: string; affiliate?: AffiliateSummary; expiresAt?: string }>;
   verifyAffiliateMagicLink(token: string): Promise<{ accepted: boolean; sessionId?: string; expiresAt?: string; affiliate?: AffiliateSummary }>;
@@ -674,23 +688,73 @@ class InMemoryPlatformStore implements PlatformStore {
     };
   }
 
+  async getAffiliateAttributionByClickId(clickId: string) {
+    const click = this.affiliateClicks.get(clickId);
+    if (!click) return null;
+    const attribution = this.affiliateAttributions.get(click.visitorId);
+    const affiliate = this.affiliates.get(click.affiliateId);
+    if (
+      !attribution
+      || attribution.clickId !== click.id
+      || attribution.affiliateId !== click.affiliateId
+      || new Date(attribution.expiresAt) <= new Date()
+      || !affiliate
+      || affiliate.status !== "active"
+    ) {
+      return null;
+    }
+    return {
+      affiliateCode: attribution.affiliateCode,
+      affiliateDisplayName: affiliate.displayName,
+      visitorId: attribution.visitorId,
+      clickId: attribution.clickId,
+      expiresAt: attribution.expiresAt,
+    };
+  }
+
+  async getAffiliateAttributionByBuyerEmail(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const cutoff = Date.now() - AFFILIATE_ATTRIBUTION_TTL_MS;
+    const intent = [...this.affiliateCheckoutIntents.values()]
+      .filter((entry) => entry.buyerEmail?.trim().toLowerCase() === normalizedEmail && Date.parse(entry.createdAt) >= cutoff && entry.clickId)
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))[0];
+    if (!intent?.clickId) return null;
+    const affiliate = this.affiliates.get(intent.affiliateId);
+    if (!affiliate || affiliate.status !== "active") return null;
+    return {
+      affiliateCode: affiliate.code,
+      affiliateDisplayName: affiliate.displayName,
+      visitorId: intent.visitorId,
+      clickId: intent.clickId,
+      checkoutIntentId: intent.id,
+      expiresAt: new Date(Date.parse(intent.createdAt) + AFFILIATE_ATTRIBUTION_TTL_MS).toISOString(),
+    };
+  }
+
   async createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput) {
     const affiliate = this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode));
     if (!affiliate || affiliate.status !== "active") return { accepted: false };
+    if (isAffiliateSelfReferral(affiliate.email, input.buyerEmail)) return { accepted: false };
 
-    const attribution = this.affiliateAttributions.get(input.visitorId);
-    if (attribution && new Date(attribution.expiresAt) <= new Date()) return { accepted: false };
+    const attribution = this.affiliateAttributions.get(input.visitorId.trim());
+    if (
+      !attribution
+      || attribution.affiliateId !== affiliate.id
+      || attribution.affiliateCode !== affiliate.code
+      || attribution.clickId !== input.clickId
+      || new Date(attribution.expiresAt) <= new Date()
+    ) return { accepted: false };
 
     const intent: AffiliateCheckoutIntentSummary = {
       id: createId("afi"),
       affiliateId: affiliate.id,
       affiliateCode: affiliate.code,
       visitorId: input.visitorId.trim(),
-      clickId: normalizeOptionalString(input.clickId) || attribution?.clickId,
+      clickId: attribution.clickId,
       plan: input.plan,
       productId: normalizeOptionalString(input.productId),
       variantId: normalizeOptionalString(input.variantId),
-      buyerEmail: normalizeOptionalString(input.buyerEmail),
+      buyerEmail: normalizeOptionalString(input.buyerEmail)?.toLowerCase(),
       createdAt: new Date().toISOString(),
     };
     this.affiliateCheckoutIntents.set(intent.id, intent);
@@ -703,10 +767,11 @@ class InMemoryPlatformStore implements PlatformStore {
     }
 
     const exactMatch = this.findAffiliateForConversion(input);
+    if (input.checkoutIntentId && !exactMatch) return { accepted: false };
     const affiliate = exactMatch?.affiliate || (input.affiliateCode ? this.getAffiliateByCode(normalizeAffiliateCode(input.affiliateCode)) : undefined);
     if (!affiliate || affiliate.status !== "active") return { accepted: false };
 
-    const match = exactMatch || this.findAffiliateForConversion({ ...input, affiliateCode: affiliate.code });
+    const match = exactMatch;
     const amount = normalizeMoney(input.amount);
     const commissionAmount = calculateCommissionAmount(amount, affiliate.commissionRate);
     const license = input.licenseId ? this.licenses.get(input.licenseId) : undefined;
@@ -730,6 +795,14 @@ class InMemoryPlatformStore implements PlatformStore {
     };
     this.affiliateConversions.set(conversion.sellauthOrderId, conversion);
     return { accepted: true, conversion, affiliate, created: true };
+  }
+
+  async updateAffiliateConversionStatus(id: string, status: AffiliateConversionSummary["status"]) {
+    const entry = [...this.affiliateConversions.entries()].find(([, conversion]) => conversion.id === id);
+    if (!entry || !isAllowedAffiliateStatusTransition(entry[1].status, status)) return null;
+    const updated = { ...entry[1], status, updatedAt: new Date().toISOString() };
+    this.affiliateConversions.set(entry[0], updated);
+    return updated;
   }
 
   async getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot> {
@@ -1673,13 +1746,13 @@ class InMemoryPlatformStore implements PlatformStore {
     const conversions = [...this.affiliateConversions.values()].filter((conversion) => conversion.affiliateId === affiliate.id);
     const commission = (status?: AffiliateConversionSummary["status"]) =>
       conversions
-        .filter((conversion) => !status || conversion.status === status)
+        .filter((conversion) => status ? conversion.status === status : conversion.status !== "rejected")
         .reduce((total, conversion) => total + Number(conversion.commissionAmount), 0)
         .toFixed(2);
 
     return {
       affiliate,
-      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/r/${encodeURIComponent(affiliate.code)}`,
       stats: {
         clicks: clicks.length,
         checkoutIntents: checkoutIntents.length,
@@ -1689,9 +1762,9 @@ class InMemoryPlatformStore implements PlatformStore {
         paidCommission: commission("paid"),
         totalCommission: commission(),
       },
-      recentClicks: clicks.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
-      recentCheckoutIntents: checkoutIntents.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
-      recentConversions: conversions.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10),
+      recentClicks: clicks.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10).map(toAffiliateDashboardClick),
+      recentCheckoutIntents: checkoutIntents.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10).map(toAffiliateDashboardIntent),
+      recentConversions: conversions.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, 10).map(toAffiliateDashboardConversion),
     };
   }
 
@@ -1704,20 +1777,7 @@ class InMemoryPlatformStore implements PlatformStore {
       return affiliate ? { affiliate, intent } : undefined;
     }
 
-    const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : undefined;
-    const candidates = [...this.affiliateCheckoutIntents.values()]
-      .filter((intent) => {
-        if (code && intent.affiliateCode !== code) return false;
-        if (input.productId && intent.productId && intent.productId !== input.productId) return false;
-        if (input.variantId && intent.variantId && intent.variantId !== input.variantId) return false;
-        return Date.now() - Date.parse(intent.createdAt) <= AFFILIATE_CHECKOUT_MATCH_WINDOW_MS;
-      })
-      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-
-    const intent = candidates[0];
-    if (!intent) return undefined;
-    const affiliate = this.affiliates.get(intent.affiliateId);
-    return affiliate ? { affiliate, intent } : undefined;
+    return undefined;
   }
 
   private async findLicenseByPlaintextKey(licenseKey: string) {
@@ -1978,16 +2038,69 @@ class NeonPlatformStore implements PlatformStore {
     };
   }
 
+  async getAffiliateAttributionByClickId(clickId: string) {
+    const [click] = await this.db
+      .select()
+      .from(schema.affiliateClicks)
+      .where(eq(schema.affiliateClicks.id, clickId))
+      .limit(1);
+    if (!click) return null;
+    const [attribution] = await this.db
+      .select()
+      .from(schema.affiliateAttributions)
+      .where(eq(schema.affiliateAttributions.visitorId, click.visitorId))
+      .limit(1);
+    if (!attribution || attribution.clickId !== click.id || attribution.expiresAt <= new Date()) return null;
+    const affiliate = await this.getActiveAffiliateById(attribution.affiliateId);
+    if (!affiliate || affiliate.code !== attribution.affiliateCode) return null;
+    return {
+      affiliateCode: attribution.affiliateCode,
+      affiliateDisplayName: affiliate.displayName,
+      visitorId: attribution.visitorId,
+      clickId: attribution.clickId,
+      expiresAt: attribution.expiresAt.toISOString(),
+    };
+  }
+
+  async getAffiliateAttributionByBuyerEmail(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const cutoff = new Date(Date.now() - AFFILIATE_ATTRIBUTION_TTL_MS);
+    const [intent] = await this.db
+      .select()
+      .from(schema.affiliateCheckoutIntents)
+      .where(and(eq(schema.affiliateCheckoutIntents.buyerEmail, normalizedEmail), gt(schema.affiliateCheckoutIntents.createdAt, cutoff)))
+      .orderBy(desc(schema.affiliateCheckoutIntents.createdAt))
+      .limit(1);
+    if (!intent?.clickId) return null;
+    const affiliate = await this.getActiveAffiliateById(intent.affiliateId);
+    if (!affiliate) return null;
+    return {
+      affiliateCode: affiliate.code,
+      affiliateDisplayName: affiliate.displayName,
+      visitorId: intent.visitorId,
+      clickId: intent.clickId,
+      checkoutIntentId: intent.id,
+      expiresAt: new Date(intent.createdAt.getTime() + AFFILIATE_ATTRIBUTION_TTL_MS).toISOString(),
+    };
+  }
+
   async createAffiliateCheckoutIntent(input: AffiliateCheckoutIntentInput) {
     const affiliate = await this.getActiveAffiliateByCode(input.affiliateCode);
     if (!affiliate) return { accepted: false };
+    if (isAffiliateSelfReferral(affiliate.email, input.buyerEmail)) return { accepted: false };
 
     const [attribution] = await this.db
       .select()
       .from(schema.affiliateAttributions)
       .where(eq(schema.affiliateAttributions.visitorId, input.visitorId.trim()))
       .limit(1);
-    if (attribution && attribution.expiresAt <= new Date()) return { accepted: false };
+    if (
+      !attribution
+      || attribution.affiliateId !== affiliate.id
+      || attribution.affiliateCode !== affiliate.code
+      || attribution.clickId !== input.clickId
+      || attribution.expiresAt <= new Date()
+    ) return { accepted: false };
 
     const [intent] = await this.db
       .insert(schema.affiliateCheckoutIntents)
@@ -1996,11 +2109,11 @@ class NeonPlatformStore implements PlatformStore {
         affiliateId: affiliate.id,
         affiliateCode: affiliate.code,
         visitorId: input.visitorId.trim(),
-        clickId: normalizeOptionalString(input.clickId) || attribution?.clickId,
+        clickId: attribution.clickId,
         plan: input.plan,
         productId: normalizeOptionalString(input.productId),
         variantId: normalizeOptionalString(input.variantId),
-        buyerEmail: normalizeOptionalString(input.buyerEmail),
+        buyerEmail: normalizeOptionalString(input.buyerEmail)?.toLowerCase(),
       })
       .returning();
 
@@ -2016,6 +2129,7 @@ class NeonPlatformStore implements PlatformStore {
     if (existing) return { accepted: true, conversion: toAffiliateConversionSummary(existing), created: false };
 
     const match = await this.findAffiliateIntentForConversion(input);
+    if (input.checkoutIntentId && !match) return { accepted: false };
     const affiliate = match?.affiliate || (input.affiliateCode ? await this.getActiveAffiliateByCode(input.affiliateCode) : undefined);
     if (!affiliate) return { accepted: false };
 
@@ -2047,12 +2161,31 @@ class NeonPlatformStore implements PlatformStore {
     return { accepted: true, conversion: toAffiliateConversionSummary(created), affiliate, created: isNew };
   }
 
+  async updateAffiliateConversionStatus(id: string, status: AffiliateConversionSummary["status"]) {
+    const [existing] = await this.db.select().from(schema.affiliateConversions).where(eq(schema.affiliateConversions.id, id)).limit(1);
+    if (!existing || !isAllowedAffiliateStatusTransition(existing.status, status)) return null;
+    const [updated] = await this.db
+      .update(schema.affiliateConversions)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(schema.affiliateConversions.id, id))
+      .returning();
+    return updated ? toAffiliateConversionSummary(updated) : null;
+  }
+
   async getAffiliateAdminSnapshot(): Promise<AffiliateAdminSnapshot> {
-    const [affiliates, clicks, checkoutIntents, conversions] = await Promise.all([
+    const [affiliates, clicks, checkoutIntents, conversions, payoutRows] = await Promise.all([
       this.db.select().from(schema.affiliates).orderBy(asc(schema.affiliates.code)),
       this.db.select().from(schema.affiliateClicks).orderBy(desc(schema.affiliateClicks.createdAt)).limit(250),
       this.db.select().from(schema.affiliateCheckoutIntents).orderBy(desc(schema.affiliateCheckoutIntents.createdAt)).limit(250),
       this.db.select().from(schema.affiliateConversions).orderBy(desc(schema.affiliateConversions.createdAt)).limit(250),
+      this.db
+        .select({
+          affiliateId: schema.affiliateConversions.affiliateId,
+          status: schema.affiliateConversions.status,
+          total: sum(schema.affiliateConversions.commissionAmount),
+        })
+        .from(schema.affiliateConversions)
+        .groupBy(schema.affiliateConversions.affiliateId, schema.affiliateConversions.status),
     ]);
 
     const affiliateSummaries = affiliates.map(toAffiliateSummary);
@@ -2062,7 +2195,7 @@ class NeonPlatformStore implements PlatformStore {
       clicks: clicks.map(toAffiliateClickSummary),
       checkoutIntents: checkoutIntents.map(toAffiliateCheckoutIntentSummary),
       conversions: conversionSummaries,
-      payoutTotals: buildPayoutTotals(affiliateSummaries, conversionSummaries),
+      payoutTotals: buildPayoutTotalsFromAggregates(affiliateSummaries, payoutRows),
     };
   }
 
@@ -3089,45 +3222,54 @@ class NeonPlatformStore implements PlatformStore {
   }
 
   private async buildAffiliateDashboard(affiliate: AffiliateSummary, baseUrl: string): Promise<AffiliateDashboardSummary> {
-    const [clicks, checkoutIntents, conversions] = await Promise.all([
-      this.db.select().from(schema.affiliateClicks).where(eq(schema.affiliateClicks.affiliateId, affiliate.id)).orderBy(desc(schema.affiliateClicks.createdAt)).limit(250),
+    const [clicks, checkoutIntents, conversions, clickCount, intentCount, conversionCount, commissionRows] = await Promise.all([
+      this.db.select().from(schema.affiliateClicks).where(eq(schema.affiliateClicks.affiliateId, affiliate.id)).orderBy(desc(schema.affiliateClicks.createdAt)).limit(10),
       this.db
         .select()
         .from(schema.affiliateCheckoutIntents)
         .where(eq(schema.affiliateCheckoutIntents.affiliateId, affiliate.id))
         .orderBy(desc(schema.affiliateCheckoutIntents.createdAt))
-        .limit(250),
+        .limit(10),
       this.db
         .select()
         .from(schema.affiliateConversions)
         .where(eq(schema.affiliateConversions.affiliateId, affiliate.id))
         .orderBy(desc(schema.affiliateConversions.createdAt))
-        .limit(250),
+        .limit(10),
+      this.db.select({ value: count() }).from(schema.affiliateClicks).where(eq(schema.affiliateClicks.affiliateId, affiliate.id)),
+      this.db.select({ value: count() }).from(schema.affiliateCheckoutIntents).where(eq(schema.affiliateCheckoutIntents.affiliateId, affiliate.id)),
+      this.db.select({ value: count() }).from(schema.affiliateConversions).where(eq(schema.affiliateConversions.affiliateId, affiliate.id)),
+      this.db
+        .select({ status: schema.affiliateConversions.status, total: sum(schema.affiliateConversions.commissionAmount) })
+        .from(schema.affiliateConversions)
+        .where(eq(schema.affiliateConversions.affiliateId, affiliate.id))
+        .groupBy(schema.affiliateConversions.status),
     ]);
     const clickSummaries = clicks.map(toAffiliateClickSummary);
     const intentSummaries = checkoutIntents.map(toAffiliateCheckoutIntentSummary);
     const conversionSummaries = conversions.map(toAffiliateConversionSummary);
-    const commission = (status?: AffiliateConversionSummary["status"]) =>
-      conversionSummaries
-        .filter((conversion) => !status || conversion.status === status)
-        .reduce((total, conversion) => total + Number(conversion.commissionAmount), 0)
-        .toFixed(2);
+    const commission = (status: AffiliateConversionSummary["status"]) =>
+      Number(commissionRows.find((entry) => entry.status === status)?.total || 0).toFixed(2);
+    const totalCommission = commissionRows
+      .filter((entry) => entry.status !== "rejected")
+      .reduce((total, entry) => total + Number(entry.total || 0), 0)
+      .toFixed(2);
 
     return {
       affiliate,
-      referralUrl: `${baseUrl.replace(/\/+$/, "")}/?ref=${encodeURIComponent(affiliate.code)}`,
+      referralUrl: `${baseUrl.replace(/\/+$/, "")}/r/${encodeURIComponent(affiliate.code)}`,
       stats: {
-        clicks: clickSummaries.length,
-        checkoutIntents: intentSummaries.length,
-        conversions: conversionSummaries.length,
+        clicks: Number(clickCount[0]?.value || 0),
+        checkoutIntents: Number(intentCount[0]?.value || 0),
+        conversions: Number(conversionCount[0]?.value || 0),
         pendingCommission: commission("pending"),
         approvedCommission: commission("approved"),
         paidCommission: commission("paid"),
-        totalCommission: commission(),
+        totalCommission,
       },
-      recentClicks: clickSummaries.slice(0, 10),
-      recentCheckoutIntents: intentSummaries.slice(0, 10),
-      recentConversions: conversionSummaries.slice(0, 10),
+      recentClicks: clickSummaries.map(toAffiliateDashboardClick),
+      recentCheckoutIntents: intentSummaries.map(toAffiliateDashboardIntent),
+      recentConversions: conversionSummaries.map(toAffiliateDashboardConversion),
     };
   }
 
@@ -3144,25 +3286,7 @@ class NeonPlatformStore implements PlatformStore {
       return affiliate ? { affiliate, intent: toAffiliateCheckoutIntentSummary(intent) } : undefined;
     }
 
-    const intents = await this.db
-      .select()
-      .from(schema.affiliateCheckoutIntents)
-      .orderBy(desc(schema.affiliateCheckoutIntents.createdAt))
-      .limit(50);
-
-    const cutoff = Date.now() - AFFILIATE_CHECKOUT_MATCH_WINDOW_MS;
-    const code = input.affiliateCode ? normalizeAffiliateCode(input.affiliateCode) : undefined;
-    const intent = intents.find((entry) => {
-      if (Date.parse(entry.createdAt.toISOString()) < cutoff) return false;
-      if (code && entry.affiliateCode !== code) return false;
-      if (input.productId && entry.productId && entry.productId !== input.productId) return false;
-      if (input.variantId && entry.variantId && entry.variantId !== input.variantId) return false;
-      return true;
-    });
-    if (!intent) return undefined;
-
-    const affiliate = await this.getActiveAffiliateByCode(intent.affiliateCode);
-    return affiliate ? { affiliate, intent: toAffiliateCheckoutIntentSummary(intent) } : undefined;
+    return undefined;
   }
 
   private async getSession(sessionId: string) {
@@ -3598,6 +3722,14 @@ function normalizeOptionalString(value?: string) {
   return normalized ? normalized : undefined;
 }
 
+function isAffiliateSelfReferral(affiliateEmail?: string, buyerEmail?: string) {
+  return Boolean(
+    affiliateEmail
+    && buyerEmail
+    && affiliateEmail.trim().toLowerCase() === buyerEmail.trim().toLowerCase()
+  );
+}
+
 function normalizeTicketSubject(input: CreateSupportTicketInput) {
   const fallback = input.type === "did_not_receive_key" ? "License key not received" : "Bug report";
   return normalizeOptionalString(input.subject)?.slice(0, 160) || fallback;
@@ -3625,6 +3757,16 @@ function normalizeMoney(value?: string) {
 
 function calculateCommissionAmount(amount: string, commissionRate: string) {
   return (Number(amount) * Number(commissionRate)).toFixed(2);
+}
+
+function isAllowedAffiliateStatusTransition(
+  current: AffiliateConversionSummary["status"],
+  next: AffiliateConversionSummary["status"],
+) {
+  if (current === next) return true;
+  if (current === "pending") return next === "approved" || next === "rejected";
+  if (current === "approved") return next === "paid" || next === "rejected";
+  return false;
 }
 
 function toAffiliateSummary(affiliate: DbAffiliate): AffiliateSummary {
@@ -3736,6 +3878,36 @@ function toAffiliateConversionSummary(conversion: DbAffiliateConversion): Affili
   };
 }
 
+function toAffiliateDashboardClick(click: AffiliateClickSummary) {
+  return {
+    id: click.id,
+    landingPath: click.landingPath,
+    source: click.source,
+    createdAt: click.createdAt,
+  };
+}
+
+function toAffiliateDashboardIntent(intent: AffiliateCheckoutIntentSummary) {
+  return {
+    id: intent.id,
+    plan: intent.plan,
+    productId: intent.productId,
+    createdAt: intent.createdAt,
+  };
+}
+
+function toAffiliateDashboardConversion(conversion: AffiliateConversionSummary) {
+  return {
+    id: conversion.id,
+    plan: conversion.plan,
+    amount: conversion.amount,
+    currency: conversion.currency,
+    commissionAmount: conversion.commissionAmount,
+    status: conversion.status,
+    createdAt: conversion.createdAt,
+  };
+}
+
 function buildPayoutTotals(affiliates: AffiliateSummary[], conversions: AffiliateConversionSummary[]): AffiliateAdminSnapshot["payoutTotals"] {
   return affiliates.map((affiliate) => {
     const affiliateConversions = conversions.filter((conversion) => conversion.affiliateId === affiliate.id);
@@ -3745,6 +3917,23 @@ function buildPayoutTotals(affiliates: AffiliateSummary[], conversions: Affiliat
         .reduce((total, conversion) => total + Number(conversion.commissionAmount), 0)
         .toFixed(2);
 
+    return {
+      affiliateId: affiliate.id,
+      affiliateCode: affiliate.code,
+      pendingCommission: totalFor("pending"),
+      approvedCommission: totalFor("approved"),
+      paidCommission: totalFor("paid"),
+    };
+  });
+}
+
+function buildPayoutTotalsFromAggregates(
+  affiliates: AffiliateSummary[],
+  rows: Array<{ affiliateId: string; status: AffiliateConversionSummary["status"]; total: string | null }>,
+): AffiliateAdminSnapshot["payoutTotals"] {
+  return affiliates.map((affiliate) => {
+    const totalFor = (status: AffiliateConversionSummary["status"]) =>
+      Number(rows.find((row) => row.affiliateId === affiliate.id && row.status === status)?.total || 0).toFixed(2);
     return {
       affiliateId: affiliate.id,
       affiliateCode: affiliate.code,

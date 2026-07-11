@@ -4,7 +4,12 @@ import React, { Suspense, useState } from "react";
 import { Check, ShoppingCart, X, Lock, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
-import { getStoredAttribution } from "@/lib/affiliate-attribution";
+import {
+  AFFILIATE_ATTRIBUTION_UPDATED_EVENT,
+  type AffiliateAttribution,
+  getStoredAttribution,
+} from "@/lib/affiliate-attribution";
+import { getReferralBonusDays } from "@rp-wallet/config";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
 import Link from "next/link";
 import { useRef } from "react";
@@ -55,6 +60,7 @@ function BuyContent() {
   const [emailError, setEmailError] = useState("");
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const [email, setEmail] = useState("");
+  const [referralOffer, setReferralOffer] = useState<AffiliateAttribution | null>(null);
   const [isCheckoutAreaFarBelow, setIsCheckoutAreaFarBelow] = useState(false);
   const autoCheckoutStartedRef = useRef(false);
 
@@ -66,8 +72,16 @@ function BuyContent() {
   const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
   const getPlanDisplayPrice = (plan: (typeof PLANS)[number]) => plan.price;
   const selectedPlanDisplayPrice = selectedPlan ? getPlanDisplayPrice(selectedPlan) : undefined;
+  const selectedReferralBonusDays = referralOffer && selectedPlanId ? getReferralBonusDays(selectedPlanId) : 0;
 
   const normalizedEmail = email.trim().toLowerCase();
+
+  React.useEffect(() => {
+    const updateReferralOffer = () => setReferralOffer(getStoredAttribution());
+    updateReferralOffer();
+    window.addEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, updateReferralOffer);
+    return () => window.removeEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, updateReferralOffer);
+  }, []);
 
   React.useEffect(() => {
     trackEvent("buy_page_viewed", {
@@ -146,31 +160,10 @@ function BuyContent() {
 
     try {
       const attribution = getStoredAttribution();
-      let affiliateCode: string | undefined;
-      let affiliateCheckoutIntentId: string | undefined;
-      if (attribution) {
-        const intentResult = await api
-          .createAffiliateCheckoutIntent({
-            affiliateCode: attribution.affiliateCode,
-            visitorId: attribution.visitorId,
-            clickId: attribution.clickId,
-            plan: plan.id,
-            buyerEmail: normalizedEmail,
-          })
-          .catch(() => null);
-        if (intentResult?.accepted) {
-          affiliateCode = attribution.affiliateCode;
-          affiliateCheckoutIntentId = intentResult.intent?.id;
-        }
-      }
-
       const result = await api.createNowPaymentsCheckout({
         planId: plan.id,
         email: normalizedEmail,
-        affiliateCode,
-        affiliateCheckoutIntentId,
-        affiliateVisitorId: affiliateCode ? attribution?.visitorId : undefined,
-        affiliateClickId: affiliateCode ? attribution?.clickId : undefined,
+        referralToken: attribution?.referralToken,
       });
       setCheckoutPhase("opening");
       trackEvent("checkout_url_ready", { plan: plan.id, provider: "nowpayments" });
@@ -373,6 +366,11 @@ function BuyContent() {
               {emailError}
             </div>
           )}
+          {selectedReferralBonusDays > 0 && (
+            <div className="w-full rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300">
+              Creator offer applied: +{selectedReferralBonusDays} bonus days
+            </div>
+          )}
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
@@ -516,6 +514,12 @@ function BuyContent() {
                   <>Crypto Checkout — {selectedPlanDisplayPrice}</>
                 )}
               </button>
+
+              {selectedReferralBonusDays > 0 && (
+                <div className="mt-2 text-center text-xs font-semibold text-emerald-300">
+                  +{selectedReferralBonusDays} creator bonus days included
+                </div>
+              )}
 
               {checkoutPhase === "error" && (
                 <div className="text-red-400 text-xs mt-2 text-center animate-pulse">

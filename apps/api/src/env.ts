@@ -12,6 +12,7 @@ export interface ApiEnv {
   DEMO_ENABLED?: string;
   DEMO_DURATION_MINUTES?: string;
   AFFILIATE_ADMIN_TOKEN?: string;
+  REFERRAL_SIGNING_SECRET?: string;
   NOWPAYMENTS_API_KEY?: string;
   NOWPAYMENTS_IPN_SECRET?: string;
   SELLAUTH_API_KEY?: string;

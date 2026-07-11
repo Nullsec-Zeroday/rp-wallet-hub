@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev src/index.ts --local --port 8787",
+    "test": "node --experimental-strip-types --test src/*.test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.1",
     "@neondatabase/serverless": "^1.1.0",
     "@rp-wallet/auth": "*",
+    "@rp-wallet/config": "*",
     "@rp-wallet/db": "*",
     "@rp-wallet/types": "*",
     "@rp-wallet/wallet-core": "*",

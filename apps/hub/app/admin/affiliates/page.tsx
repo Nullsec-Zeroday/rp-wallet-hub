@@ -16,6 +16,7 @@ export default function AffiliateAdminPage() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [updatingConversionId, setUpdatingConversionId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [form, setForm] = useState({
@@ -74,6 +75,21 @@ export default function AffiliateAdminPage() {
   async function copyLink(code: string) {
     await navigator.clipboard.writeText(`https://rpwallet.app/?ref=${code}`);
     setNotice(`Copied referral link for ${code}.`);
+  }
+
+  async function updateConversion(id: string, status: "approved" | "rejected" | "paid") {
+    setUpdatingConversionId(id);
+    setError("");
+    setNotice("");
+    try {
+      await api.updateAffiliateConversionStatus(adminToken.trim(), id, status);
+      await refresh(adminToken);
+      setNotice(`Conversion marked ${status}.`);
+    } catch {
+      setError("Unable to update this conversion. Refresh and check its current status.");
+    } finally {
+      setUpdatingConversionId("");
+    }
   }
 
   const totals = snapshot
@@ -139,7 +155,7 @@ export default function AffiliateAdminPage() {
           <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Metric label="Total Affiliates" value={totals.affiliates.toString()} />
             <Metric label="Recent Clicks" value={totals.clicks.toString()} />
-            <Metric label="Conversions" value={totals.conversions.toString()} />
+            <Metric label="Recent Conversions" value={totals.conversions.toString()} />
             <Metric label="Pending Commission" value={`$${totals.pending}`} />
           </section>
         )}
@@ -205,6 +221,11 @@ export default function AffiliateAdminPage() {
                   title: `${conversion.affiliateCode} · ${conversion.plan}`,
                   detail: `${conversion.status} · $${conversion.commissionAmount} commission`,
                   date: conversion.createdAt,
+                  action: conversion.status === "pending" ? (
+                    <button disabled={updatingConversionId === conversion.id} onClick={() => updateConversion(conversion.id, "approved")} className="rounded-md border border-emerald-800 px-2 py-1 text-[11px] font-semibold text-emerald-400 disabled:opacity-50">Approve</button>
+                  ) : conversion.status === "approved" ? (
+                    <button disabled={updatingConversionId === conversion.id} onClick={() => updateConversion(conversion.id, "paid")} className="rounded-md border border-[#8b78ee]/60 px-2 py-1 text-[11px] font-semibold text-[#b9adff] disabled:opacity-50">Mark paid</button>
+                  ) : undefined,
                 }))} />
               </Panel>
 
@@ -252,7 +273,7 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ActivityTable({ rows }: { rows: Array<{ id: string; title: string; detail: string; date: string }> }) {
+function ActivityTable({ rows }: { rows: Array<{ id: string; title: string; detail: string; date: string; action?: React.ReactNode }> }) {
   if (rows.length === 0) return <p className="text-sm text-zinc-500">No activity yet.</p>;
   return (
     <div className="space-y-6">
@@ -264,6 +285,7 @@ function ActivityTable({ rows }: { rows: Array<{ id: string; title: string; deta
           </div>
           <div className="shrink-0 font-medium text-xs text-zinc-500">
             {new Date(row.date).toLocaleDateString()}
+            {row.action && <div className="mt-2 text-right">{row.action}</div>}
           </div>
         </div>
       ))}
