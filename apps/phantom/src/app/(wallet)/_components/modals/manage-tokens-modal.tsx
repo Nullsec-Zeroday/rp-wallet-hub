@@ -34,7 +34,9 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
     tokenBalances,
     customTokens,
     dexscreenerApiKey,
-    updateAllBalances
+    updateAllBalances,
+    profile,
+    walletName
   } = useWalletStore();
   const { prices } = useLivePrices();
 
@@ -158,10 +160,16 @@ export default function ManageTokensModal({ visible, onClose, onCloseStart }: Ma
 
     try {
       await updateBackendWalletState({
+        accountAddress: profile.walletAddress,
+        accountName: walletName,
+        accountUsername: profile.username,
         balances: newBalances.map((balance) => ({
           amount: String(balance.balance),
           tokenSymbol: balance.symbol,
         })),
+        profile: {
+          displayName: walletName,
+        },
       });
       toast.success("Balances updated successfully");
       handleClose();

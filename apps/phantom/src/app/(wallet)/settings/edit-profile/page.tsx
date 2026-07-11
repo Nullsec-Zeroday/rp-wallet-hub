@@ -372,7 +372,7 @@ function EditProfileContent() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-full max-w-[430px] mx-auto w-full relative walkthrough-edit-profile-page bg-[#111111] text-[#eeeeee]">
+    <div className="flex flex-col min-h-full max-w-[430px] mx-auto w-full relative walkthrough-edit-profile-page bg-[#111111] text-[#eeeeee]">
       <div className="flex-1 flex flex-col w-full relative">
         {/* Header - Sticky Matching Wallet Style */}
         <div className="flex items-center justify-between px-3 pt-[calc(8px+env(safe-area-inset-top))] pb-4 sticky top-0 z-20 backdrop-blur-md bg-[#111111]/90 border-b border-[#1c1c1e]">
@@ -393,7 +393,7 @@ function EditProfileContent() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto hidden-scrollbar px-4 pb-12">
+        <div className="px-4 pb-12">
           {/* ── TOP AVATAR PREVIEW ── */}
           <div className="flex flex-col items-center justify-center pt-8 pb-4">
             <div className="relative">
