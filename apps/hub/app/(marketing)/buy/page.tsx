@@ -167,7 +167,7 @@ function BuyContent() {
         if (!result.accepted || !result.referralToken || !result.claimCode || !result.attribution) {
           setReferralOffer(null);
           clearStoredAttribution();
-          setCreatorError("That creator code is not active.");
+          setCreatorError("That referral code is not active.");
           return;
         }
         storeAttribution({
@@ -180,7 +180,7 @@ function BuyContent() {
           expiresAt: result.attribution.expiresAt,
         });
       } catch {
-        if (!cancelled) setCreatorError("Unable to check this creator code right now.");
+        if (!cancelled) setCreatorError("Unable to check this referral code right now.");
       } finally {
         if (!cancelled) setCreatorLoading(false);
       }
@@ -269,7 +269,7 @@ function BuyContent() {
         });
         if (!creatorResult.accepted || !creatorResult.referralToken || !creatorResult.claimCode || !creatorResult.attribution) {
           clearSlowTimer();
-          setCreatorError("That creator code is not active.");
+          setCreatorError("That referral code is not active.");
           setCheckoutPhase("idle");
           return;
         }
@@ -337,7 +337,7 @@ function BuyContent() {
           </p>
           {referralOffer && (
             <div className="mx-auto mt-4 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-              Creator code applied
+              Referral code applied
             </div>
           )}
         </div>
@@ -470,11 +470,13 @@ function BuyContent() {
         {/* ── C H E C K O U T  B U T T O N ── */}
         <div ref={buttonRef} className="w-full max-w-[440px] flex flex-col items-center gap-4 mb-20">
           <label className="w-full">
-            <span className="mb-2 block text-sm font-medium text-white/70">Email for license delivery</span>
+            <span className="mb-2 block text-sm font-medium text-white/70">Email for license delivery <span className="text-rose-400">*</span></span>
             <div className="relative w-full rounded-xl overflow-hidden backdrop-blur-md">
               <input
                 id="email-input"
                 type="email"
+                required
+                aria-required="true"
                 autoComplete="email"
                 value={email}
                 onChange={(event) => {
@@ -504,7 +506,7 @@ function BuyContent() {
             </div>
           )}
           <label className="w-full">
-            <span className="mb-2 block text-sm font-medium text-white/70">Creator code</span>
+            <span className="mb-2 block text-sm font-medium text-white/70">Referral code</span>
             <div className="relative">
               <input
                 value={creatorCode}
@@ -518,7 +520,7 @@ function BuyContent() {
                     clearStoredAttribution();
                   }
                 }}
-                placeholder="Use creator code for bonus days"
+                placeholder="Use referral code for bonus days"
                 className="w-full rounded-xl border border-emerald-400/25 bg-emerald-400/[0.04] px-4 py-3.5 pr-10 font-semibold lowercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-white/30 focus:border-emerald-400/70 focus:ring-4 focus:ring-emerald-400/10"
               />
               {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}
@@ -531,7 +533,7 @@ function BuyContent() {
           )}
           {selectedReferralBonusDays > 0 && (
             <div className="w-full rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300">
-              Creator offer applied: +{selectedReferralBonusDays} bonus days
+              Referral offer applied: +{selectedReferralBonusDays} bonus days
             </div>
           )}
           <button
@@ -666,7 +668,7 @@ function BuyContent() {
                         clearStoredAttribution();
                       }
                     }}
-                    placeholder="Creator code"
+                    placeholder="Referral code"
                     className="w-full rounded-xl border border-emerald-400/25 bg-black/40 px-3 py-3 pr-9 text-sm font-semibold lowercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-white/40 focus:border-emerald-400/70 focus:ring-4 focus:ring-emerald-400/10"
                   />
                   {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}
@@ -701,7 +703,7 @@ function BuyContent() {
 
               {selectedReferralBonusDays > 0 && (
                 <div className="mt-2 text-center text-xs font-semibold text-emerald-300">
-                  +{selectedReferralBonusDays} creator bonus days included
+                  +{selectedReferralBonusDays} referral bonus days included
                 </div>
               )}
 
