@@ -7,7 +7,10 @@ import { PRICING_PLANS } from "@/lib/pricing-config";
 import {
   AFFILIATE_ATTRIBUTION_UPDATED_EVENT,
   type AffiliateAttribution,
+  clearStoredAttribution,
+  getOrCreateVisitorId,
   getStoredAttribution,
+  storeAttribution,
 } from "@/lib/affiliate-attribution";
 import { getReferralBonusDays } from "@rp-wallet/config";
 import { RpWalletApiClient } from "@rp-wallet/api-client";
@@ -61,8 +64,12 @@ function BuyContent() {
   const [isSlowCheckout, setIsSlowCheckout] = useState(false);
   const [email, setEmail] = useState("");
   const [referralOffer, setReferralOffer] = useState<AffiliateAttribution | null>(null);
+  const [creatorCode, setCreatorCode] = useState("");
+  const [creatorLoading, setCreatorLoading] = useState(false);
+  const [creatorError, setCreatorError] = useState("");
   const [isCheckoutAreaFarBelow, setIsCheckoutAreaFarBelow] = useState(false);
   const autoCheckoutStartedRef = useRef(false);
+  const creatorFieldTouchedRef = useRef(false);
 
   const buttonRef = useRef<HTMLDivElement>(null);
   const isButtonInView = useInView(buttonRef, { margin: "0px 0px -100px 0px" });
@@ -77,10 +84,17 @@ function BuyContent() {
   const normalizedEmail = email.trim().toLowerCase();
 
   React.useEffect(() => {
-    const updateReferralOffer = () => setReferralOffer(getStoredAttribution());
-    updateReferralOffer();
-    window.addEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, updateReferralOffer);
-    return () => window.removeEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, updateReferralOffer);
+    const stored = getStoredAttribution();
+    setReferralOffer(stored);
+    setCreatorCode(stored?.affiliateCode || "");
+    const handleAttributionUpdated = (event: Event) => {
+      const attribution = (event as CustomEvent<AffiliateAttribution>).detail;
+      setReferralOffer(attribution);
+      setCreatorCode(attribution.affiliateCode);
+      setCreatorError("");
+    };
+    window.addEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, handleAttributionUpdated);
+    return () => window.removeEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, handleAttributionUpdated);
   }, []);
 
   React.useEffect(() => {
@@ -131,6 +145,91 @@ function BuyContent() {
     }
   }, [initialPlan, validPlanId]);
 
+  React.useEffect(() => {
+    const normalizedCode = creatorCode.trim().toLowerCase();
+    if (!normalizedCode || referralOffer?.affiliateCode === normalizedCode) {
+      setCreatorLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCreatorError("");
+    const timer = window.setTimeout(async () => {
+      setCreatorLoading(true);
+      try {
+        const visitorId = getOrCreateVisitorId();
+        const result = await api.applyCreatorCode({
+          creatorCode: normalizedCode,
+          visitorId,
+          landingPath: window.location.pathname,
+        });
+        if (cancelled) return;
+        if (!result.accepted || !result.referralToken || !result.claimCode || !result.attribution) {
+          setReferralOffer(null);
+          clearStoredAttribution();
+          setCreatorError("That creator code is not active.");
+          return;
+        }
+        storeAttribution({
+          affiliateCode: result.attribution.affiliateCode,
+          affiliateDisplayName: result.attribution.affiliateDisplayName,
+          visitorId,
+          clickId: result.attribution.clickId,
+          referralToken: result.referralToken,
+          claimCode: result.claimCode,
+          expiresAt: result.attribution.expiresAt,
+        });
+      } catch {
+        if (!cancelled) setCreatorError("Unable to check this creator code right now.");
+      } finally {
+        if (!cancelled) setCreatorLoading(false);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [api, creatorCode, referralOffer?.affiliateCode]);
+
+  React.useEffect(() => {
+    if (
+      creatorFieldTouchedRef.current
+      || creatorCode.trim()
+      || referralOffer
+      || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const visitorId = getOrCreateVisitorId();
+        const result = await api.recoverCreatorOffer({
+          email: normalizedEmail,
+          visitorId,
+          landingPath: window.location.pathname,
+        });
+        if (cancelled || !result.accepted || !result.referralToken || !result.claimCode || !result.attribution) return;
+        storeAttribution({
+          affiliateCode: result.attribution.affiliateCode,
+          affiliateDisplayName: result.attribution.affiliateDisplayName,
+          visitorId,
+          clickId: result.attribution.clickId,
+          referralToken: result.referralToken,
+          claimCode: result.claimCode,
+          expiresAt: result.attribution.expiresAt,
+        });
+      } catch {
+        // A missing prior creator association is a normal direct checkout.
+      }
+    }, 700);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [api, creatorCode, normalizedEmail, referralOffer]);
+
   const handleCheckout = async () => {
     if (!selectedPlanId || checkoutLocked) return;
     const plan = selectedPlan;
@@ -159,7 +258,33 @@ function BuyContent() {
     setCheckoutPhase("preparing");
 
     try {
-      const attribution = getStoredAttribution();
+      let attribution = getStoredAttribution();
+      const normalizedCreatorCode = creatorCode.trim().toLowerCase();
+      if (normalizedCreatorCode && attribution?.affiliateCode !== normalizedCreatorCode) {
+        const visitorId = getOrCreateVisitorId();
+        const creatorResult = await api.applyCreatorCode({
+          creatorCode: normalizedCreatorCode,
+          visitorId,
+          landingPath: window.location.pathname,
+        });
+        if (!creatorResult.accepted || !creatorResult.referralToken || !creatorResult.claimCode || !creatorResult.attribution) {
+          clearSlowTimer();
+          setCreatorError("That creator code is not active.");
+          setCheckoutPhase("idle");
+          return;
+        }
+        attribution = {
+          affiliateCode: creatorResult.attribution.affiliateCode,
+          affiliateDisplayName: creatorResult.attribution.affiliateDisplayName,
+          visitorId,
+          clickId: creatorResult.attribution.clickId,
+          referralToken: creatorResult.referralToken,
+          claimCode: creatorResult.claimCode,
+          expiresAt: creatorResult.attribution.expiresAt,
+        };
+        storeAttribution(attribution);
+      }
+
       const result = await api.createNowPaymentsCheckout({
         planId: plan.id,
         email: normalizedEmail,
@@ -210,6 +335,11 @@ function BuyContent() {
           <p className="text-white/60 text-base md:text-lg font-medium max-w-[400px] mx-auto leading-relaxed">
             Complete checkout, receive unique key and unlock instant access - no subscriptions.
           </p>
+          {referralOffer && (
+            <div className="mx-auto mt-4 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-sm font-semibold text-emerald-200">
+              Creator code applied
+            </div>
+          )}
         </div>
 
         {/* ── I N T E R A C T I V E  P R I C I N G  G R I D ── */}
@@ -221,6 +351,7 @@ function BuyContent() {
             const isYearly = plan.id === "yearly";
             const displayPrice = getPlanDisplayPrice(plan);
             const showOriginalPrice = Boolean(isYearly && plan.originalPrice);
+            const referralBonus = referralOffer ? getReferralBonusDays(plan.id) : 0;
 
             const bgGradient = isSelected
               ? isYearly
@@ -302,6 +433,12 @@ function BuyContent() {
                   <span className="text-white/80 font-medium text-lg">{isStarter ? "7 Days Access" : isPopular ? "1 Month Access" : "1 Year Access"}</span>
                 </div>
 
+                {referralBonus > 0 && (
+                  <div className="relative z-10 mb-4 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-center text-sm font-bold text-emerald-300">
+                    +{referralBonus} bonus days included
+                  </div>
+                )}
+
                 <div className="relative z-10 flex min-h-[60px] flex-col items-center justify-start mb-6 transition-all duration-300">
                   <div className="flex items-baseline justify-center gap-1">
                     {showOriginalPrice && <span className="relative text-2xl md:text-3xl font-display font-medium text-white/40 mr-1.5 after:absolute after:inset-x-0 after:top-1/2 after:h-[2px] after:-translate-y-1/2 after:-rotate-[20deg] after:bg-red-500">{plan.originalPrice}</span>}
@@ -364,6 +501,32 @@ function BuyContent() {
           {emailError && (
             <div className="text-amber-400 text-sm -mt-2 mb-1 w-full text-center animate-pulse font-medium">
               {emailError}
+            </div>
+          )}
+          <label className="w-full">
+            <span className="mb-2 block text-sm font-medium text-white/70">Creator code</span>
+            <div className="relative">
+              <input
+                value={creatorCode}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  creatorFieldTouchedRef.current = true;
+                  setCreatorCode(value);
+                  setCreatorError("");
+                  if (value.trim().toLowerCase() !== referralOffer?.affiliateCode) {
+                    setReferralOffer(null);
+                    clearStoredAttribution();
+                  }
+                }}
+                placeholder="Use creator code for bonus days"
+                className="w-full rounded-xl border border-emerald-400/25 bg-emerald-400/[0.04] px-4 py-3.5 pr-10 font-semibold lowercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-white/30 focus:border-emerald-400/70 focus:ring-4 focus:ring-emerald-400/10"
+              />
+              {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}
+            </div>
+          </label>
+          {creatorError && (
+            <div className="w-full rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-300">
+              {creatorError}
             </div>
           )}
           {selectedReferralBonusDays > 0 && (
@@ -489,6 +652,27 @@ function BuyContent() {
                   {emailError}
                 </div>
               )}
+              <div className="mb-3">
+                <div className="relative">
+                  <input
+                    value={creatorCode}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      creatorFieldTouchedRef.current = true;
+                      setCreatorCode(value);
+                      setCreatorError("");
+                      if (value.trim().toLowerCase() !== referralOffer?.affiliateCode) {
+                        setReferralOffer(null);
+                        clearStoredAttribution();
+                      }
+                    }}
+                    placeholder="Creator code"
+                    className="w-full rounded-xl border border-emerald-400/25 bg-black/40 px-3 py-3 pr-9 text-sm font-semibold lowercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-white/40 focus:border-emerald-400/70 focus:ring-4 focus:ring-emerald-400/10"
+                  />
+                  {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}
+                </div>
+                {creatorError && <div className="mt-2 text-xs font-medium text-amber-300">{creatorError}</div>}
+              </div>
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}

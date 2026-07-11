@@ -69,6 +69,12 @@ export default function PrivacyPage() {
                       <strong className="text-white">Telegram Contact Information:</strong> If you contact us or purchase through Telegram, we may retain your Telegram username and conversation history for customer support purposes.
                     </span>
                   </li>
+                  <li className="flex gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] mt-2.5 shrink-0" />
+                    <span>
+                      <strong className="text-white">Creator Referral Information:</strong> When you follow or enter a creator referral code, we store the code, referral click, landing page, general traffic source, and a random visitor identifier for up to 45 days. We may retain hashed IP-address and browser information to measure referrals and reduce abuse. If you begin checkout with a creator offer, we may associate that creator with your delivery email so the offer can be restored. Creators do not receive your email address.
+                    </span>
+                  </li>
                 </ul>
                 <div className="pt-4 mt-4 border-t border-white/[0.05]">
                   <p className="mb-4 text-white font-semibold">We do NOT collect:</p>
@@ -132,7 +138,7 @@ export default function PrivacyPage() {
             <section className="bg-white/[0.02] border border-white/[0.04] rounded-[24px] p-8 md:p-10 backdrop-blur-xl">
               <h2 className="text-[20px] font-bold text-white mb-6 tracking-tight">6. Cookies & Tracking</h2>
               <p className="text-[16px] text-[#A1A1AA] leading-relaxed">
-                The rpwallet.app website may use minimal cookies or local storage for functional purposes such as session management. We do not use third-party advertising trackers. We may use basic, anonymized analytics to understand overall site traffic.
+                The rpwallet.app website uses first-party cookies or local storage for session management, license access, and creator referral attribution. Referral attribution normally expires after 45 days. We do not use third-party advertising trackers. We may use product analytics to understand site traffic and improve the purchase and installation experience.
               </p>
             </section>
           </FadeIn>

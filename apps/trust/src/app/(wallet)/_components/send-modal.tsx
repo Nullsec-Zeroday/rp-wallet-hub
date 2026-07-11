@@ -47,6 +47,7 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
   const [amount, setAmount] = useState("");
   const [activeInput, setActiveInput] = useState<"address" | "amount" | null>(null);
   const [createdTransaction, setCreatedTransaction] = useState<WalletTransaction | null>(null);
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
   const submissionIdRef = useRef(0);
   const { account, balanceMap, baseCurrency, createTransaction, prices, tokenSymbols, transactionError, transactionPending, walletAddress } = useTrustWallet();
 
@@ -107,6 +108,21 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
   const networkFeeTokenAmount = selectedToken ? Math.min(Math.max(parsedAmount * 0.00002, 0.000001), 0.0000072) : 0;
   const networkFeeFiat = networkFeeTokenAmount * selectedPrice;
   const totalCost = fiatValue + networkFeeFiat;
+
+  const pasteAddress = async () => {
+    try {
+      const text = await navigator.clipboard?.readText();
+      if (text?.trim()) {
+        setAddress(text.trim());
+        return;
+      }
+    } catch {
+      // The native edit menu remains available when clipboard permission is denied.
+    }
+
+    addressInputRef.current?.focus();
+    setActiveInput("address");
+  };
 
   const submitTransaction = async () => {
     if (!selectedToken || transactionPending) return;
@@ -504,15 +520,12 @@ export default function SendModal({ isOpen, onClose }: SendModalProps) {
                     <div style={{ marginBottom: "24px" }}>
                       <div style={{ color: "#aaa", fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>Address or Domain Name</div>
                       <div style={{ display: "flex", alignItems: "center", border: activeInput === "address" ? "1.5px solid #48FF91" : "1.5px solid #333", borderRadius: "12px", padding: "14px 16px", background: "transparent", transition: "border 0.2s ease" }}>
-                        <input type="text" placeholder="Search or Enter" value={address} onChange={e => setAddress(e.target.value)} onFocus={() => setActiveInput("address")} onBlur={() => setActiveInput(null)} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#fff", fontSize: "16px", caretColor: "#48FF91" }} />
+                        <input ref={addressInputRef} type="text" placeholder="Search or Enter" value={address} onChange={e => setAddress(e.target.value)} onPaste={e => { e.preventDefault(); setAddress(e.clipboardData.getData("text").trim()); }} onFocus={() => setActiveInput("address")} onBlur={() => setActiveInput(null)} autoCapitalize="none" autoCorrect="off" spellCheck={false} style={{ flex: 1, background: "transparent", border: "none", outline: "none", color: "#fff", fontSize: "16px", caretColor: "#48FF91" }} />
                         <div style={{ display: "flex", alignItems: "center", gap: "14px", flexShrink: 0 }}>
                           {address.length > 0 && (
                             <button onClick={() => setAddress("")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#888", display: "flex" }}><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z" /></svg></button>
                           )}
-                          <button type="button" onClick={async () => {
-                            const text = await navigator.clipboard?.readText().catch(() => "");
-                            if (text) setAddress(text);
-                          }} style={{ background: "none", border: "none", color: "#48FF91", fontSize: "15px", fontWeight: 600, padding: 0, cursor: "pointer" }}>Paste</button>
+                          <button type="button" onClick={pasteAddress} style={{ background: "none", border: "none", color: "#48FF91", fontSize: "15px", fontWeight: 600, padding: 0, cursor: "pointer" }}>Paste</button>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#48FF91" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                           <svg width="18" height="18" viewBox="0 0 10.327905 9.5664062" version="1.1" id="svg1" xmlSpace="preserve" style={{ color: "#48FF91" }}>
                             <g id="layer1" transform="translate(-177.39211,-85.718861)">

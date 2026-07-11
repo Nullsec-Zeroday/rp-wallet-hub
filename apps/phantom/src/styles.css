@@ -165,6 +165,7 @@ input,
 textarea {
   -webkit-user-select: auto;
   user-select: auto;
+  -webkit-touch-callout: default;
 }
 
 button,

@@ -531,10 +531,17 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                       type="text"
                       value={recipientAddress}
                       onChange={(e) => setRecipientAddress(e.target.value)}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        setRecipientAddress(e.clipboardData.getData("text").trim());
+                      }}
                       onBlur={() => setTimeout(() => window.scrollTo(0, 0), 100)}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       className="flex-1 bg-transparent border-none outline-none text-[#eeeeee] text-[16px] font-normal leading-5 placeholder:text-[#a0a0a0]"
                     />
-                    <button className="bg-transparent border-none p-1 cursor-pointer flex-shrink-0 active:opacity-60 transition-opacity">
+                    <button type="button" aria-label="Scan address" className="bg-transparent border-none p-1 cursor-pointer flex-shrink-0 active:opacity-60 transition-opacity">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 7v-4h4"></path>
                         <path d="M21 7v-4h-4"></path>
