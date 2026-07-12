@@ -529,7 +529,7 @@ function BuyContent() {
                     clearStoredAttribution();
                   }
                 }}
-                placeholder="Use referral code for bonus days"
+                placeholder="Referral code"
                 className="w-full rounded-xl border border-emerald-400/25 bg-emerald-400/[0.04] px-4 py-3.5 pr-10 font-semibold lowercase tracking-wide text-white outline-none transition placeholder:normal-case placeholder:font-medium placeholder:tracking-normal placeholder:text-white/30 focus:border-emerald-400/70 focus:ring-4 focus:ring-emerald-400/10"
               />
               {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}

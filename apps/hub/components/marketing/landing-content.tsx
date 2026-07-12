@@ -299,7 +299,7 @@ export default function LandingContent() {
               transition={{ duration: 0.4 }}
               className="mb-4 whitespace-nowrap sl-font text-[12px] font-bold uppercase tracking-[0.2em] text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
             >
-              <span className="text-lg leading-0">✦</span> Available on iOS and Android <span className="text-lg leading-0">✦</span>
+              <span className="text-lg leading-0">✦</span> New quest active: Daily Flex <span className="text-lg leading-0">✦</span>
             </motion.p>
             <p>
               Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom &amp; Trust Wallet. Flex online, prank others or create content - with no real crypto involved.

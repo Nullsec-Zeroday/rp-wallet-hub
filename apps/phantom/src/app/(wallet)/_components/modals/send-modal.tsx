@@ -104,16 +104,13 @@ interface SendModalProps {
 }
 
 type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
-const DEMO_WALLET_ADDRESS_PATTERN = /^(?:Ph|Tw)[a-f0-9]{30}$/;
-const GENERIC_WALLET_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,64}$/;
 const getOptimisticSuccessDelay = () => 1500 + Math.random() * 500;
 
 function getRecipientAddressError(value: string, ownAddress: string) {
   const trimmed = value.trim();
   if (!trimmed) return "Enter a wallet address.";
   if (trimmed === ownAddress) return "Choose a different wallet address. Sending to your own address is not supported.";
-  if (DEMO_WALLET_ADDRESS_PATTERN.test(trimmed) || GENERIC_WALLET_ADDRESS_PATTERN.test(trimmed)) return null;
-  return "Enter a valid wallet address.";
+  return null;
 }
 
 export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, onCloseStart }: SendModalProps) {
