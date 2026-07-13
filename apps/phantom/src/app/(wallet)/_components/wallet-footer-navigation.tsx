@@ -229,10 +229,10 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
 
       {/* ── Floating Plus Button (Z-Index 1000) ── */}
       <div
-        className={`fixed -bottom-3 left-0 right-0 z-[1000] pointer-events-none transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full" : "translate-y-0"}`}
+        className={`walletFooterBar fixed -bottom-3 left-0 right-0 z-[1000] pointer-events-none transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full" : "translate-y-0"}`}
       >
         <div
-          className="px-4 max-w-[430px] mx-auto flex items-center justify-end pt-2"
+          className="walletFooterNav px-4 max-w-[430px] mx-auto flex items-center justify-end pt-2"
           style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
         >
           <motion.button
