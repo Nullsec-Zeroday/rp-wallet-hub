@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { X, ChevronLeft, Search, Check, ArrowRight, Loader2, Send, ArrowUpDown } from "lucide-react";
-import { useWalletStore } from "@/lib/wallet-store";
+import { useWalletStore, type Transaction } from "@/lib/wallet-store";
 import { TOKENS, TOKEN_MAP, formatCurrency, formatBalance, type TokenInfo } from "@/lib/wallet-data";
 import { useLivePrices } from "@/hooks/useLivePrices";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,6 +12,7 @@ import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import { useRiveAsset } from "../rive-asset-provider";
 import { createBackendWalletTransaction, persistBackendWalletState, refreshBackendWalletState } from "@/lib/backend-wallet";
 import { logWalletDebug } from "@/lib/wallet-debug";
+import { getSolscanTransactionDetails } from "@/lib/solscan-transaction";
 
 const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => void, onDelete: () => void }) => {
   const buttons = [
@@ -129,6 +130,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
   const [selectedToken, setSelectedToken] = useState<TokenInfo | null>(null);
   const [recipientAddress, setRecipientAddress] = useState("");
   const [amount, setAmount] = useState("");
+  const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const hasPlayedConfetti = useRef(false);
@@ -177,6 +179,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
       // Reset inputs
       setRecipientAddress("");
       setAmount("");
+      setSentTransaction(null);
       hasPlayedConfetti.current = false;
     }
   }, [visible, initialTokenSymbol, customTokens]);
@@ -247,6 +250,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
     const numAmount = parseFloat(amount) || 0;
     return numAmount * selectedTokenPrice;
   }, [amount, selectedTokenPrice]);
+  const solscanDetails = getSolscanTransactionDetails(sentTransaction, prices);
 
   const recipientAddressError = useMemo(
     () => getRecipientAddressError(recipientAddress, profile.walletAddress),
@@ -311,6 +315,9 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
       from: profile.walletAddress,
       to: normalizedRecipientAddress,
     });
+    setSentTransaction(
+      useWalletStore.getState().transactions.find((transaction) => transaction.id === optimisticTransactionId) || null,
+    );
     optimisticSuccessTimerRef.current = window.setTimeout(() => {
       setStep("SUCCESS");
       optimisticSuccessTimerRef.current = null;
@@ -330,13 +337,16 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         },
       });
 
-      await createBackendWalletTransaction({
+      const response = await createBackendWalletTransaction({
         type: "send",
         tokenSymbol: selectedToken.symbol,
         amount: String(numAmount),
         fromAddress: profile.walletAddress,
         toAddress: normalizedRecipientAddress,
       });
+      setSentTransaction(
+        useWalletStore.getState().transactions.find((transaction) => transaction.id === response.transaction.id) || null,
+      );
     } catch (error) {
       const message = error instanceof Error
         ? error.message.replace(/^RPWallet API request failed:\s*\d+:?\s*/i, "")
@@ -351,6 +361,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
         optimisticSuccessTimerRef.current = null;
       }
       setStep("CONFIRM");
+      setSentTransaction(null);
 
       try {
         await refreshBackendWalletState();
@@ -778,7 +789,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                     </div>
                     <div className="flex justify-between items-center py-4">
                       <span className="text-[16px] text-[#a0a0a0]">Network fee</span>
-                      <span className="text-[16px] font-semibold text-[#eeeeee]">$0.005</span>
+                      <span className="text-[16px] font-semibold text-[#eeeeee]">$0.00</span>
                     </div>
                   </div>
                   <div className="flex-1 min-h-[24px]" />
@@ -884,11 +895,11 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
 
                   {/* Price Row */}
                   <div className="flex items-center gap-2 px-4 py-1 text-[13px] text-[#b4b4b4]">
-                    <span className="text-[#eeeeee] font-semibold">$87.92</span>
-                    <span className="text-[#4FE862]">+1.49%</span>
+                    <span className="text-[#eeeeee] font-semibold">{solscanDetails.solPrice}</span>
+                    <span className={solscanDetails.solChangeIsPositive ? "text-[#4FE862]" : "text-[#F80633]"}>{solscanDetails.solChange}</span>
                     <span>|</span>
                     <span>Avg Fee:</span>
-                    <span className="text-[#eeeeee]">0.00001571</span>
+                    <span className="text-[#eeeeee]">{solscanDetails.averageFee}</span>
                   </div>
 
                   {/* Search Bar */}
@@ -944,7 +955,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         Summary
                       </div>
                       <div className="text-[14px] text-[#b4b4b4] leading-relaxed">
-                        Transfer from <span className="text-[#3B82F6]">bHGM17...5r3deG</span> to 2 accounts for <span className="text-white font-semibold">{amount || "0.0090"}</span> <span className="text-[#4FE862]">${usdValue ? (usdValue * parseFloat(amount || "0")).toFixed(2) : "0.79"}</span> <span className="text-white font-semibold">◎ {selectedToken?.symbol || "SOL"}</span>
+                        Transfer from <span className="text-[#3B82F6]">{solscanDetails.fromShort}</span> to <span className="text-[#3B82F6]">{solscanDetails.toShort}</span> for <span className="text-white font-semibold">{solscanDetails.amount} {solscanDetails.token}</span> <span className="text-[#4FE862]">{solscanDetails.tokenUsdValue}</span>
                       </div>
                     </div>
 
@@ -963,23 +974,31 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                             Inspect Tx
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-[#3B82F6] truncate mt-1">
-                          <span className="truncate">bHGM17duGU3S9MU9eZgfcBG4...ZKpwEd5r3deG</span>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 text-[#3B82F6] truncate mt-1 text-left"
+                          onClick={() => {
+                            if (!sentTransaction) return;
+                            navigator.clipboard.writeText(solscanDetails.signature);
+                            toast.success("Transaction ID copied");
+                          }}
+                        >
+                          <span className="truncate">{solscanDetails.signatureShort}</span>
                           <svg className="flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"></path></svg>
-                        </div>
+                        </button>
                       </div>
 
                       {/* Detail Rows */}
                       {[
-                        { label: "Block", value: "40,63,55,001", isLink: true },
-                        { label: "Timestamp", value: "23:20:02 May 15, 2026 (UTC)", isLink: false },
-                        { label: "Result", value: "SUCCESS", isSuccess: true },
-                        { label: "Fee", value: "0.000006975 SOL", isLink: false },
-                        { label: "Priority Fee", value: "0.000000541 SOL", isLink: false },
-                        { label: "Compute Units Consumed", value: "22,110 / 58,049", isLink: false },
-                        { label: "Tx Version", value: "Legacy", isLink: false },
-                        { label: "Recent Block Hash", value: "Mh3Pj5Rm7To9...m7To9VqB", isLink: false },
-                        { label: "Signer", value: "7xKXtg2C...uJosgAsU", isLink: true },
+                        { label: "Block", value: "—", isLink: false },
+                        { label: "Timestamp", value: solscanDetails.timestamp, isLink: false },
+                        { label: "Result", value: solscanDetails.status, isStatus: true },
+                        { label: "Fee", value: solscanDetails.fee, isLink: false },
+                        { label: "Priority Fee", value: solscanDetails.priorityFee, isLink: false },
+                        { label: "Compute Units Consumed", value: "—", isLink: false },
+                        { label: "Tx Version", value: "—", isLink: false },
+                        { label: "Recent Block Hash", value: "—", isLink: false },
+                        { label: "Signer", value: solscanDetails.signerShort, isLink: true },
                       ].map((row, idx) => (
                         <div key={idx} className="flex items-start justify-between p-4 border-b border-[#2a2a2a] last:border-0">
                           <div className="text-[#b4b4b4] w-[45%] pr-2 flex items-center gap-2 shrink-0">
@@ -987,8 +1006,8 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                             {row.label}
                           </div>
                           <div className="flex-1 flex justify-end text-right min-w-0">
-                            {row.isSuccess ? (
-                              <div className="bg-[#4FE862]/20 text-[#4FE862] px-2 py-0.5 rounded text-[11px] font-bold">SUCCESS</div>
+                            {row.isStatus ? (
+                              <div className={`${solscanDetails.statusTone === "success" ? "bg-[#4FE862]/20 text-[#4FE862]" : solscanDetails.statusTone === "pending" ? "bg-[#F59E0B]/20 text-[#F59E0B]" : "bg-[#F80633]/20 text-[#F80633]"} px-2 py-0.5 rounded text-[11px] font-bold`}>{row.value}</div>
                             ) : (
                               <div className={`${row.isLink ? "text-[#3B82F6]" : "text-[#eeeeee]"} break-all text-[13px]`}>
                                 {row.value}
@@ -1009,23 +1028,14 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         </div>
                       </div>
 
-                      <div className="text-[12px] text-[#b4b4b4] mb-2">Compute Units Distribution Total: 29,991</div>
+                      <div className="text-[12px] text-[#b4b4b4] mb-2">Compute Units Distribution Total: —</div>
                       <div className="flex h-2 w-full rounded-full overflow-hidden mb-4">
-                        <div className="bg-[#4FE862] w-[40%]"></div>
-                        <div className="bg-[#3B82F6] w-[25%]"></div>
-                        <div className="bg-[#F59E0B] w-[15%]"></div>
-                        <div className="bg-[#8B5CF6] w-[12%]"></div>
-                        <div className="bg-[#EC4899] w-[8%]"></div>
+                        <div className="bg-[#333] w-full"></div>
                       </div>
 
                       <div className="bg-[#1a1a1f] rounded-xl border border-[#2a2a2a] overflow-hidden">
                         {[
-                          { id: 1, name: "Transfer", sub: "System Program", color: "bg-[#4FE862]" },
-                          { id: 2, name: "Transfer", sub: "Token Program", color: "bg-[#3B82F6]" },
-                          { id: 3, name: "TransferChecked", sub: "Token Program", color: "bg-[#3B82F6]" },
-                          { id: 4, name: "Create", sub: "Associated Token Account", color: "bg-[#F59E0B]" },
-                          { id: 5, name: "SetComputeUnitLimit", sub: "Compute Budget", color: "bg-[#8B5CF6]" },
-                          { id: 6, name: "SetComputeUnitPrice", sub: "Compute Budget", color: "bg-[#EC4899]" },
+                          { id: 1, name: solscanDetails.instructionName, sub: solscanDetails.instructionProgram, color: "bg-[#4FE862]" },
                         ].map((inst) => (
                           <div key={inst.id} className="flex items-center p-3 border-b border-[#2a2a2a] last:border-0">
                             <div className={`${inst.color} text-white text-[11px] font-bold px-2 py-1 rounded mr-3 shrink-0`}>#{inst.id}</div>
@@ -1067,7 +1077,7 @@ export default function SendModal({ visible, onClose, initialTokenSymbol, onOpen
                         </div>
                       </div>
                       <div className="text-[11px] text-[#9CA3AF] mt-4">
-                        © 2026 Solscan. All rights reserved.
+                        © {new Date().getFullYear()} Solscan. All rights reserved.
                       </div>
                     </div>
                   </div>

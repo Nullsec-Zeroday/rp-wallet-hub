@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { SendIcon } from "../action-icons";
 import TokenLogo from "../token-logo";
 import { useLivePrices } from "@/hooks/useLivePrices";
+import { getSolscanTransactionDetails } from "@/lib/solscan-transaction";
 
 interface RecentActivityModalProps {
   visible: boolean;
@@ -86,6 +87,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
   const [isDetailClosing, setIsDetailClosing] = React.useState(false);
   const [showSolscan, setShowSolscan] = React.useState(false);
   const [isSolscanClosing, setIsSolscanClosing] = React.useState(false);
+  const solscanDetails = getSolscanTransactionDetails(selectedTx, prices);
 
   React.useEffect(() => {
     if (visible) {
@@ -428,7 +430,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                       { label: "Status", value: "Succeeded", color: "#4FE862", className: "font-semibold" },
                       { label: selectedTx.type === 'receive' ? "From" : "To", value: selectedTx.type === 'receive' ? selectedTx.from : selectedTx.to, isAddress: true, className: "text-[#888888] font-semibold" },
                       { label: "Network", value: "Solana", className: "text-[#eeeeee] font-semibold" },
-                      ...(selectedTx.type !== 'receive' ? [{ label: "Network Fee", value: "-0.00008 SOL", className: "text-[#eeeeee] font-semibold" }] : [])
+                      ...(selectedTx.type !== 'receive' ? [{ label: "Network Fee", value: "0 SOL", className: "text-[#eeeeee] font-semibold" }] : [])
                     ].map((row, i) => (
                       <div key={row.label} className={`flex items-center justify-between p-4 px-5 ${i !== 0 ? "border-t border-white/[0.03]" : ""}`}>
                         <span className="text-[15px] font-medium text-[#888]">{row.label}</span>
@@ -539,11 +541,11 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
 
               {/* Price Row */}
               <div className="flex items-center gap-2 px-4 py-1 text-[13px] text-[#b4b4b4]">
-                <span className="text-[#eeeeee] font-semibold">$87.92</span>
-                <span className="text-[#4FE862]">+1.49%</span>
+                <span className="text-[#eeeeee] font-semibold">{solscanDetails.solPrice}</span>
+                <span className={solscanDetails.solChangeIsPositive ? "text-[#4FE862]" : "text-[#F80633]"}>{solscanDetails.solChange}</span>
                 <span>|</span>
                 <span>Avg Fee:</span>
-                <span className="text-[#eeeeee]">0.00001571</span>
+                <span className="text-[#eeeeee]">{solscanDetails.averageFee}</span>
               </div>
 
               {/* Search Bar */}
@@ -564,7 +566,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                   <h2 className="text-[18px] font-bold text-[#eeeeee]">Transaction Details</h2>
                   <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#1e1e24] text-[#4FE862] text-[12px] font-medium border border-[#4FE862]/30">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><line x1="7" y1="17" x2="17" y2="7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"></line><polyline points="7 7 17 7 17 17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"></polyline></svg>
-                    {selectedTx?.type === 'swap' ? 'Swap' : selectedTx?.type === 'receive' ? 'Receive' : 'Transfer'}
+                    {solscanDetails.transactionType}
                   </div>
                 </div>
 
@@ -601,11 +603,11 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                   <div className="text-[14px] text-[#b4b4b4] leading-relaxed">
                     {selectedTx?.type === 'swap' ? (
                       <>
-                        Swapped <span className="text-white font-semibold">{selectedTx.amount} {selectedTx.token}</span> for <span className="text-white font-semibold">{selectedTx.toAmount} {selectedTx.toToken}</span>
+                        Swapped <span className="text-white font-semibold">{solscanDetails.amount} {solscanDetails.token}</span> for <span className="text-white font-semibold">{solscanDetails.destinationAmount} {solscanDetails.destinationToken}</span>
                       </>
                     ) : (
                       <>
-                        {selectedTx?.type === 'receive' ? 'Received' : 'Sent'} <span className="text-white font-semibold">{selectedTx?.amount}</span> <span className="text-[#4FE862]">${Math.floor(Number(selectedTx?.amount || 0) * 1).toLocaleString()}</span> <span className="text-white font-semibold">◎ {selectedTx?.token || "SOL"}</span>
+                        {selectedTx?.type === 'receive' ? 'Received' : 'Sent'} <span className="text-white font-semibold">{solscanDetails.amount} {solscanDetails.token}</span> <span className="text-[#4FE862]">{solscanDetails.tokenUsdValue}</span> {selectedTx?.type === 'receive' ? 'from' : 'to'} <span className="text-[#3B82F6]">{selectedTx?.type === 'receive' ? solscanDetails.fromShort : solscanDetails.toShort}</span>
                       </>
                     )}
                   </div>
@@ -626,23 +628,31 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                         Inspect Tx
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[#3B82F6] truncate mt-1">
-                      <span className="truncate">2kPxNbQ7mT9eZgfcBG4...ZKpwEd5r3deG</span>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 text-[#3B82F6] truncate mt-1 text-left"
+                      onClick={() => {
+                        if (!selectedTx) return;
+                        navigator.clipboard.writeText(solscanDetails.signature);
+                        toast.success("Transaction ID copied");
+                      }}
+                    >
+                      <span className="truncate">{solscanDetails.signatureShort}</span>
                       <svg className="flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round"></path></svg>
-                    </div>
+                    </button>
                   </div>
 
                   {/* Detail Rows */}
                   {[
-                    { label: "Block", value: "40,63,55,001", isLink: true },
-                    { label: "Timestamp", value: selectedTx ? new Date(selectedTx.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : "—", isLink: false },
-                    { label: "Result", value: "SUCCESS", isSuccess: true },
-                    { label: "Fee", value: "0.000006975 SOL", isLink: false },
-                    { label: "Priority Fee", value: "0.000000541 SOL", isLink: false },
-                    { label: "Compute Units Consumed", value: "22,110 / 58,049", isLink: false },
-                    { label: "Tx Version", value: "Legacy", isLink: false },
-                    { label: "Recent Block Hash", value: "Mh3Pj5Rm7To9...m7To9VqB", isLink: false },
-                    { label: "Signer", value: "4Fk2rY9s...3v8nLM", isLink: true },
+                    { label: "Block", value: "—", isLink: false },
+                    { label: "Timestamp", value: solscanDetails.timestamp, isLink: false },
+                    { label: "Result", value: solscanDetails.status, isStatus: true },
+                    { label: "Fee", value: solscanDetails.fee, isLink: false },
+                    { label: "Priority Fee", value: solscanDetails.priorityFee, isLink: false },
+                    { label: "Compute Units Consumed", value: "—", isLink: false },
+                    { label: "Tx Version", value: "—", isLink: false },
+                    { label: "Recent Block Hash", value: "—", isLink: false },
+                    { label: "Signer", value: solscanDetails.signerShort, isLink: true },
                   ].map((row, idx) => (
                     <div key={idx} className="flex items-start justify-between p-4 border-b border-[#2a2a2a] last:border-0">
                       <div className="text-[#b4b4b4] w-[45%] pr-2 flex items-center gap-2 shrink-0">
@@ -650,8 +660,8 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                         {row.label}
                       </div>
                       <div className="flex-1 flex justify-end text-right min-w-0">
-                        {row.isSuccess ? (
-                          <div className="bg-[#4FE862]/20 text-[#4FE862] px-2 py-0.5 rounded text-[11px] font-bold">SUCCESS</div>
+                        {row.isStatus ? (
+                          <div className={`${solscanDetails.statusTone === "success" ? "bg-[#4FE862]/20 text-[#4FE862]" : solscanDetails.statusTone === "pending" ? "bg-[#F59E0B]/20 text-[#F59E0B]" : "bg-[#F80633]/20 text-[#F80633]"} px-2 py-0.5 rounded text-[11px] font-bold`}>{row.value}</div>
                         ) : (
                           <div className={`${row.isLink ? "text-[#3B82F6]" : "text-[#eeeeee]"} break-all text-[13px]`}>
                             {row.value}
@@ -672,24 +682,15 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                     </div>
                   </div>
 
-                  <div className="text-[12px] text-[#b4b4b4] mb-2">Compute Units Distribution Total: 29,991</div>
+                  <div className="text-[12px] text-[#b4b4b4] mb-2">Compute Units Distribution Total: —</div>
                   <div className="flex h-2 w-full rounded-full overflow-hidden mb-4">
-                    <div className="bg-[#4FE862] w-[40%]"></div>
-                    <div className="bg-[#3B82F6] w-[25%]"></div>
-                    <div className="bg-[#F59E0B] w-[15%]"></div>
-                    <div className="bg-[#8B5CF6] w-[12%]"></div>
-                    <div className="bg-[#EC4899] w-[8%]"></div>
+                    <div className="bg-[#333] w-full"></div>
                   </div>
 
                   <div className="bg-[#1a1a1f] rounded-xl border border-[#2a2a2a] overflow-hidden">
-                    {[
-                      { id: 1, name: "Transfer", sub: "System Program", color: "bg-[#4FE862]" },
-                      { id: 2, name: "Transfer", sub: "Token Program", color: "bg-[#3B82F6]" },
-                      { id: 3, name: "TransferChecked", sub: "Token Program", color: "bg-[#3B82F6]" },
-                      { id: 4, name: "Create", sub: "Associated Token Account", color: "bg-[#F59E0B]" },
-                      { id: 5, name: "SetComputeUnitLimit", sub: "Compute Budget", color: "bg-[#8B5CF6]" },
-                      { id: 6, name: "SetComputeUnitPrice", sub: "Compute Budget", color: "bg-[#EC4899]" },
-                    ].map((inst) => (
+                      {[
+                        { id: 1, name: solscanDetails.instructionName, sub: solscanDetails.instructionProgram, color: "bg-[#4FE862]" },
+                      ].map((inst) => (
                       <div key={inst.id} className="flex items-center p-3 border-b border-[#2a2a2a] last:border-0">
                         <div className={`${inst.color} text-white text-[11px] font-bold px-2 py-1 rounded mr-3 shrink-0`}>#{inst.id}</div>
                         <div className="flex-1 min-w-0">
@@ -730,7 +731,7 @@ export default function RecentActivityModal({ visible, onClose, onCloseStart, on
                     </div>
                   </div>
                   <div className="text-[11px] text-[#9CA3AF] mt-4">
-                    © 2026 Solscan. All rights reserved.
+                    © {new Date().getFullYear()} Solscan. All rights reserved.
                   </div>
                 </div>
               </div>
