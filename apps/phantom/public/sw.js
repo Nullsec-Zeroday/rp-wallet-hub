@@ -1,7 +1,7 @@
 // Service Worker for RPWallet PWA
 // Handles: background notifications + aggressive asset caching for native-like speed
 
-const CACHE_NAME = 'rp-wallet-v8';
+const CACHE_NAME = 'rp-wallet-v9';
 const STATIC_ASSETS = [
   '/tokens/sol.webp',
   '/tokens/eth.webp',

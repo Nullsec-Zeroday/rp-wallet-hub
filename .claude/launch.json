@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--workspace", "apps/hub"],
       "port": 3000
+    },
+    {
+      "name": "phantom",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "apps/phantom"],
+      "port": 5173
     }
   ]
 }

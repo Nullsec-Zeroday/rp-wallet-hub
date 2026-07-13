@@ -262,7 +262,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
 
       {/* ── Footer Bar ── */}
       <div
-        className={`fixed -bottom-3 left-0 right-0 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0"} ${searchOpen ? "z-[120]" : "z-50"}`}
+        className={`walletFooterBar fixed -bottom-3 left-0 right-0 transition-transform duration-300 ease-in-out ${hidden ? "translate-y-full pointer-events-none" : "translate-y-0"} ${searchOpen ? "z-[120]" : "z-50"}`}
       >
         {/* Stacked graduated blur layers (bottom-to-top) */}
         <div className="absolute top-[2px] left-0 right-0 bottom-0 pointer-events-none z-0">
@@ -306,7 +306,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
         </div>
 
         <nav
-          className="relative z-10 pointer-events-auto px-4 max-w-[430px] mx-auto flex items-center justify-between gap-3 pt-2"
+          className="walletFooterNav relative z-10 pointer-events-auto px-4 max-w-[430px] mx-auto flex items-center justify-between gap-3 pt-2"
           style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
         >
           {searchOpen ? (

@@ -10,10 +10,19 @@
     <meta name="theme-color" content="#111111" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Ph4ntom" />
+    <meta name="apple-mobile-web-app-title" content="Phantom" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/logos/icon_128x128.png" />
+    <script>
+      // Android-only: flag the root element so CSS can paint true black edge-to-edge
+      // and switch the status bar to black. iOS is left on its original (correct) look.
+      if (/android/i.test(navigator.userAgent)) {
+        document.documentElement.classList.add("is-android");
+        var themeMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeMeta) themeMeta.setAttribute("content", "#000000");
+      }
+    </script>
     <title>Ph4ntom</title>
   </head>
   <body>

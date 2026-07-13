@@ -1,13 +1,13 @@
 {
-  "name": "Ph4ntom",
-  "short_name": "Ph4ntom",
+  "name": "Phantom",
+  "short_name": "Phantom",
   "description": "RPWallet Ph4ntom wallet PWA.",
   "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#111111",
-  "theme_color": "#111111",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "/favicon.ico",

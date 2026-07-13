@@ -25,7 +25,7 @@ const STORAGE_TS_KEY = 'phantom_live_prices_ts';
 // so movement looks organic — some ticks barely move, others jump more.
 const PRICE_JITTER_MIN_PCT = 0.0002; // ±0.02% floor
 const PRICE_JITTER_MAX_PCT = 0.0012; // ±0.12% ceiling
-const PRICE_JITTER_INTERVAL_MS = 2500;
+const PRICE_JITTER_INTERVAL_MS = 5000;
 
 function applyPriceJitter(anchor: LivePrices): LivePrices {
   const jittered: LivePrices = {};
@@ -136,8 +136,10 @@ export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn 
     const handleRefresh = (e: Event) => {
       const detail = (e as CustomEvent).detail as LivePrices;
       if (detail && Object.keys(detail).length > 0) {
+        // Anchor to the real prices, but display a jitter tick so a manual
+        // pull-to-refresh always produces a visible fluctuation.
         lastPricesRef.current = detail;
-        setPrices(detail);
+        setPrices(applyPriceJitter(detail));
         setLastUpdated(Date.now());
         setError(null);
         setIsLoading(false);

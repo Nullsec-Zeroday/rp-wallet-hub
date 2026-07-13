@@ -3,7 +3,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--app-font);
   --font-mono: ui-mono, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -121,7 +121,10 @@
   --ion-text-color: #f7f5f0;
   --radius: 0.75rem;
   color-scheme: dark;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Default (iOS + desktop): San Francisco via -apple-system, exactly as before.
+     Android switches this to Inter in the `html.is-android` block below. */
+  --app-font: -apple-system, BlinkMacSystemFont, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--app-font);
 }
 
 html,
@@ -151,7 +154,7 @@ body {
   display: flex;
   flex-direction: column;
   color: #fff;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--app-font);
   min-height: -webkit-fill-available;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -1311,7 +1314,7 @@ h1 {
   background: #222222 !important;
   color: #ffffff !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-family: var(--app-font) !important;
   pointer-events: auto !important;
 }
 
@@ -1379,4 +1382,54 @@ h1 {
 .phantom-swap-toast-cancel {
   background: #2c2c2e !important;
   color: #ffffff !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Android-only overrides (root gets `.is-android` from the inline UA check in
+   index.html). iOS was already pixel-perfect, so it keeps every original value.
+
+   On Android an installed PWA is drawn edge-to-edge behind the system bars, so
+   we (1) paint true black — matching the real app — behind those bars, and
+   (2) use the dynamic viewport height so the background actually reaches them.
+   Without this, `-webkit-fill-available` collapses on Android Chrome and the
+   status/navigation bars fall back to Chrome's default gray.
+   ────────────────────────────────────────────────────────────────────────── */
+html.is-android {
+  --background: #000000;
+  --color-pt-bg: #000000;
+  --ion-background-color: #000000;
+  /* Android uses Inter (matches the real app); iOS keeps San Francisco. */
+  --app-font: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html.is-android,
+html.is-android body,
+html.is-android #root,
+html.is-android ion-app,
+html.is-android ion-page,
+html.is-android ion-content,
+html.is-android .walletFrame,
+html.is-android .walletShell {
+  background: #000000;
+}
+
+html.is-android,
+html.is-android body,
+html.is-android .walletFrame,
+html.is-android .walletViewport,
+html.is-android .walletShell,
+html.is-android .installShell {
+  min-height: 100dvh;
+}
+
+/* The footer search bar is pinned 12px below the viewport (`-bottom-3`) with a
+   small safe-area pad — fine on iOS, but on Android the gesture/nav bar clips it.
+   Pull it back onto the screen and give it more clearance above the nav bar. */
+html.is-android .walletFooterBar {
+  bottom: 0;
+}
+
+html.is-android .walletFooterNav {
+  /* overrides the element's inline paddingBottom, so !important is required */
+  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
 }

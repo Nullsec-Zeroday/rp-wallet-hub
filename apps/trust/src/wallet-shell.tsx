@@ -8,6 +8,7 @@ import MarketsPage from "./app/(wallet)/markets/page";
 import PerpsPage from "./app/(wallet)/perps/page";
 import DiscoverPage from "./app/(wallet)/discover/page";
 import SwapPage from "./app/(wallet)/swap/page";
+import { TRUST_REFRESH_PRICES_EVENT } from "./hooks/useTrustLivePrices";
 
 export default function WalletShell() {
   const pathname = usePathname();
@@ -178,8 +179,9 @@ export default function WalletShell() {
           });
         }
 
-        // Simulate fetch delay
+        // Simulate fetch delay, then tick the prices so the pull shows movement.
         setTimeout(() => {
+          window.dispatchEvent(new Event(TRUST_REFRESH_PRICES_EVENT));
           setTranslateY(0, true, "0.8s");
           if (typeof window !== "undefined" && (window as any).triggerHaptic) {
             (window as any).triggerHaptic("success");

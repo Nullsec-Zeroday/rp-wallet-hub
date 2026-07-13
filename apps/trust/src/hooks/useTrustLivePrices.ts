@@ -1,10 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiDefaults } from "@rp-wallet/config";
 import { appEnv } from "@/app-env";
 import { getStaticTrustPrices, TRUST_TOKENS, type TrustLivePrices } from "@/lib/trust-token-data";
 
 const STORAGE_KEY = "trust_live_prices";
 const STORAGE_TS_KEY = "trust_live_prices_ts";
+
+// Window event a pull-to-refresh dispatches to force a fresh fluctuation tick.
+export const TRUST_REFRESH_PRICES_EVENT = "trust-refresh-prices";
+
+// The price proxy only refreshes every 1–5 min, so consecutive polls usually
+// return identical values and the portfolio total looks frozen — unlike a real
+// account that ticks constantly. Between real fetches (every 5s, and on every
+// pull-to-refresh) we apply a tiny synthetic jitter so the value visibly
+// fluctuates. Each tick is anchored to the last REAL price (not compounded), so
+// it oscillates in a tight band and never drifts. Display-only — localStorage
+// always holds the real prices.
+const PRICE_JITTER_MIN_PCT = 0.0002; // ±0.02% floor
+const PRICE_JITTER_MAX_PCT = 0.0012; // ±0.12% ceiling
+const PRICE_JITTER_INTERVAL_MS = 5000;
+
+function applyPriceJitter(anchor: TrustLivePrices): TrustLivePrices {
+  const jittered: TrustLivePrices = {};
+  for (const symbol in anchor) {
+    const entry = anchor[symbol];
+    const magnitude = PRICE_JITTER_MIN_PCT + Math.random() * (PRICE_JITTER_MAX_PCT - PRICE_JITTER_MIN_PCT);
+    const sign = Math.random() < 0.5 ? -1 : 1;
+    const noise = 1 + sign * magnitude;
+    jittered[symbol] = { ...entry, usd: entry.usd * noise };
+  }
+  return jittered;
+}
 
 function readCachedPrices(): TrustLivePrices | null {
   if (typeof window === "undefined") return null;
@@ -30,6 +56,9 @@ export function useTrustLivePrices(symbols: string[], apiKey: string, currency: 
   const [prices, setPrices] = useState<TrustLivePrices>(() => readCachedPrices() || getStaticTrustPrices());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Holds the last REAL prices so the jitter re-centers on truth (never compounds).
+  const lastRealPricesRef = useRef<TrustLivePrices>(prices);
 
   const symbolKey = useMemo(
     () => Array.from(new Set(symbols.map((symbol) => symbol.toUpperCase()))).sort().join(","),
@@ -58,13 +87,16 @@ export function useTrustLivePrices(symbols: string[], apiKey: string, currency: 
 
       const live = await response.json() as TrustLivePrices;
       const merged = { ...staticPrices, ...live };
+      lastRealPricesRef.current = merged;
       setPrices(merged);
       setError(null);
       writeCachedPrices(merged);
     } catch (fetchError) {
       const cached = readCachedPrices();
       if (cached) {
-        setPrices({ ...staticPrices, ...cached });
+        const mergedCached = { ...staticPrices, ...cached };
+        lastRealPricesRef.current = mergedCached;
+        setPrices(mergedCached);
       }
       setError(fetchError instanceof Error ? fetchError.message : "Unable to fetch prices");
     } finally {
@@ -77,6 +109,30 @@ export function useTrustLivePrices(symbols: string[], apiKey: string, currency: 
     const interval = window.setInterval(fetchPrices, apiKey.trim() ? 10000 : 30000);
     return () => window.clearInterval(interval);
   }, [apiKey, fetchPrices]);
+
+  // Synthetic micro-fluctuation between real fetches (every 5s), anchored to the
+  // last real price so the total ticks like a live account without drifting.
+  useEffect(() => {
+    const handle = window.setInterval(() => {
+      const anchor = lastRealPricesRef.current;
+      if (anchor && Object.keys(anchor).length > 0) {
+        setPrices(applyPriceJitter(anchor));
+      }
+    }, PRICE_JITTER_INTERVAL_MS);
+    return () => window.clearInterval(handle);
+  }, []);
+
+  // Pull-to-refresh fires an immediate fluctuation tick.
+  useEffect(() => {
+    const onRefresh = () => {
+      const anchor = lastRealPricesRef.current;
+      if (anchor && Object.keys(anchor).length > 0) {
+        setPrices(applyPriceJitter(anchor));
+      }
+    };
+    window.addEventListener(TRUST_REFRESH_PRICES_EVENT, onRefresh);
+    return () => window.removeEventListener(TRUST_REFRESH_PRICES_EVENT, onRefresh);
+  }, []);
 
   return {
     error,

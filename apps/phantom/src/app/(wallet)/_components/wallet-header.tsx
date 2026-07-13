@@ -116,7 +116,7 @@ const WalletHeader = ({ scrolled = false, onAvatarPress, onActivityPress, isDraw
           background: "transparent",
         }}
       />
-      <div className="relative z-10 flex items-center px-4 pt-3 pb-3">
+      <div className="relative z-10 flex items-center px-4 pt-2.5 pb-2.5">
         <button
           className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex items-center action-btn walkthrough-settings"
           onClick={onAvatarPress}
@@ -124,7 +124,7 @@ const WalletHeader = ({ scrolled = false, onAvatarPress, onActivityPress, isDraw
           <Avatar
             iconIndex={profile.iconIndex}
             avatarType={profile.avatarType}
-            size={40}
+            size={38}
           />
         </button>
 
@@ -153,27 +153,27 @@ const WalletHeader = ({ scrolled = false, onAvatarPress, onActivityPress, isDraw
         >
           <button
             onClick={() => router.push('/home')}
-            className={`shrink-0 h-[42px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/home' || pathname === '/' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
+            className={`shrink-0 h-[38px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/home' || pathname === '/' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
           >
-            <span className="font-medium text-[17px]">Home</span>
+            <span className="font-normal text-[17px]">Home</span>
           </button>
           <button
             onClick={() => router.push('/swap')}
-            className={`shrink-0 h-[42px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/swap' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
+            className={`shrink-0 h-[38px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/swap' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
           >
-            <span className="font-medium text-[17px]">Trade</span>
+            <span className="font-normal text-[17px]">Trade</span>
           </button>
           <button
             onClick={() => router.push('/predict')}
-            className={`shrink-0 h-[42px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/predict' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
+            className={`shrink-0 h-[38px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/predict' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
           >
-            <span className="font-medium text-[17px]">Predict</span>
+            <span className="font-normal text-[17px]">Predict</span>
           </button>
           <button
             onClick={() => router.push('/browser')}
-            className={`shrink-0 h-[42px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/browser' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
+            className={`shrink-0 h-[38px] px-4 flex items-center justify-center rounded-full tracking-tight transition-colors ${pathname === '/browser' ? 'bg-[#B4A6F9] text-black' : 'bg-[#2A2A2B] text-[#A0A0A5]'}`}
           >
-            <span className="font-medium text-[17px]">Explore</span>
+            <span className="font-normal text-[17px]">Explore</span>
           </button>
         </div>
       </div>
