@@ -1421,15 +1421,3 @@ html.is-android .walletShell,
 html.is-android .installShell {
   min-height: 100dvh;
 }
-
-/* The footer search bar is pinned 12px below the viewport (`-bottom-3`) with a
-   small safe-area pad — fine on iOS, but on Android the gesture/nav bar clips it.
-   Pull it back onto the screen and give it more clearance above the nav bar. */
-html.is-android .walletFooterBar {
-  bottom: 0;
-}
-
-html.is-android .walletFooterNav {
-  /* overrides the element's inline paddingBottom, so !important is required */
-  padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
-}
