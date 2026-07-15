@@ -15,6 +15,10 @@ export interface ApiEnv {
   REFERRAL_SIGNING_SECRET?: string;
   NOWPAYMENTS_API_KEY?: string;
   NOWPAYMENTS_IPN_SECRET?: string;
+  PAYBLIS_MERCHANT_KEY?: string;
+  PAYBLIS_SECRET_KEY?: string;
+  PAYBLIS_SANDBOX?: string;
+  PAYBLIS_IPN_ORIGIN?: string;
   SELLAUTH_API_KEY?: string;
   SELLAUTH_WEBHOOK_SECRET?: string;
   SELLAUTH_SHOP_ID?: string;

@@ -575,7 +575,7 @@ export default function LandingContent() {
                 Choose your <span className="bg-gradient-to-r from-[#d8b4fe] to-[#8b5cf6] bg-clip-text text-transparent">power.</span>
               </h2>
               <p className="mx-auto max-w-md text-base font-medium leading-relaxed text-white/60 md:text-lg">
-                Secure checkout powered by NOWPayments.
+                Pay securely with card or crypto.
               </p>
             </>
           )}

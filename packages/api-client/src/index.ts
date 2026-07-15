@@ -213,6 +213,17 @@ export class RpWalletApiClient {
     });
   }
 
+  async createPayblisCheckout(body: {
+    planId: string;
+    email: string;
+    referralToken?: string;
+  }) {
+    return this.request<{ checkoutUrl: string; orderId: string }>("/payments/payblis/checkout", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
   async createSupportTicket(body: {
     type: SupportTicketType;
     email: string;

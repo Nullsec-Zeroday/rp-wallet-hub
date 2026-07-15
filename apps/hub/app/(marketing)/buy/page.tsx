@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useState } from "react";
-import { Check, ShoppingCart, X, Lock, Loader2 } from "lucide-react";
+import { Check, ShoppingCart, X, Lock, Loader2, CreditCard, ChevronDown } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { PRICING_PLANS } from "@/lib/pricing-config";
 import {
@@ -23,6 +23,7 @@ import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
 
 const PLANS = Object.values(PRICING_PLANS);
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
+type PaymentMethod = "card" | "crypto";
 const STICKY_CHECKOUT_HIDE_DISTANCE = 160;
 
 function Corners({ className = "" }: { className?: string }) {
@@ -67,6 +68,8 @@ function BuyContent() {
   const initialPlan = searchParams.get("plan");
   const validPlanId = initialPlan && PLANS.some((p) => p.id === initialPlan) ? initialPlan : "starter";
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(validPlanId);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [showCodes, setShowCodes] = useState(false);
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -105,6 +108,14 @@ function BuyContent() {
     window.addEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, handleAttributionUpdated);
     return () => window.removeEventListener(AFFILIATE_ATTRIBUTION_UPDATED_EVENT, handleAttributionUpdated);
   }, []);
+
+  // Keep the referral disclosure open once a code is in play so an applied referral
+  // stays visible instead of being hidden behind the collapsed control.
+  React.useEffect(() => {
+    if (referralOffer || creatorCode.trim()) {
+      setShowCodes(true);
+    }
+  }, [referralOffer, creatorCode]);
 
   React.useEffect(() => {
     trackEvent("buy_page_viewed", {
@@ -244,10 +255,11 @@ function BuyContent() {
     const plan = selectedPlan;
     if (!plan) return;
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
+    const provider = paymentMethod === "card" ? "payblis" : "nowpayments";
     trackEvent("checkout_started", {
       plan: plan.id,
       price: getPlanDisplayPrice(plan),
-      provider: "nowpayments",
+      provider,
     });
     const normalizedEmail = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
@@ -294,20 +306,23 @@ function BuyContent() {
         storeAttribution(attribution);
       }
 
-      const result = await api.createNowPaymentsCheckout({
+      const checkoutPayload = {
         planId: plan.id,
         email: normalizedEmail,
         referralToken: attribution?.referralToken,
-      });
+      };
+      const result = paymentMethod === "card"
+        ? await api.createPayblisCheckout(checkoutPayload)
+        : await api.createNowPaymentsCheckout(checkoutPayload);
       setCheckoutPhase("opening");
-      trackEvent("checkout_url_ready", { plan: plan.id, provider: "nowpayments" });
+      trackEvent("checkout_url_ready", { plan: plan.id, provider });
       window.location.href = result.checkoutUrl;
     } catch (error) {
       clearSlowTimer();
       const message = error instanceof Error ? error.message : "Please try again.";
       setCheckoutError(message);
       setCheckoutPhase("error");
-      trackEvent("checkout_failed", { plan: plan.id, provider: "nowpayments", error: message });
+      trackEvent("checkout_failed", { plan: plan.id, provider, error: message });
     }
   };
 
@@ -320,6 +335,51 @@ function BuyContent() {
       window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
     }
   }, [searchParams]);
+
+  const payMethodLabel = paymentMethod === "card" ? "Card" : "crypto";
+  const providerLabel = paymentMethod === "card" ? "Payblis" : "NOWPayments";
+
+  // Card | Crypto segmented control with a method-aware caption. Rendered above the pay
+  // button in both the main block and the sticky bar; `compact` shrinks it for the sticky.
+  const renderMethodToggle = (compact: boolean) => (
+    <div className={compact ? "w-full" : "w-full"}>
+      <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#8b5cf6]/25 bg-white/[0.04] p-1" role="tablist" aria-label="Payment method">
+        {([
+          { id: "card" as const, label: "Card", Icon: CreditCard },
+          { id: "crypto" as const, label: "Crypto", Icon: null },
+        ]).map(({ id, label, Icon }) => {
+          const active = paymentMethod === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              disabled={checkoutLocked}
+              onClick={() => {
+                setPaymentMethod(id);
+                trackEvent("payment_method_selected", { method: id, plan: selectedPlanId });
+              }}
+              className={`flex items-center justify-center gap-2 rounded-lg font-semibold transition-all ${compact ? "py-2 text-sm" : "py-2.5 text-[15px]"} ${active
+                ? "bg-[#8b5cf6]/20 text-white ring-1 ring-[#a78bfa]/50 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
+                : "text-white/50 hover:text-white/80"
+                }`}
+            >
+              {Icon ? (
+                <Icon size={compact ? 15 : 17} className={active ? "text-[#c7bdff]" : "text-white/40"} />
+              ) : (
+                <BitcoinIcon className={compact ? "w-[15px] h-[15px]" : "w-[17px] h-[17px]"} />
+              )}
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <p className={`text-center text-white/45 font-medium ${compact ? "mt-1.5 text-[11px]" : "mt-2 text-[12px]"}`}>
+        {paymentMethod === "card" ? "Card, Apple Pay & Google Pay accepted" : "Pay with BTC, ETH, USDT & more"}
+      </p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen text-white selection:bg-[#9c8df6]/30 relative pb-24">
@@ -514,6 +574,16 @@ function BuyContent() {
               {emailError}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => setShowCodes((value) => !value)}
+            aria-expanded={showCodes}
+            className="flex w-full items-center justify-between rounded-xl border border-[#8b5cf6]/20 bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/[0.06] hover:text-white/90"
+          >
+            <span>Have a referral code?</span>
+            <ChevronDown size={18} className={`text-white/50 transition-transform ${showCodes ? "rotate-180" : ""}`} />
+          </button>
+          {showCodes && (
           <label className="w-full">
             <span className="mb-2 block text-sm font-medium text-white/70">Referral code</span>
             <div className="relative">
@@ -535,6 +605,7 @@ function BuyContent() {
               {creatorLoading ? <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-white/50" /> : referralOffer ? <Check className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-emerald-400" /> : null}
             </div>
           </label>
+          )}
           {creatorError && (
             <div className="w-full rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm font-medium text-amber-300">
               {creatorError}
@@ -545,6 +616,7 @@ function BuyContent() {
               Referral offer applied: +{selectedReferralBonusDays} bonus days
             </div>
           )}
+          {renderMethodToggle(false)}
           <button
             disabled={!selectedPlanId || checkoutLocked}
             onClick={handleCheckout}
@@ -566,6 +638,8 @@ function BuyContent() {
               </>
             ) : !selectedPlanId ? (
               "Select a package to continue"
+            ) : paymentMethod === "card" ? (
+              <>Pay {selectedPlanDisplayPrice} with Card <CreditCard className="w-5 h-5" /></>
             ) : (
               <>Pay {selectedPlanDisplayPrice} with crypto <BitcoinIcon className="w-5 h-5" /></>
             )}
@@ -578,13 +652,13 @@ function BuyContent() {
           )}
           {isSlowCheckout && !checkoutError && (
             <div className="text-amber-400/80 text-sm -mt-2 text-center">
-              NOWPayments is taking a little longer. Please wait...
+              {providerLabel} is taking a little longer. Please wait...
             </div>
           )}
 
           <div className="flex items-center justify-center gap-2 mt-1 mb-2 text-white/70 text-[13px] font-medium">
             <Lock size={14} className="text-[#c084fc]" />
-            <span>Secure checkout secured by NOWPayments</span>
+            <span>Secure checkout secured by {providerLabel}</span>
           </div>
 
           <p className="text-center text-[12px] text-white/40 max-w-[400px]">
@@ -665,6 +739,7 @@ function BuyContent() {
                   {emailError}
                 </div>
               )}
+              {showCodes && (
               <div className="mb-3">
                 <div className="relative">
                   <input
@@ -686,6 +761,8 @@ function BuyContent() {
                 </div>
                 {creatorError && <div className="mt-2 text-xs font-medium text-amber-300">{creatorError}</div>}
               </div>
+              )}
+              <div className="mb-3">{renderMethodToggle(true)}</div>
               <button
                 disabled={!selectedPlanId || checkoutLocked}
                 onClick={handleCheckout}
@@ -731,7 +808,7 @@ function BuyContent() {
 
               <div className="flex items-center justify-center gap-1.5 mt-2.5 text-white/70 text-[12px] font-medium">
                 <Lock size={12} className="text-[#c084fc]" />
-                <span>Secure checkout via NOWPayments</span>
+                <span>Secure checkout via {providerLabel}</span>
               </div>
             </div>
           </motion.div>
