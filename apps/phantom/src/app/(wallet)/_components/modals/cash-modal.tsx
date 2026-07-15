@@ -12,12 +12,13 @@ interface CashModalProps {
 
 export default function CashModal({ visible, onClose }: CashModalProps) {
   const [isClosing, setIsClosing] = useState(false);
-  const [isSwipeClosing, setIsSwipeClosing] = useState(false);
   const { cashBalance, baseCurrency, profile } = useWalletStore();
-  const [translateY, setTranslateY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const startYRef = useRef(0);
-  const currentYRef = useRef(0);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const isHeaderDragging = useRef(false);
+  const headerDragStartY = useRef(0);
+  const headerCurrentDragY = useRef(0);
+  const isSwipeClosing = useRef(false);
   const router = useRouter();
 
   // Waitlist state
@@ -31,8 +32,7 @@ export default function CashModal({ visible, onClose }: CashModalProps) {
     setMounted(true);
     if (visible) {
       setIsClosing(false);
-      setIsSwipeClosing(false);
-      setTranslateY(0);
+      isSwipeClosing.current = false;
       document.body.style.overflow = "hidden";
       
       const savedJoined = localStorage.getItem("phantom_card_waitlist_joined");
@@ -50,42 +50,89 @@ export default function CashModal({ visible, onClose }: CashModalProps) {
   }, [visible, profile.email]);
 
   const handleClose = () => {
+    if (isClosing) return;
     setIsClosing(true);
     setTimeout(() => {
       onClose();
     }, 200);
   };
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    startYRef.current = e.clientY;
-    currentYRef.current = e.clientY;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
+  useEffect(() => {
+    const header = headerRef.current;
+    const modal = modalContainerRef.current;
+    if (!visible || !header || !modal) return;
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    currentYRef.current = e.clientY;
-    const delta = Math.max(0, currentYRef.current - startYRef.current);
-    setTranslateY(delta);
-  };
+    let rafId: number;
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    const updateDragPosition = (clientY: number) => {
+      const diff = clientY - headerDragStartY.current;
+      if (rafId) cancelAnimationFrame(rafId);
 
-    const delta = currentYRef.current - startYRef.current;
-    if (delta > 100) {
-      setIsSwipeClosing(true);
-      setTranslateY(window.innerHeight);
-      setTimeout(() => {
-        onClose();
-      }, 300);
-    } else {
-      setTranslateY(0);
-    }
-  };
+      rafId = requestAnimationFrame(() => {
+        if (diff > 0) {
+          headerCurrentDragY.current = diff;
+          modal.style.transform = `translateY(${diff}px)`;
+        } else {
+          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
+          headerCurrentDragY.current = rubberBand;
+          modal.style.transform = `translateY(${rubberBand}px)`;
+        }
+      });
+    };
+
+    const startDrag = (clientY: number) => {
+      isHeaderDragging.current = true;
+      headerDragStartY.current = clientY;
+      modal.style.transition = "none";
+      modal.style.animation = "none";
+    };
+
+    const endDrag = () => {
+      if (!isHeaderDragging.current) return;
+      isHeaderDragging.current = false;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      if (headerCurrentDragY.current > 120) {
+        isSwipeClosing.current = true;
+        modal.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(100vh)";
+        handleClose();
+      } else {
+        modal.style.transition = "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(0px)";
+      }
+      headerCurrentDragY.current = 0;
+    };
+
+    const onTouchStart = (event: TouchEvent) => startDrag(event.touches[0].clientY);
+    const onTouchMove = (event: TouchEvent) => {
+      if (!isHeaderDragging.current) return;
+      if (event.cancelable) event.preventDefault();
+      updateDragPosition(event.touches[0].clientY);
+    };
+    const onMouseDown = (event: MouseEvent) => startDrag(event.clientY);
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isHeaderDragging.current) return;
+      updateDragPosition(event.clientY);
+    };
+
+    header.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", endDrag);
+    header.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", endDrag);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      header.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", endDrag);
+      header.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", endDrag);
+    };
+  }, [visible, isClosing]);
 
   const handleJoinWaitlist = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,38 +162,30 @@ export default function CashModal({ visible, onClose }: CashModalProps) {
       <div
         className="absolute inset-0 bg-black/40 pointer-events-auto"
         style={{
-          animation: isSwipeClosing ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
-          opacity: isSwipeClosing ? Math.max(0, 1 - translateY / 300) : undefined
+          animation: isSwipeClosing.current ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
         }}
         onClick={handleClose}
       />
 
       {/* Sheet */}
       <div
+        ref={modalContainerRef}
         className="w-full bg-[#000000] flex flex-col pointer-events-auto shadow-2xl relative"
         style={{
           height: "94vh",
           paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
-          transform: `translateY(${translateY}px)`,
-          transition: isDragging ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-          animation: isSwipeClosing ? "none" : (isClosing ? "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards" : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards"),
+          animation: isClosing
+            ? (isSwipeClosing.current ? "none" : "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards")
+            : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
           willChange: "transform",
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
       >
-        <div className="w-full flex justify-center pt-3 pb-3">
-          <div className="w-9 h-[5px] bg-[#333333] rounded-full" />
-        </div>
+        {/* Grabber + Header (drag-to-close zone) */}
+        <div ref={headerRef} className="w-full flex flex-col flex-shrink-0 cursor-grab active:cursor-grabbing">
+          <div className="w-full flex justify-center pt-3 pb-3">
+            <div className="w-9 h-[5px] bg-[#333333] rounded-full" />
+          </div>
 
-        {/* Scrollable Content inside sheet to prevent drag interruption */}
-        <div 
-          className="flex-1 overflow-y-auto no-scrollbar"
-          onPointerDown={(e) => e.stopPropagation()} // Stop drag when scrolling inner content
-        >
-          {/* Header */}
           <div className="flex items-center justify-between px-4 pb-4">
             <button
               onClick={handleClose}
@@ -157,7 +196,10 @@ export default function CashModal({ visible, onClose }: CashModalProps) {
             <h2 className="text-[17px] font-bold text-white">Cash</h2>
             <div className="w-10 h-10" /> {/* Spacer to keep title centered */}
           </div>
+        </div>
 
+        {/* Scrollable content stays independent from the swipe-close zone. */}
+        <div className="flex-1 overflow-y-auto no-scrollbar">
           <div className="flex flex-col pb-[110px] select-none">
             {/* ── BALANCE & CARD PREVIEW ROW ── */}
             <div className="flex flex-row items-center justify-between px-4 my-4">
