@@ -336,7 +336,6 @@ function BuyContent() {
     }
   }, [searchParams]);
 
-  const payMethodLabel = paymentMethod === "card" ? "Card" : "crypto";
   const providerLabel = paymentMethod === "card" ? "Payblis" : "NOWPayments";
 
   // Card | Crypto segmented control with a method-aware caption. Rendered above the pay
@@ -784,6 +783,8 @@ function BuyContent() {
                   </>
                 ) : !selectedPlanId ? (
                   "Select a package to continue"
+                ) : paymentMethod === "card" ? (
+                  <>Pay {selectedPlanDisplayPrice} with Card <CreditCard className="w-5 h-5" /></>
                 ) : (
                   <>Pay {selectedPlanDisplayPrice} with crypto <BitcoinIcon className="w-5 h-5" /></>
                 )}
