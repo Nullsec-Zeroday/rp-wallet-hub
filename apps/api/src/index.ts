@@ -20,6 +20,15 @@ import type { ApiEnv } from "./env";
 import { getAllowedOrigins } from "./env";
 import { DemoDeviceUsedError, DemoUnavailableError, DeviceLimitError, InvalidLicenseError, getPlatformStore, isSupportTicketStatus, isSupportTicketType } from "./platform-store";
 import type { AffiliateAttributionSummary, AffiliateConversionSummary, AffiliateSummary, PaymentOrderSummary, PlatformStore } from "./platform-store";
+import {
+  PAYBLIS_WEBHOOK_MAX_BYTES,
+  buildPayblisCheckoutUrl,
+  isFulfilledPayblisStatus,
+  parsePayblisWebhook,
+  payblisAmountMatches,
+  payblisCurrencyMatches,
+  verifyPayblisSignature,
+} from "./payblis";
 import { createReferralToken, verifyReferralToken } from "./referral-token";
 
 const DEFAULT_SESSION_COOKIE = "rp_session";
@@ -891,7 +900,14 @@ async function handleNowPaymentsWebhook(c: Context<HonoEnv>) {
   const store = getPlatformStore(c.env.DATABASE_URL);
   const order = await store.getPaymentOrder(orderId);
   if (!order || order.provider !== "nowpayments") return c.text("Unknown order", 404);
-  if (order.licenseId) return c.text("OK");
+  if (order.licenseId) {
+    await ensureAffiliateConversion(c, order, {
+      paymentId: order.providerPaymentId || order.id,
+      providerLabel: "nowpayments",
+      licenseId: order.licenseId,
+    });
+    return c.text("OK");
+  }
 
   if (!isFulfilledNowPaymentsStatus(paymentStatus)) {
     // `order.status` is the pre-update value; use it to fire the email only on the
@@ -954,7 +970,23 @@ async function fulfillPaidOrder(
     allowedDevices: order.allowedDevices,
   });
   const newlyCompleted = await store.completePaymentOrder(order.id, paymentId, license.id);
-  if (!newlyCompleted) return;
+  if (!newlyCompleted) {
+    const completedOrder = await store.getPaymentOrder(order.id);
+    if (completedOrder?.licenseId) {
+      await ensureAffiliateConversion(c, completedOrder, {
+        paymentId: completedOrder.providerPaymentId || paymentId,
+        providerLabel,
+        licenseId: completedOrder.licenseId,
+      });
+    }
+    return;
+  }
+
+  const affiliateConversion = await ensureAffiliateConversion(c, order, {
+    paymentId,
+    providerLabel,
+    licenseId: license.id,
+  });
 
   c.executionCtx.waitUntil(
     Promise.all([
@@ -969,24 +1001,38 @@ async function fulfillPaidOrder(
         referralBonusDays: Math.max(0, order.durationDays - (PAYMENT_PLANS[order.planId]?.durationDays || order.durationDays)),
         to: order.email,
       }),
-      store
-        .createAffiliateConversion({
-          affiliateCode: order.affiliateCode,
-          checkoutIntentId: order.affiliateCheckoutIntentId,
-          sellauthOrderId: `${providerLabel}:${paymentId}`,
-          licenseId: license.id,
-          buyerEmail: order.email,
-          plan: order.planLabel,
-          amount: order.priceAmount,
-          currency: order.priceCurrency,
-        })
-        .then((result) => notifyReferralConversion(c.env, result)),
+      affiliateConversion ? notifyReferralConversion(c.env, affiliateConversion) : Promise.resolve(),
     ]).catch((error) => {
       console.error(`[${providerLabel}-webhook] Post-fulfillment task failed`, error);
     }),
   );
 
   console.log(`[${providerLabel}-webhook] Created license for order ${order.id}`);
+}
+
+async function ensureAffiliateConversion(
+  c: Context<HonoEnv>,
+  order: PaymentOrderSummary,
+  options: { paymentId: string; providerLabel: string; licenseId: string },
+) {
+  if (!order.affiliateCode && !order.affiliateCheckoutIntentId) return null;
+
+  // Await the durable conversion before acknowledging the webhook. Provider
+  // retries revisit this idempotent key if the first database write fails.
+  const result = await getPlatformStore(c.env.DATABASE_URL).createAffiliateConversion({
+    affiliateCode: order.affiliateCode,
+    checkoutIntentId: order.affiliateCheckoutIntentId,
+    sellauthOrderId: `${options.providerLabel}:${options.paymentId}`,
+    licenseId: options.licenseId,
+    buyerEmail: order.email,
+    plan: order.planLabel,
+    amount: order.priceAmount,
+    currency: order.priceCurrency,
+  });
+  if (!result.accepted) {
+    console.warn(`[${options.providerLabel}-webhook] Affiliate conversion rejected`, { orderId: order.id });
+  }
+  return result;
 }
 
 function isFulfilledNowPaymentsStatus(status: string) {
@@ -997,12 +1043,6 @@ function isFulfilledNowPaymentsStatus(status: string) {
 // Card payments via Payblis run through the same order/fulfillment model as
 // NOWPayments: create a payment order, redirect the buyer to Payblis' hosted
 // checkout, then verify the IPN webhook and fulfill via `fulfillPaidOrder`.
-const PAYBLIS_CHECKOUT_BASE = "https://pay.payblis.com/api/payment_gateway.php";
-// Methods offered on the Payblis hosted checkout. Apple Pay / Google Pay only render
-// on eligible devices/browsers and require the wallets to be enabled on the Payblis
-// merchant account (Apple Pay also needs domain verification).
-const PAYBLIS_METHODS = "credit_cards,apple_pay,google_pay";
-
 app.post("/payments/payblis/checkout", async (c) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   try {
@@ -1117,72 +1157,6 @@ app.post("/payments/payblis/checkout", async (c) => {
   }
 });
 
-// Builds the Payblis hosted-checkout redirect URL. Payblis' "Checkout mode" expects
-// the payment parameters as a PHP-`serialize()`d, standard-`base64_encode`d token —
-// their gateway does `unserialize(base64_decode($token))`, so the format must match
-// exactly (JSON or URL-safe base64 yields "Invalid token data"). No signature is part
-// of the checkout token; the HMAC secret is only used to verify the IPN callback.
-function buildPayblisCheckoutUrl(input: {
-  merchantKey: string;
-  sandbox: boolean;
-  amount: string;
-  currency: string;
-  productName: string;
-  storeName: string;
-  refOrder: string;
-  customerEmail: string;
-  customerName: string;
-  customerFirstName: string;
-  country: string;
-  userIP: string;
-  lang: string;
-  urlOK: string;
-  urlKO: string;
-  ipnURL: string;
-}) {
-  // Field set + order per Payblis' documented PHP checkout example.
-  const params: Record<string, string> = {
-    MerchantKey: input.merchantKey,
-    sandbox: input.sandbox ? "true" : "false",
-    amount: input.amount,
-    currency: input.currency,
-    product_name: input.productName,
-    method: PAYBLIS_METHODS,
-    RefOrder: input.refOrder,
-    Customer_Email: input.customerEmail,
-    Customer_Name: input.customerName,
-    Customer_FirstName: input.customerFirstName,
-    country: input.country,
-    userIP: input.userIP,
-    lang: input.lang,
-    store_name: input.storeName,
-    urlOK: input.urlOK,
-    urlKO: input.urlKO,
-    ipnURL: input.ipnURL,
-  };
-  const token = base64Standard(phpSerializeStringMap(params));
-  return `${PAYBLIS_CHECKOUT_BASE}?token=${encodeURIComponent(token)}`;
-}
-
-// Minimal PHP `serialize()` for a flat string→string map: a:<n>:{<key><value>...}
-// where each string is s:<byteLength>:"<value>";. Byte length (not char count) is
-// what PHP emits, so multi-byte values are measured with TextEncoder.
-function phpSerializeStringMap(map: Record<string, string>) {
-  const encoder = new TextEncoder();
-  const serializeString = (value: string) => `s:${encoder.encode(value).length}:"${value}";`;
-  const entries = Object.entries(map)
-    .map(([key, value]) => `${serializeString(key)}${serializeString(value)}`)
-    .join("");
-  return `a:${Object.keys(map).length}:{${entries}}`;
-}
-
-function base64Standard(value: string) {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
 app.post("/webhooks/payblis", handlePayblisWebhook);
 app.post("/api/webhooks/payblis", handlePayblisWebhook);
 
@@ -1194,30 +1168,52 @@ async function handlePayblisWebhook(c: Context<HonoEnv>) {
   }
 
   const rawBody = await c.req.text();
-  let payload: Record<string, any>;
+  if (new TextEncoder().encode(rawBody).length > PAYBLIS_WEBHOOK_MAX_BYTES) {
+    return c.text("Payload too large", 413);
+  }
+
+  let payload: Record<string, unknown>;
   try {
-    payload = JSON.parse(rawBody) as Record<string, any>;
+    const parsed = JSON.parse(rawBody) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return c.text("Invalid JSON", 400);
+    payload = parsed as Record<string, unknown>;
   } catch {
     return c.text("Invalid JSON", 400);
   }
 
   const signature = c.req.header("x-payblis-signature") || normalizePayloadString(payload.signature) || "";
   if (!signature) return c.text("Missing signature", 401);
-  if (!(await verifyPayblisSignature(payload, signature, secret))) {
+  if (!(await verifyPayblisSignature(rawBody, payload, signature, secret))) {
     console.warn("[payblis-webhook] Signature verification failed");
     return c.text("Invalid signature", 403);
   }
 
-  const orderId = normalizePayloadString(payload.RefOrder ?? payload.merchant_reference);
-  const status = normalizePayloadString(payload.status)?.toUpperCase();
-  if (!orderId || !status) return c.text("Missing payment fields", 400);
+  const parsedWebhook = parsePayblisWebhook(payload);
+  if (!parsedWebhook.ok) {
+    console.warn("[payblis-webhook] Invalid notification", { reason: parsedWebhook.error });
+    return c.text(parsedWebhook.error, 400);
+  }
+  const { orderId, status, event, paymentId, amount, currency } = parsedWebhook.webhook;
+  console.log("[payblis-webhook] Verified notification", {
+    orderId,
+    status,
+    event: event || null,
+    hasTransactionId: Boolean(paymentId),
+  });
 
   const store = getPlatformStore(c.env.DATABASE_URL);
   const order = await store.getPaymentOrder(orderId);
   if (!order || order.provider !== "payblis") return c.text("Unknown order", 404);
-  if (order.licenseId) return c.text("OK");
+  if (order.licenseId) {
+    await ensureAffiliateConversion(c, order, {
+      paymentId: order.providerPaymentId || paymentId || order.id,
+      providerLabel: "payblis",
+      licenseId: order.licenseId,
+    });
+    return c.text("OK");
+  }
 
-  if (status !== "SUCCESS") {
+  if (!isFulfilledPayblisStatus(status)) {
     const normalizedStatus = status.toLowerCase();
     const isNewStatus = order.status !== normalizedStatus;
     await store.updatePaymentOrderStatus(order.id, normalizedStatus);
@@ -1236,31 +1232,26 @@ async function handlePayblisWebhook(c: Context<HonoEnv>) {
   }
 
   // Fulfillment path: validate the amount before issuing a license.
-  const paymentId = normalizePayloadString(payload.transaction_id ?? payload.transactionId) || order.id;
-  const priceAmount = Number(payload.amount);
-  if (!Number.isFinite(priceAmount) || priceAmount !== Number(order.priceAmount)) {
+  if (!paymentId) return c.text("Missing transaction ID", 400);
+  if (!payblisAmountMatches(order.priceAmount, amount)) {
     console.warn("[payblis-webhook] Order amount mismatch", {
       orderId,
       expectedAmount: order.priceAmount,
-      receivedAmount: payload.amount,
+      receivedAmount: amount,
     });
     return c.text("Order amount mismatch", 409);
+  }
+  if (!payblisCurrencyMatches(order.priceCurrency, currency)) {
+    console.warn("[payblis-webhook] Order currency mismatch", {
+      orderId,
+      expectedCurrency: order.priceCurrency,
+      receivedCurrency: currency,
+    });
+    return c.text("Order currency mismatch", 409);
   }
 
   await fulfillPaidOrder(c, order, { paymentId, providerLabel: "payblis", licenseSecret: secret });
   return c.text("OK");
-}
-
-// Verifies the Payblis IPN HMAC-SHA256 signature. Confirmed against a live sandbox
-// IPN: Payblis removes the `signature` field, then signs `json_encode(payload)` of the
-// remaining fields in their original order (NOT key-sorted). Reconstructing that with
-// JSON.stringify over the destructured `rest` (which preserves parse order) reproduces
-// the digest exactly. (IPN fields never contain "/", so PHP slash-escaping is moot.)
-async function verifyPayblisSignature(payload: Record<string, any>, signature: string, secret: string) {
-  const { signature: _omit, ...rest } = payload;
-  const canonicalPayload = JSON.stringify(rest);
-  const computed = await hmacSha256Hex(secret, canonicalPayload);
-  return timingSafeHexEqual(computed, normalizeSignature(signature));
 }
 
 app.post("/webhooks/sellauth", handleSellAuthWebhook);
@@ -3289,18 +3280,23 @@ function buildAffiliateLoginUrl(env: ApiEnv, token: string) {
 }
 
 /**
- * Cron sweep: email people who started checkout (entered their email, invoice
- * created) but dropped off before paying. Targets orders still in `waiting`,
- * 30min–72h old, that haven't been reminded yet, then marks them so each buyer
- * is nudged at most once.
+ * Cron sweep: email people who started checkout but dropped off before paying.
+ * Targets attempts still `waiting` and 30min–72h old, excludes buyers who got an
+ * active license in the last 72h, sends once per email, then marks every current
+ * waiting attempt for that buyer so duplicates cannot trigger another reminder.
  */
 async function runAbandonedCheckoutSweep(env: ApiEnv) {
   const store = getPlatformStore(env.DATABASE_URL);
-  const orders = await store.getAbandonedPaymentOrders({ olderThanMinutes: 30, maxAgeHours: 72, limit: 100 });
+  const orders = await store.getAbandonedPaymentOrders({
+    olderThanMinutes: 30,
+    maxAgeHours: 72,
+    recentPurchaseHours: 72,
+    limit: 100,
+  });
   for (const order of orders) {
     try {
       await sendAbandonedCheckoutEmail(env, { to: order.email, planLabel: order.planLabel });
-      await store.markAbandonedReminderSent(order.id);
+      await store.markAbandonedRemindersSent(order.email);
     } catch (error) {
       console.error(`[cron] Abandoned-checkout email failed for order ${order.id}`, error);
     }

@@ -25,6 +25,7 @@ import type {
   WalletTransaction,
 } from "@rp-wallet/types";
 import { getDemoBalances, listWalletApps, walletRegistry } from "@rp-wallet/wallet-core";
+import { selectAbandonedReminderOrders } from "./abandoned-checkout";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const LAUNCH_TOKEN_TTL_MS = 60 * 1000;
@@ -298,6 +299,7 @@ export interface PaymentOrderSummary {
 export interface AbandonedPaymentOrderQuery {
   olderThanMinutes: number;
   maxAgeHours: number;
+  recentPurchaseHours: number;
   limit: number;
 }
 
@@ -430,7 +432,7 @@ export interface PlatformStore {
   updatePaymentOrderStatus(id: string, status: string): Promise<void>;
   completePaymentOrder(id: string, providerPaymentId: string, licenseId: string): Promise<boolean>;
   getAbandonedPaymentOrders(query: AbandonedPaymentOrderQuery): Promise<PaymentOrderSummary[]>;
-  markAbandonedReminderSent(id: string): Promise<void>;
+  markAbandonedRemindersSent(email: string): Promise<void>;
   createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary>;
   getAdminSupportTickets(): Promise<SupportTicketSummary[]>;
   updateAdminSupportTicket(id: string, input: UpdateSupportTicketInput): Promise<SupportTicketSummary | null>;
@@ -558,20 +560,29 @@ class InMemoryPlatformStore implements PlatformStore {
     const now = Date.now();
     const recentCutoff = now - query.olderThanMinutes * 60 * 1000;
     const oldCutoff = now - query.maxAgeHours * 60 * 60 * 1000;
-    return [...this.paymentOrders.values()]
+    const recentPurchaseCutoff = now - query.recentPurchaseHours * 60 * 60 * 1000;
+    const recentPurchaseEmails = [...this.licenses.values()]
+      .filter((license) => license.status === "active")
+      .map((license) => this.users.get(license.userId))
+      .filter((user): user is UserSummary => Boolean(user?.email && Date.parse(user.createdAt) >= recentPurchaseCutoff))
+      .map((user) => user.email!);
+    const candidates = [...this.paymentOrders.values()]
       .filter((order) => {
         if (order.status !== "waiting" || order.licenseId || order.abandonedReminderSentAt) return false;
         const created = Date.parse(order.createdAt);
         return created < recentCutoff && created > oldCutoff;
       })
-      .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
-      .slice(0, query.limit);
+      .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
+    return selectAbandonedReminderOrders(candidates, recentPurchaseEmails, query.limit);
   }
 
-  async markAbandonedReminderSent(id: string) {
-    const order = this.paymentOrders.get(id);
-    if (!order) return;
-    this.paymentOrders.set(id, { ...order, abandonedReminderSentAt: new Date().toISOString() });
+  async markAbandonedRemindersSent(email: string) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const sentAt = new Date().toISOString();
+    for (const [id, order] of this.paymentOrders) {
+      if (order.email.trim().toLowerCase() !== normalizedEmail || order.status !== "waiting" || order.licenseId) continue;
+      this.paymentOrders.set(id, { ...order, abandonedReminderSentAt: sentAt });
+    }
   }
 
   async completePaymentOrder(id: string, providerPaymentId: string, licenseId: string) {
@@ -1888,28 +1899,45 @@ class NeonPlatformStore implements PlatformStore {
     const now = Date.now();
     const recentCutoff = new Date(now - query.olderThanMinutes * 60 * 1000);
     const oldCutoff = new Date(now - query.maxAgeHours * 60 * 60 * 1000);
-    const orders = await this.db
-      .select()
-      .from(schema.paymentOrders)
-      .where(
-        and(
-          eq(schema.paymentOrders.status, "waiting"),
-          isNull(schema.paymentOrders.licenseId),
-          isNull(schema.paymentOrders.abandonedReminderSentAt),
-          lt(schema.paymentOrders.createdAt, recentCutoff),
-          gt(schema.paymentOrders.createdAt, oldCutoff),
-        ),
-      )
-      .orderBy(asc(schema.paymentOrders.createdAt))
-      .limit(query.limit);
-    return orders.map(toPaymentOrderSummary);
+    const recentPurchaseCutoff = new Date(now - query.recentPurchaseHours * 60 * 60 * 1000);
+    const [orders, recentPurchases] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.paymentOrders)
+        .where(
+          and(
+            eq(schema.paymentOrders.status, "waiting"),
+            isNull(schema.paymentOrders.licenseId),
+            isNull(schema.paymentOrders.abandonedReminderSentAt),
+            lt(schema.paymentOrders.createdAt, recentCutoff),
+            gt(schema.paymentOrders.createdAt, oldCutoff),
+          ),
+        )
+        .orderBy(asc(schema.paymentOrders.createdAt)),
+      this.db
+        .select({ email: schema.users.email })
+        .from(schema.licenses)
+        .innerJoin(schema.users, eq(schema.licenses.userId, schema.users.id))
+        .where(and(eq(schema.licenses.status, "active"), gt(schema.licenses.createdAt, recentPurchaseCutoff))),
+    ]);
+    return selectAbandonedReminderOrders(
+      orders.map(toPaymentOrderSummary),
+      recentPurchases.flatMap((purchase) => purchase.email ? [purchase.email] : []),
+      query.limit,
+    );
   }
 
-  async markAbandonedReminderSent(id: string) {
+  async markAbandonedRemindersSent(email: string) {
     await this.db
       .update(schema.paymentOrders)
       .set({ abandonedReminderSentAt: new Date() })
-      .where(eq(schema.paymentOrders.id, id));
+      .where(
+        and(
+          eq(schema.paymentOrders.email, email.trim().toLowerCase()),
+          eq(schema.paymentOrders.status, "waiting"),
+          isNull(schema.paymentOrders.licenseId),
+        ),
+      );
   }
 
   async createSupportTicket(input: CreateSupportTicketInput): Promise<SupportTicketSummary> {
