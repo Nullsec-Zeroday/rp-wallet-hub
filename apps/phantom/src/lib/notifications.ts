@@ -19,8 +19,8 @@ export async function showSystemNotification(title: string, body: string) {
 
       await registration.showNotification(title, {
         body,
-        icon: "/logos/icon_512x512.png",
-        badge: "/logos/icon_512x512.png",
+        icon: "/logos/icon-192x192.png",
+        badge: "/logos/icon-monochrome-96x96.png",
         tag: `rp-wallet-${Date.now()}`,
       });
       return;
@@ -31,6 +31,6 @@ export async function showSystemNotification(title: string, body: string) {
 
   new window.Notification(title, {
     body,
-    icon: "/logos/icon_512x512.png",
+    icon: "/logos/icon-192x192.png",
   });
 }

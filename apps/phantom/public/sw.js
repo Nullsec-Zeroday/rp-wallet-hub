@@ -1,7 +1,7 @@
 // Service Worker for RPWallet PWA
 // Handles: background notifications + aggressive asset caching for native-like speed
 
-const CACHE_NAME = 'rp-wallet-v9';
+const CACHE_NAME = 'rp-wallet-v10';
 const STATIC_ASSETS = [
   '/tokens/sol.webp',
   '/tokens/eth.webp',
@@ -27,8 +27,11 @@ const STATIC_ASSETS = [
   '/icons/activity-unselected.webp',
   '/icons/search-selected.webp',
   '/icons/search-unselected.webp',
-  '/logos/icon_128x128.png',
-  '/logos/icon_512x512.png',
+  '/logos/icon-192x192.png',
+  '/logos/icon-512x512.png',
+  '/logos/icon-maskable-192x192.png',
+  '/logos/icon-maskable-512x512.png',
+  '/logos/icon-monochrome-96x96.png',
   '/rive/nav-home.rivx',
   '/rive/progress-send.rivx',
   '/rive/nav-wallet.rivx',
@@ -136,8 +139,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Notification from Ph4ntom';
   const options = {
     body: data.body || 'Received transaction',
-    icon: '/logos/icon_512x512.png',
-    badge: '/logos/icon_512x512.png',
+    icon: '/logos/icon-192x192.png',
+    badge: '/logos/icon-monochrome-96x96.png',
     vibrate: [200, 100, 200],
     data: {
       url: '/activity'

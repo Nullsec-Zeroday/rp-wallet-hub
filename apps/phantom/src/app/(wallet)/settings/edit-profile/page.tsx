@@ -17,7 +17,7 @@ import {
   updateBackendNotificationSettings,
   updateBackendWalletState,
 } from "@/lib/backend-wallet";
-import { requestNotificationPermission } from "@/lib/notifications";
+import { requestNotificationPermission, showSystemNotification } from "@/lib/notifications";
 import { appEnv } from "@/app-env";
 
 interface SearchResult {
@@ -121,6 +121,7 @@ function EditProfileContent() {
   const [txFrom, setTxFrom] = useState('');
   const [txDate, setTxDate] = useState('');
   const [txTime, setTxTime] = useState('');
+  const [txPushNotification, setTxPushNotification] = useState(false);
 
   const [localBalances, setLocalBalances] = useState<Record<string, string>>({});
 
@@ -292,6 +293,8 @@ function EditProfileContent() {
       return;
     }
 
+    const shouldNotify = txType === 'receive' && txPushNotification;
+
     try {
       const createdAt = txDate ? new Date(`${txDate}T${txTime || '12:00'}:00`).toISOString() : undefined;
       await createBackendWalletTransaction({
@@ -301,6 +304,7 @@ function EditProfileContent() {
         fromAddress: txType === 'receive' ? (txFrom || 'External Wallet') : profile.walletAddress,
         toAddress: txType === 'send' ? (txFrom || 'External Wallet') : profile.walletAddress,
         createdAt,
+        source: shouldNotify ? 'notification_simulation' : undefined,
       });
     } catch {
       toast.error("Unable to add transaction. Check the balance and backend session.");
@@ -323,7 +327,32 @@ function EditProfileContent() {
     setTxFrom('');
     setTxDate('');
     setTxTime('');
+
+    if (shouldNotify) {
+      try {
+        await showSystemNotification('Notification', `Received ${amount} ${txToken}`);
+      } catch (error) {
+        console.warn('Fake receive notification failed:', error);
+        toast.error('Transaction added, but the push notification could not be shown.');
+      }
+    }
+
     toast.success(`Transaction Added: ${txType === 'receive' ? 'Received' : 'Sent'} ${amount} ${txToken}`);
+  };
+
+  const handleToggleFakeTransactionPush = async () => {
+    if (txPushNotification) {
+      setTxPushNotification(false);
+      return;
+    }
+
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      toast.error('Notification permission is blocked for this browser.');
+      return;
+    }
+
+    setTxPushNotification(true);
   };
 
   const handleTogglePush = async () => {
@@ -796,6 +825,30 @@ function EditProfileContent() {
               </div>
             </div>
             <div className="h-px bg-[#2c2c2e] ml-4" />
+
+            {txType === 'receive' && (
+              <>
+                <div className="flex h-[52px] items-center justify-between px-4">
+                  <div className="flex items-center gap-2">
+                    <Bell size={17} className="text-[#AB9FF2]" />
+                    <span className="text-[15px] text-[#8b8ca7]">Push Notification</span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-pressed={txPushNotification}
+                    aria-label="Send a push notification for this received transaction"
+                    onClick={() => void handleToggleFakeTransactionPush()}
+                    className="w-[50px] h-[28px] rounded-full p-1 transition-colors duration-200 relative border border-white/5"
+                    style={{ backgroundColor: txPushNotification ? '#AB9FF2' : '#2c2c2e' }}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${txPushNotification ? 'translate-x-[22px]' : 'translate-x-0'}`}
+                    />
+                  </button>
+                </div>
+                <div className="h-px bg-[#2c2c2e] ml-4" />
+              </>
+            )}
 
             <div className="flex h-[52px] items-center justify-between px-4">
               <span className="text-[15px] text-[#8b8ca7]">Token Symbol</span>
