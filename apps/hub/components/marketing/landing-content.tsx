@@ -271,6 +271,14 @@ export default function LandingContent() {
             <span>Used by 800+ creators &amp; larpers</span>
           </div>
         </motion.div>
+        {/* <motion.p
+          initial={isMobile ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="mb-4 whitespace-nowrap sl-font text-[12px] font-bold uppercase tracking-[0.2em] mt-4 text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
+        >
+          <span className="text-lg leading-0">✦</span> New quest active: Daily Flex <span className="text-lg leading-0">✦</span>
+        </motion.p> */}
 
         <div className="relative z-10 mt-5 flex flex-col items-center md:mt-7">
 
@@ -278,12 +286,12 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display max-w-5xl text-center text-[2.5rem] font-semibold leading-none tracking-tight md:text-6xl lg:text-7xl"
+            className="font-display max-w-5xl text-center text-[2.6rem] font-semibold leading-none tracking-tight md:text-6xl lg:text-7xl"
           >
             <>
-              The #1{" "}
+              Fake it till you make it,{" "}
               <span className="bg-gradient-to-r from-[#e9d5ff] via-[#c084fc] to-[#8b5cf6] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(139,92,246,0.45)]">
-                fake crypto <br /> wallet app.
+                larp like a pro.
               </span>
             </>
           </motion.h1>
@@ -293,16 +301,9 @@ export default function LandingContent() {
             transition={{ duration: 0.4 }}
             className="my-4 flex max-w-3xl flex-col gap-2 text-center text-base font-medium leading-relaxed text-ph4ntom-light/80 md:my-8 md:text-xl"
           >
-            <motion.p
-              initial={isMobile ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="mb-4 whitespace-nowrap sl-font text-[12px] font-bold uppercase tracking-[0.2em] text-[#c084fc]/80 md:text-[12px] md:tracking-[0.4em]"
-            >
-              <span className="text-lg leading-0">✦</span> New quest active: Daily Flex <span className="text-lg leading-0">✦</span>
-            </motion.p>
+
             <p>
-              Set any balance, import any token, simulate transactions, push notifications in pixel-perfect copies of Phantom &amp; Trust Wallet. Flex online, prank others or create content - with no real crypto involved.
+              Sell a course, network with the rich or grow your social media easily with our clones of popular iOS crypto wallets. RPWallet is the only vendor that offers 1:1 clones with regular updates.
             </p>
           </motion.div>
         </div>
