@@ -16,7 +16,7 @@ export default function TryFreeButton({
 }) {
   const demoEnabled = process.env.NEXT_PUBLIC_FREE_DEMO_ENABLED === "true";
   const href = demoEnabled ? "/dashboard" : "/#pricing";
-  const label = labelOverride || (demoEnabled ? "Try Free Now" : "Get App Access");
+  const label = labelOverride || (demoEnabled ? "Try Free Now" : "Unlock Access");
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     trackEvent("clicked_get_rpwallet", {
