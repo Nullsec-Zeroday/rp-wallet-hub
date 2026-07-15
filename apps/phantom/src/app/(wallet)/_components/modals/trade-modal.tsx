@@ -49,12 +49,6 @@ const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => 
 
 export default function TradeModal({ visible, onClose, onCloseStart }: TradeModalProps) {
   const [isClosing, setIsClosing] = useState(false);
-  const modalContainerRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const isHeaderDragging = useRef(false);
-  const headerDragStartY = useRef(0);
-  const headerCurrentDragY = useRef(0);
-  const isSwipeClosing = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [toastState, setToastState] = useState<"swapping" | "swapped" | null>(null);
 
@@ -142,7 +136,6 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
     setMounted(true);
     if (visible) {
       setIsClosing(false);
-      isSwipeClosing.current = false;
       document.body.style.overflow = "hidden";
       setPayAmount("");
     } else {
@@ -157,101 +150,6 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
       onClose();
     }, 200);
   };
-
-  useEffect(() => {
-    const header = headerRef.current;
-    const modal = modalContainerRef.current;
-    if (!visible || !header || !modal) return;
-
-    let rafId: number;
-
-    const onTouchStart = (event: TouchEvent) => {
-      isHeaderDragging.current = true;
-      headerDragStartY.current = event.touches[0].clientY;
-      modal.style.transition = "none";
-      modal.style.animation = "none";
-    };
-
-    const onTouchMove = (event: TouchEvent) => {
-      if (!isHeaderDragging.current) return;
-      if (event.cancelable) event.preventDefault();
-
-      const diff = event.touches[0].clientY - headerDragStartY.current;
-      if (rafId) cancelAnimationFrame(rafId);
-
-      rafId = requestAnimationFrame(() => {
-        if (diff > 0) {
-          headerCurrentDragY.current = diff;
-          modal.style.transform = `translateY(${diff}px)`;
-        } else {
-          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
-          headerCurrentDragY.current = rubberBand;
-          modal.style.transform = `translateY(${rubberBand}px)`;
-        }
-      });
-    };
-
-    const onTouchEnd = () => {
-      if (!isHeaderDragging.current) return;
-      isHeaderDragging.current = false;
-      if (rafId) cancelAnimationFrame(rafId);
-
-      if (headerCurrentDragY.current > 120) {
-        isSwipeClosing.current = true;
-        modal.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
-        modal.style.transform = "translateY(100vh)";
-        handleClose();
-      } else {
-        modal.style.transition = "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)";
-        modal.style.transform = "translateY(0px)";
-      }
-      headerCurrentDragY.current = 0;
-    };
-
-    const onMouseDown = (event: MouseEvent) => {
-      isHeaderDragging.current = true;
-      headerDragStartY.current = event.clientY;
-      modal.style.transition = "none";
-      modal.style.animation = "none";
-    };
-
-    const onMouseMove = (event: MouseEvent) => {
-      if (!isHeaderDragging.current) return;
-
-      const diff = event.clientY - headerDragStartY.current;
-      if (rafId) cancelAnimationFrame(rafId);
-
-      rafId = requestAnimationFrame(() => {
-        if (diff > 0) {
-          headerCurrentDragY.current = diff;
-          modal.style.transform = `translateY(${diff}px)`;
-        } else {
-          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
-          headerCurrentDragY.current = rubberBand;
-          modal.style.transform = `translateY(${rubberBand}px)`;
-        }
-      });
-    };
-
-    const onMouseUp = () => onTouchEnd();
-
-    header.addEventListener("touchstart", onTouchStart, { passive: false });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("touchend", onTouchEnd);
-    header.addEventListener("mousedown", onMouseDown);
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      header.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
-      header.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [visible]);
 
   const handleFlip = useCallback(() => {
     setPayToken(receiveToken);
@@ -287,25 +185,24 @@ export default function TradeModal({ visible, onClose, onCloseStart }: TradeModa
       <div
         className="absolute inset-0 bg-black/60 pointer-events-auto"
         style={{
-          animation: isSwipeClosing.current ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
+          animation: isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards",
         }}
         onClick={handleClose}
       />
 
       {/* Sheet */}
       <div
-        ref={modalContainerRef}
         className="w-full max-w-md bg-[#000000] flex flex-col pointer-events-auto shadow-2xl relative rounded-t-[32px]"
         style={{
           height: "94vh",
           paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
           animation: isClosing
-            ? (isSwipeClosing.current ? "none" : "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards")
+            ? "slideDown 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards"
             : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
           willChange: "transform",
         }}
       >
-        <div ref={headerRef} className="cursor-grab active:cursor-grabbing w-full flex flex-col flex-shrink-0 z-20">
+        <div className="w-full flex flex-col flex-shrink-0 z-20">
           <div className="w-full flex justify-center pt-3 pb-3">
             <div className="w-9 h-[5px] bg-[#444444] rounded-full" />
           </div>

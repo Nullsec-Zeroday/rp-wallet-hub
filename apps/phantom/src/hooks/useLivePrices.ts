@@ -25,7 +25,10 @@ const STORAGE_TS_KEY = 'phantom_live_prices_ts';
 // so movement looks organic — some ticks barely move, others jump more.
 const PRICE_JITTER_MIN_PCT = 0.0002; // ±0.02% floor
 const PRICE_JITTER_MAX_PCT = 0.0012; // ±0.12% ceiling
-const PRICE_JITTER_INTERVAL_MS = 5000;
+const PRICE_JITTER_INTERVAL_MS = 10000; // default tick cadence
+// Inside the token detail modal we slow the synthetic fluctuation right down so the
+// chart/price the user is staring at stays steadier (once per minute instead of 10s).
+export const TOKEN_MODAL_JITTER_INTERVAL_MS = 60000;
 
 function applyPriceJitter(anchor: LivePrices): LivePrices {
   const jittered: LivePrices = {};
@@ -77,7 +80,7 @@ function getInitialPrices(): LivePrices {
   return getStaticPrices();
 }
 
-export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn {
+export function useLivePrices(overrideIntervalMs?: number, jitterIntervalMs: number = PRICE_JITTER_INTERVAL_MS): UseLivePricesReturn {
   const { isKeyVerified, coingeckoApiKey, baseCurrency, customTokens } = useWalletStore();
   
   // Logic: 10s if custom key, 30s default
@@ -158,9 +161,9 @@ export function useLivePrices(overrideIntervalMs?: number): UseLivePricesReturn 
       if (anchor && Object.keys(anchor).length > 0) {
         setPrices(applyPriceJitter(anchor));
       }
-    }, PRICE_JITTER_INTERVAL_MS);
+    }, jitterIntervalMs);
     return () => clearInterval(handle);
-  }, []);
+  }, [jitterIntervalMs]);
 
   return { prices, isLoading, lastUpdated, error, refetch: doFetch };
 }

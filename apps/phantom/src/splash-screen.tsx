@@ -1,45 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 
+export const PHANTOM_SPLASH_DURATION_MS = 3000;
+
 export default function SplashScreen() {
-  // useEffect(() => {
-  //   const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  //   if (metaThemeColor) metaThemeColor.setAttribute("content", "#AB9FF2");
-
-  //   document.documentElement.style.backgroundColor = "#AB9FF2";
-  //   document.body.style.backgroundColor = "#AB9FF2";
-
-  //   return () => {
-  //     if (metaThemeColor) metaThemeColor.setAttribute("content", "#111111");
-  //     document.documentElement.style.backgroundColor = "";
-  //     document.body.style.backgroundColor = "";
-  //   };
-  // }, []);
-
   return (
     <motion.main
       className="absolute inset-0 z-[9999] h-screen flex w-full flex-col items-center justify-center overflow-hidden"
       style={{ backgroundColor: "#AB9FF2" }}
       initial={{ opacity: 1 }}
-      exit={{
-        opacity: 0,
-        transition: { duration: 0.4, delay: 0.8, ease: "easeInOut" }
+      animate={{ opacity: [1, 1, 0] }}
+      transition={{
+        duration: PHANTOM_SPLASH_DURATION_MS / 1000,
+        times: [0, 0.9, 1],
+        ease: "easeInOut",
       }}
+      exit={{ opacity: 0, transition: { duration: 0 } }}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 1 }}
-        animate={{ scale: [0.9, 0.93, 0.9] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        exit={{
+        animate={{
           scale: [0.9, 1, 1, 40],
-          opacity: [1, 1, 1, 0],
-          transition: {
-            duration: 1.2,
-            times: [0, 0.3, 0.7, 1],
-            ease: ["easeOut", "linear", "easeIn"],
-          }
+        }}
+        transition={{
+          delay: 1.5,
+          duration: 1.2,
+          times: [0, 0.3, 0.7, 1],
+          ease: ["easeOut", "linear", "easeIn"],
         }}
       >
         <svg width="180" height="180" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">

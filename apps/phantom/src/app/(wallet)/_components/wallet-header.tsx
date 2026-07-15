@@ -145,7 +145,7 @@ const WalletHeader = ({ scrolled = false, onAvatarPress, onActivityPress, isDraw
 
         <div
           ref={tabsRef}
-          className="w-full flex items-center gap-2 overflow-x-auto no-scrollbar pl-[52px]"
+          className="w-full flex items-center gap-2 overflow-x-auto no-scrollbar pl-[48px]"
           style={tabsMask ? {
             WebkitMaskImage: tabsMask,
             maskImage: tabsMask,

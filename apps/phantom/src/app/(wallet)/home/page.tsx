@@ -153,7 +153,7 @@ export default function HomePage() {
   if (!mounted) return <HomeSkeleton />;
 
   return (
-    <div className="flex flex-col pb-32">
+    <div className="-mt-2 flex flex-col pb-32">
       <div className="px-4">
         {/* ── Balance Section ── */}
         <div className="pb-4 walkthrough-balance">

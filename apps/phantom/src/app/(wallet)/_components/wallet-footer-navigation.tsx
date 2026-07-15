@@ -21,8 +21,14 @@ const ACTION_ITEMS = [
     initialY: 160,
   },
   {
-    label: "Buy",
-    icon: <img src="/icons/buy_icon.webp" alt="Buy" width={22} height={22} className="object-contain" />,
+    label: "Add Cash",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+        <path d="M12 18V6"></path>
+      </svg>
+    ),
     action: "/home?modal=buy",
     initialY: 110,
   },
@@ -233,7 +239,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
       >
         <div
           className="px-4 max-w-[430px] mx-auto flex items-center justify-end pt-2"
-          style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
+          style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}
         >
           <motion.button
             onClick={searchOpen ? () => setSearchOpen(false) : (menuOpen ? closeMenu : openMenu)}
@@ -307,7 +313,7 @@ const WalletFooterNavigation = ({ hidden = false, isDrawerOpen = false }: { acti
 
         <nav
           className="relative z-10 pointer-events-auto px-4 max-w-[430px] mx-auto flex items-center justify-between gap-3 pt-2"
-          style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))" }}
+          style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}
         >
           {searchOpen ? (
             <div className="flex-1 h-[50px] px-4 flex items-center gap-2.5 bg-[#232323]/80 backdrop-blur-md border border-[#2b2b2b]/80 rounded-full active:scale-[0.98] transition-transform">

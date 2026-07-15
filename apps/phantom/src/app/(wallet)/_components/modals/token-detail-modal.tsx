@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useWalletStore } from "@/lib/wallet-store";
 import { TOKEN_MAP, formatCurrency, CURRENCY_SYMBOLS, TOKENS } from "@/lib/wallet-data";
 import { getStaticPriceData, fetchLivePrices, getStaticPrices } from "@/lib/coingecko-service";
-import { useLivePrices } from "@/hooks/useLivePrices";
+import { useLivePrices, TOKEN_MODAL_JITTER_INTERVAL_MS } from "@/hooks/useLivePrices";
 import { apiDefaults } from "@rp-wallet/config";
 import { appEnv } from "@/app-env";
 import InteractiveChart, { type ChartPoint } from "@/components/wallet/interactive-chart";
@@ -96,7 +96,7 @@ interface TokenDetailModalProps {
 
 export default function TokenDetailModal({ visible, symbol, onClose }: TokenDetailModalProps) {
   const router = useRouter();
-  const { prices } = useLivePrices();
+  const { prices } = useLivePrices(undefined, TOKEN_MODAL_JITTER_INTERVAL_MS);
   const [isClosing, setIsClosing] = useState(false);
 
   const { tokenBalances, transactions, handleRefreshBoost, baseCurrency, customTokens, coingeckoApiKey, dexscreenerApiKey } = useWalletStore();

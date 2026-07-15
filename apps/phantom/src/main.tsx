@@ -21,7 +21,7 @@ import {
 } from "@rp-wallet/wallet-core";
 import { appEnv } from "./app-env";
 import { StrictWalletApp } from "./strict-wallet";
-import SplashScreen from "./splash-screen";
+import SplashScreen, { PHANTOM_SPLASH_DURATION_MS } from "./splash-screen";
 import { DEFAULT_NOTIFICATION_SETTINGS } from "./lib/wallet-store";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/inter/latin-500.css";
@@ -91,10 +91,10 @@ function Ph4ntomApp() {
     payloadRef.current = payload;
   }, [payload]);
 
-  // Always show the splash briefly on mount, even on a fast cached open, then reveal
-  // the wallet. The startup license check still runs independently (non-blocking).
+  // Keep the splash timeline independent from startup work so its visible duration
+  // is always exactly three seconds.
   React.useEffect(() => {
-    const timer = window.setTimeout(() => setShowSplash(false), 500);
+    const timer = window.setTimeout(() => setShowSplash(false), PHANTOM_SPLASH_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -247,7 +247,7 @@ function Ph4ntomApp() {
       ) : null}
 
       <AnimatePresence>
-        {(loading || showSplash) && <SplashScreen />}
+        {showSplash && <SplashScreen />}
         {payload?.access?.kind === "demo" && !isDemoExpired(payload, now) && activeDemoPaywallOpen && (
           <DemoPaywall walletName="Ph4ntom" onClose={() => setActiveDemoPaywallOpen(false)} />
         )}

@@ -166,6 +166,7 @@ interface WalletStore {
   setTokenPickerVisible: (visible: boolean) => void;
   addRecentAddress: (address: string, name?: string) => void;
   toggleAddressBook: (address: string, name?: string) => void;
+  addContact: (address: string, name: string) => void;
   setFooterHidden: (hidden: boolean) => void;
 
 
@@ -764,6 +765,15 @@ export const useWalletStore = create<WalletStore>()(
           };
           set({ addressBook: [...addressBook, newEntry] });
         }
+      },
+      addContact: (address, name) => {
+        const { addressBook } = get();
+        const newEntry: AddressEntry = {
+          address,
+          name: name || `${address.slice(0, 4)}...${address.slice(-4)}`,
+          isBookmarked: true,
+        };
+        set({ addressBook: [...addressBook.filter(a => a.address !== address), newEntry] });
       },
       setFooterHidden: (hidden) => {
         set({ footerHidden: hidden });

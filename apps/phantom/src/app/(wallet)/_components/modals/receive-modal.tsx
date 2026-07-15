@@ -20,9 +20,18 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
   const [selectedToken, setSelectedToken] = React.useState(TOKENS[0]); // Default to SOL
   const [showTokenSelector, setShowTokenSelector] = React.useState(false);
   const [isSelectorClosing, setIsSelectorClosing] = React.useState(false);
+  const modalContainerRef = React.useRef<HTMLDivElement>(null);
+  const headerRef = React.useRef<HTMLDivElement>(null);
+  const isHeaderDragging = React.useRef(false);
+  const headerDragStartY = React.useRef(0);
+  const headerCurrentDragY = React.useRef(0);
+  const isSwipeClosing = React.useRef(false);
 
   React.useEffect(() => {
-    if (visible) setIsClosing(false);
+    if (visible) {
+      setIsClosing(false);
+      isSwipeClosing.current = false;
+    }
   }, [visible]);
 
   const handleClose = () => {
@@ -33,6 +42,101 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
       onClose();
     }, 200);
   };
+
+  React.useEffect(() => {
+    const header = headerRef.current;
+    const modal = modalContainerRef.current;
+    if (!visible || !header || !modal) return;
+
+    let rafId: number;
+
+    const onTouchStart = (event: TouchEvent) => {
+      isHeaderDragging.current = true;
+      headerDragStartY.current = event.touches[0].clientY;
+      modal.style.transition = "none";
+      modal.style.animation = "none";
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (!isHeaderDragging.current) return;
+      if (event.cancelable) event.preventDefault();
+
+      const diff = event.touches[0].clientY - headerDragStartY.current;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        if (diff > 0) {
+          headerCurrentDragY.current = diff;
+          modal.style.transform = `translateY(${diff}px)`;
+        } else {
+          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
+          headerCurrentDragY.current = rubberBand;
+          modal.style.transform = `translateY(${rubberBand}px)`;
+        }
+      });
+    };
+
+    const onTouchEnd = () => {
+      if (!isHeaderDragging.current) return;
+      isHeaderDragging.current = false;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      if (headerCurrentDragY.current > 120) {
+        isSwipeClosing.current = true;
+        modal.style.transition = "transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(100vh)";
+        handleClose();
+      } else {
+        modal.style.transition = "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)";
+        modal.style.transform = "translateY(0px)";
+      }
+      headerCurrentDragY.current = 0;
+    };
+
+    const onMouseDown = (event: MouseEvent) => {
+      isHeaderDragging.current = true;
+      headerDragStartY.current = event.clientY;
+      modal.style.transition = "none";
+      modal.style.animation = "none";
+    };
+
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isHeaderDragging.current) return;
+
+      const diff = event.clientY - headerDragStartY.current;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        if (diff > 0) {
+          headerCurrentDragY.current = diff;
+          modal.style.transform = `translateY(${diff}px)`;
+        } else {
+          const rubberBand = diff * (1 / (1 + Math.abs(diff) * 0.005));
+          headerCurrentDragY.current = rubberBand;
+          modal.style.transform = `translateY(${rubberBand}px)`;
+        }
+      });
+    };
+
+    const onMouseUp = () => onTouchEnd();
+
+    header.addEventListener("touchstart", onTouchStart, { passive: false });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    header.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      header.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      header.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [visible]);
 
   const handleOpenSelector = () => {
     setShowTokenSelector(true);
@@ -70,27 +174,42 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
         className="absolute inset-0 flex-1"
         style={{
           backgroundColor: "rgba(0,0,0,0.15)",
-          animation: isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards",
+          animation: isSwipeClosing.current ? "none" : (isClosing ? "fadeOut 0.2s ease forwards" : "fadeIn 0.3s ease forwards"),
         }}
         onClick={handleClose}
       />
 
       {/* Sheet */}
       <div
+        ref={modalContainerRef}
         className="w-full flex flex-col rounded-t-[28px] overflow-hidden relative"
         style={{
           background: "#000000",
           height: "94vh",
           paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
           animation: isClosing
-            ? "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards"
+            ? (isSwipeClosing.current ? "none" : "slideDown 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards")
             : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
           willChange: "transform",
         }}
       >
-        {/* Grabber */}
-        <div className="w-full flex justify-center pt-3 pb-1">
-          <div className="w-10 h-[4px] rounded-full bg-[#333333]"></div>
+        {/* Grabber + Header (drag-to-close zone) */}
+        <div ref={headerRef} className="w-full flex flex-col flex-shrink-0 cursor-grab active:cursor-grabbing">
+          <div className="w-full flex justify-center pt-3 pb-1">
+            <div className="w-10 h-[4px] rounded-full bg-[#333333]"></div>
+          </div>
+          <div className="flex items-center justify-between px-4 pt-2 pb-2">
+            <button
+              onClick={handleClose}
+              className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity"
+            >
+              <X size={22} className="text-white" />
+            </button>
+            <span className="text-[17px] font-semibold text-white tracking-wide">Receive</span>
+            <button className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity">
+              <ScanLine size={20} className="text-white" />
+            </button>
+          </div>
         </div>
 
         {/* Token Selector Overlay */}
@@ -146,20 +265,6 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
             </div>
           </div>
         )}
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-2 pb-2 flex-shrink-0">
-          <button
-            onClick={handleClose}
-            className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity"
-          >
-            <X size={22} className="text-white" />
-          </button>
-          <span className="text-[17px] font-semibold text-white tracking-wide">Receive</span>
-          <button className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity">
-            <ScanLine size={20} className="text-white" />
-          </button>
-        </div>
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0 relative">
