@@ -530,6 +530,10 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
   const staticData = symbol ? getStaticPriceData(symbol) : { usd: 0, usd_24h_change: 0 };
   const livePrice = prices[symbol || ""]?.usd ?? staticData.usd;
   const liveChange = prices[symbol || ""]?.usd_24h_change ?? staticData.usd_24h_change;
+  const chartFallbackPriceRef = useRef(livePrice);
+  const chartFallbackChangeRef = useRef(liveChange);
+  chartFallbackPriceRef.current = livePrice;
+  chartFallbackChangeRef.current = liveChange;
   const currentPrice = hoveredPoint?.price ?? (chartData.length > 0 ? chartData[chartData.length - 1].price : livePrice);
 
   const positionValue = userBalance * currentPrice;
@@ -551,9 +555,13 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
 
   useEffect(() => {
     async function loadChart() {
-      if (!token) return;
+      if (!visible || !token) return;
       setIsLoading(true);
-      const fallbackData = buildFallbackChartData(activeTimeFrame, livePrice, liveChange);
+      const fallbackData = buildFallbackChartData(
+        activeTimeFrame,
+        chartFallbackPriceRef.current,
+        chartFallbackChangeRef.current,
+      );
       try {
         const res = await fetch(`${appEnv.apiBaseUrl || apiDefaults.localBaseUrl}/chart?symbol=${token.symbol}&id=${token.coingeckoId || ''}&timeframe=${activeTimeFrame}&currency=${baseCurrency.toLowerCase()}${dexscreenerApiKey ? `&dsKey=${encodeURIComponent(dexscreenerApiKey)}` : ''}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -573,7 +581,7 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
       setIsLoading(false);
     }
     loadChart();
-  }, [token, activeTimeFrame, baseCurrency, dexscreenerApiKey, livePrice, liveChange]);
+  }, [visible, token, activeTimeFrame, baseCurrency, dexscreenerApiKey]);
 
   useEffect(() => {
     async function loadDetails() {
