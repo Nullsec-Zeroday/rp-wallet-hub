@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { X, ScanLine, ChevronDown, Copy } from "lucide-react";
+import { X, ChevronDown, Copy } from "lucide-react";
 import { useWalletStore } from "@/lib/wallet-store";
 import { TOKENS, TOKEN_MAP } from "@/lib/wallet-data";
 import { toast } from "sonner";
+import StyledQR from "../styled-qr";
 
 interface ReceiveModalProps {
   visible: boolean;
@@ -17,6 +18,7 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
   const walletAddress = profile?.walletAddress || "j9iMYuecFRuwaLzGtnsftYCpwYwW48tCWdYGGjaEpGYS";
 
   const [isClosing, setIsClosing] = React.useState(false);
+  const [receiveMode, setReceiveMode] = React.useState<"tokens" | "cash">("tokens");
   const [selectedToken, setSelectedToken] = React.useState(TOKENS[0]); // Default to SOL
   const [showTokenSelector, setShowTokenSelector] = React.useState(false);
   const [isSelectorClosing, setIsSelectorClosing] = React.useState(false);
@@ -198,17 +200,28 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
           <div className="w-full flex justify-center pt-3 pb-1">
             <div className="w-10 h-[4px] rounded-full bg-[#333333]"></div>
           </div>
-          <div className="flex items-center justify-between px-4 pt-2 pb-2">
-            <button
-              onClick={handleClose}
-              className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity"
-            >
-              <X size={22} className="text-white" />
-            </button>
-            <span className="text-[17px] font-semibold text-white tracking-wide">Receive</span>
-            <button className="w-11 h-11 bg-[#1c1c1e] rounded-full flex items-center justify-center active:opacity-70 transition-opacity">
-              <ScanLine size={20} className="text-white" />
-            </button>
+          <div className="px-4 pt-3 pb-4">
+            <h2 className="text-[28px] font-bold text-white tracking-tight">Receive</h2>
+          </div>
+        </div>
+
+        {/* Tokens / Cash segmented toggle */}
+        <div className="px-4 flex-shrink-0">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-[#1c1c1e] rounded-full">
+            {(["tokens", "cash"] as const).map((mode) => {
+              const active = receiveMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setReceiveMode(mode)}
+                  className={`py-2 rounded-full text-[15px] font-semibold transition-colors ${
+                    active ? "bg-[#e6e6e6] text-black" : "text-[#8a8a8a]"
+                  }`}
+                >
+                  {mode === "tokens" ? "Tokens" : "Cash"}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -268,74 +281,69 @@ export default function ReceiveModal({ visible, onClose, onCloseStart }: Receive
 
         {/* Content */}
         <div className="flex-1 flex flex-col min-h-0 relative">
-          
-          {/* Token Dropdown Pill */}
-          <div className="flex justify-center mt-6 mb-6">
-            <button
-              onClick={handleOpenSelector}
-              className="flex items-center gap-2 bg-[#1c1c1e] px-3 py-1.5 rounded-full active:opacity-70 transition-opacity"
-            >
-              <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center bg-[#232323]">
-                {selectedToken.logoUrl ? (
-                  <img src={selectedToken.logoUrl} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[10px]" style={{ color: selectedToken.color }}>{selectedToken.icon}</span>
-                )}
-              </div>
-              <span className="text-white font-medium text-[15px]">{selectedToken.name}</span>
-              <ChevronDown size={16} className="text-[#a0a0a0]" />
-            </button>
-          </div>
-
-          {/* QR Code Container */}
-          <div className="flex justify-center">
-            <div className="relative w-[300px] h-[300px] bg-white rounded-[24px] p-4 flex items-center justify-center overflow-hidden">
-              <img
-                alt="QR Code"
-                className="w-full h-full object-contain mix-blend-multiply"
-                style={{ imageRendering: "pixelated" }}
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=${walletAddress}`}
-              />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-[64px] h-[64px] rounded-lg bg-white flex items-center justify-center p-[4px] overflow-hidden">
-                  <div className="w-full h-full rounded-md overflow-hidden flex items-center justify-center bg-[#232323]">
-                    {selectedToken.logoUrl ? (
-                      <img src={selectedToken.logoUrl} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xl" style={{ color: selectedToken.color }}>{selectedToken.icon}</span>
-                    )}
+          {receiveMode === "tokens" ? (
+            <>
+              {/* QR Code Container */}
+              <div className="flex-1 flex flex-col justify-center min-h-0">
+                <div className="flex justify-center">
+                  <div className="relative w-[300px] h-[300px] bg-[#1c1c1e] rounded-[28px] p-4 flex items-center justify-center overflow-hidden">
+                    <StyledQR data={walletAddress} size={250} />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-[60px] h-[60px] rounded-[14px] bg-[#2A2A2C] flex items-center justify-center">
+                        {selectedToken.symbol === "SOL" ? (
+                          /* Official Solana mark, monochrome white — matches Phantom's QR badge */
+                          <svg width="28" height="22" viewBox="0 0 397.7 311.7" fill="#ffffff">
+                            <path d="M64.6,237.9c2.4-2.4,5.7-3.8,9.2-3.8h317.4c5.8,0,8.7,7,4.6,11.1l-62.7,62.7c-2.4,2.4-5.7,3.8-9.2,3.8H6.5c-5.8,0-8.7-7-4.6-11.1L64.6,237.9z" />
+                            <path d="M64.6,3.8C67.1,1.4,70.4,0,73.8,0h317.4c5.8,0,8.7,7,4.6,11.1l-62.7,62.7c-2.4,2.4-5.7,3.8-9.2,3.8H6.5c-5.8,0-8.7-7-4.6-11.1L64.6,3.8z" />
+                            <path d="M333.1,120.1c-2.4-2.4-5.7-3.8-9.2-3.8H6.5c-5.8,0-8.7,7-4.6,11.1l62.7,62.7c2.4,2.4,5.7,3.8,9.2,3.8h317.4c5.8,0,8.7-7,4.6-11.1L333.1,120.1z" />
+                          </svg>
+                        ) : selectedToken.logoUrl ? (
+                          <div className="w-9 h-9 rounded-full overflow-hidden">
+                            <img src={selectedToken.logoUrl} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <span className="text-xl" style={{ color: selectedToken.color }}>{selectedToken.icon}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Network + Address row (opens network selector) */}
+                <button
+                  onClick={handleOpenSelector}
+                  className="mx-4 mt-8 flex items-center justify-between active:opacity-70 transition-opacity"
+                >
+                  <span className="text-[18px] tracking-tight">
+                    <span className="text-white font-semibold">{selectedToken.name}</span>
+                    <span className="text-[#8a8a8a] font-medium"> &middot; {shortenAddr(walletAddress)}</span>
+                  </span>
+                  <ChevronDown size={22} className="text-[#8a8a8a]" strokeWidth={2.5} />
+                </button>
               </div>
+
+              {/* Footer Actions */}
+              <div className="flex flex-col gap-3 px-4 pb-2 flex-shrink-0">
+                <button onClick={copyAddress} className="w-full bg-[#B4A6F9] py-4 rounded-full text-black font-semibold text-[17px] active:opacity-80 transition-opacity">
+                  Copy Address
+                </button>
+                <button onClick={() => toast.info("Share functionality is a simulation")} className="w-full bg-[#1c1c1e] py-4 rounded-full text-white font-semibold text-[17px] active:opacity-70 transition-opacity">
+                  Share
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Cash receive — not yet available */
+            <div className="flex-1 flex flex-col items-center justify-center px-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-[#1c1c1e] flex items-center justify-center mb-5">
+                <Copy size={26} className="text-[#8a8a8a]" />
+              </div>
+              <p className="text-white font-semibold text-[18px] mb-2">Cash deposits coming soon</p>
+              <p className="text-[#8a8a8a] text-[15px] leading-relaxed">
+                Add cash to your balance directly from your bank. Join the waitlist from the Cash card.
+              </p>
             </div>
-          </div>
-
-          {/* Address text */}
-          <div 
-            className="flex justify-center items-center gap-2 mt-8 cursor-pointer active:opacity-70 transition-opacity" 
-            onClick={copyAddress}
-          >
-            <span className="text-white font-medium text-[16px] tracking-wide">{shortenAddr(walletAddress)}</span>
-            <Copy size={16} className="text-[#eeeeee]" />
-          </div>
-
-          {/* Spacer to push bottom text and buttons down */}
-          <div className="flex-1"></div>
-
-          {/* Description */}
-          <p className="text-center text-[#a0a0a0] text-[15px] px-10 mb-8 leading-relaxed">
-            Use to receive tokens on the {selectedToken.name} network only.
-          </p>
-
-          {/* Footer Actions */}
-          <div className="flex items-center gap-3 px-4 pb-2">
-            <button onClick={copyAddress} className="flex-1 bg-[#1c1c1e] py-4 rounded-[20px] text-white font-semibold text-[16px] active:opacity-70 transition-opacity">
-              Copy address
-            </button>
-            <button onClick={() => toast.info("Share functionality is a simulation")} className="flex-1 bg-[#1c1c1e] py-4 rounded-[20px] text-white font-semibold text-[16px] active:opacity-70 transition-opacity">
-              Share
-            </button>
-          </div>
+          )}
         </div>
       </div>
 

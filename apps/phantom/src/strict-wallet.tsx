@@ -134,16 +134,16 @@ function WalletRouteBody() {
 
   const routeVariants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? 100 : direction < 0 ? -100 : 0,
-      opacity: 0
+      x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
+      opacity: direction === 0 ? 0 : 1
     }),
     center: {
       x: 0,
       opacity: 1
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? 100 : direction > 0 ? -100 : 0,
-      opacity: 0
+      x: direction < 0 ? "100%" : direction > 0 ? "-100%" : 0,
+      opacity: direction === 0 ? 0 : 1
     })
   };
 
@@ -775,8 +775,8 @@ function WalletRouteBody() {
                 animate="center"
                 exit="exit"
                 transition={{
-                  x: { type: "spring", stiffness: 350, damping: 30 },
-                  opacity: { duration: 0.15 }
+                  x: { type: "spring", stiffness: 300, damping: 34, mass: 0.9 },
+                  opacity: { duration: 0.12 }
                 }}
                 className="h-full w-full flex-1 min-h-0"
               >

@@ -656,13 +656,13 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
               <div className="flex items-center gap-3">
                 <TokenLogo
                   token={token}
-                  size={48}
+                  size={44}
                   liveImage={prices[token.symbol]?.image}
                   hideChainIcon={token.symbol === "USDC"}
                 />
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-white font-bold text-[22px] tracking-tight">{token.name}</span>
+                    <span className="text-white font-bold text-[23px] tracking-tight">{token.name}</span>
                     <img src="/icons/verified_highlighted.webp" alt="Verified" style={{ width: 18, height: 18, flexShrink: 0, objectFit: 'contain' }} />
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -672,9 +672,9 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <button className="px-4 py-2 rounded-[10px] font-bold text-[14px] text-white bg-[#1c1c1e] active:opacity-70 shrink-0">Follow</button>
-                <button className="w-9 h-9 rounded-full bg-[#1c1c1e] flex items-center justify-center text-white active:opacity-60 shrink-0">
-                  <Share size={16} strokeWidth={2.5} />
+                <button className="h-[38px] px-3 rounded-[16px] flex items-center font-bold text-[16px] text-white bg-[#1c1c1e] border border-white/[0.08] active:opacity-70 shrink-0">Follow</button>
+                <button className="w-[50px] h-[50px] rounded-full bg-[#1c1c1e] border border-white/[0.08] flex items-center justify-center text-white active:opacity-60 shrink-0">
+                  <Share size={21} strokeWidth={2} />
                 </button>
               </div>
             </div>
@@ -711,7 +711,7 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
               <div ref={contentRef} className="h-full pt-2">
 
                 <div className="px-4 pt-1 pb-3" style={{ minHeight: "110px" }}>
-                  <div className="text-white font-medium" style={{ fontSize: 54, lineHeight: "54px", letterSpacing: "-0.03em", fontWeight: 700 }}>
+                  <div className="text-white" style={{ fontSize: 55, lineHeight: "58px", letterSpacing: "-0.022em", fontWeight: 500 }}>
                     {formatVal(currentPrice)}
                   </div>
                   <div className="flex items-center gap-2 mt-3">
@@ -780,7 +780,10 @@ export default function TokenDetailModal({ visible, symbol, onClose }: TokenDeta
                       router.push(`?modal=send&symbol=${symbol}`);
                     }} />
                   ) : (
-                    <ActionButton Icon={ReceiveIcon} label="Receive" />
+                    <ActionButton Icon={ReceiveIcon} label="Receive" onClick={() => {
+                      onClose();
+                      router.push(`?modal=receive`);
+                    }} />
                   )}
                   <ActionButton Icon={MoreHorizontal} label="More" />
                 </div>
