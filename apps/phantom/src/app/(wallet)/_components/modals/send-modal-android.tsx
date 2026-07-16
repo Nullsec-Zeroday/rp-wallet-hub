@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { X, ChevronLeft, Search, Check, ArrowRight, Loader2, Send, ArrowUpDown, SlidersHorizontal } from "lucide-react";
+import { X, ChevronLeft, Search, Check, ArrowRight, Loader2, Send, ArrowUpDown } from "lucide-react";
 import { useWalletStore, type Transaction } from "@/lib/wallet-store";
 import { TOKENS, TOKEN_MAP, formatCurrency, formatBalance, type TokenInfo } from "@/lib/wallet-data";
 import { useLivePrices } from "@/hooks/useLivePrices";
@@ -13,18 +13,25 @@ import { useRiveAsset } from "../rive-asset-provider";
 import { createBackendWalletTransaction, persistBackendWalletState, refreshBackendWalletState } from "@/lib/backend-wallet";
 import { logWalletDebug } from "@/lib/wallet-debug";
 import { getSolscanTransactionDetails } from "@/lib/solscan-transaction";
-import AndroidSendModal from "./send-modal-android";
 
 const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => void, onDelete: () => void }) => {
   const buttons = [
-    { num: '1' }, { num: '2' }, { num: '3' },
-    { num: '4' }, { num: '5' }, { num: '6' },
-    { num: '7' }, { num: '8' }, { num: '9' },
-    { num: '.' }, { num: '0' }, { num: 'del' }
+    { num: '1', letters: '' },
+    { num: '2', letters: 'A B C' },
+    { num: '3', letters: 'D E F' },
+    { num: '4', letters: 'G H I' },
+    { num: '5', letters: 'J K L' },
+    { num: '6', letters: 'M N O' },
+    { num: '7', letters: 'P Q R S' },
+    { num: '8', letters: 'T U V' },
+    { num: '9', letters: 'W X Y Z' },
+    { num: '.', letters: '' },
+    { num: '0', letters: '' },
+    { num: 'del', letters: '' }
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-y-2 gap-x-2 w-full pb-2 pt-2 px-4">
+    <div className="grid grid-cols-3 gap-[6px] p-1.5 bg-[#2c2c2e] w-full pb-1.5 pt-1.5">
       {buttons.map((btn, i) => (
         <button
           key={i}
@@ -32,14 +39,22 @@ const NumberPad = ({ onNumberPress, onDelete }: { onNumberPress: (n: string) => 
             e.preventDefault();
             btn.num === 'del' ? onDelete() : onNumberPress(btn.num);
           }}
-          className="flex flex-col items-center justify-center active:opacity-50 h-[48px] border-none cursor-pointer bg-transparent"
+          className={`flex flex-col items-center justify-center active:bg-[#6b6b6b] rounded-[8px] h-[48px] border-none cursor-pointer ${btn.num === '.' || btn.num === 'del'
+              ? 'bg-transparent shadow-none'
+              : 'bg-[#515151] shadow-sm'
+            }`}
         >
           {btn.num === 'del' ? (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 18l-6-6 6-6" />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
             </svg>
           ) : (
-            <span className="text-[28px] font-medium text-[#ffffff]">{btn.num}</span>
+            <>
+              <span className="text-[25px] leading-[30px] font-normal text-[#ffffff]">{btn.num}</span>
+              {btn.letters && <span className="text-[10px] leading-[10px] font-bold text-[#ffffff] tracking-[1px] mt-0.5">{btn.letters}</span>}
+            </>
           )}
         </button>
       ))}
@@ -81,7 +96,7 @@ const SendingAnimation = ({ isSuccess }: { isSuccess?: boolean }) => {
   );
 };
 
-export interface SendModalProps {
+interface SendModalProps {
   visible: boolean;
   onClose: () => void;
   initialTokenSymbol?: string;
@@ -89,7 +104,7 @@ export interface SendModalProps {
   onCloseStart?: () => void;
 }
 
-type Step = "TOKEN_SELECT" | "ADDRESS" | "ADD_CONTACT" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
+type Step = "TOKEN_SELECT" | "ADDRESS" | "AMOUNT" | "CONFIRM" | "SENDING" | "SUCCESS" | "VIEW_TX";
 const getOptimisticSuccessDelay = () => 1500 + Math.random() * 500;
 
 function getRecipientAddressError(value: string, ownAddress: string) {
@@ -99,35 +114,15 @@ function getRecipientAddressError(value: string, ownAddress: string) {
   return null;
 }
 
-function getNameInitials(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "A";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
-
-function truncateAddress(address: string) {
-  return address.length > 12 ? `${address.slice(0, 5)}...${address.slice(-5)}` : address;
-}
-
-export default function SendModal(props: SendModalProps) {
-  const isAndroid = typeof document !== "undefined"
-    && document.documentElement.classList.contains("is-android");
-
-  return isAndroid ? <AndroidSendModal {...props} /> : <IosSendModal {...props} />;
-}
-
-function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, onCloseStart }: SendModalProps) {
+export default function SendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, onCloseStart }: SendModalProps) {
   const {
     tokenBalances,
     customTokens,
     profile,
     baseCurrency,
     addressBook,
-    addRecentAddress,
-    addContact,
-    accounts,
-    currentAccountIndex
+    recentAddresses,
+    addRecentAddress
   } = useWalletStore();
   const { prices } = useLivePrices();
 
@@ -138,11 +133,6 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
   const [sentTransaction, setSentTransaction] = useState<Transaction | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [addressQuery, setAddressQuery] = useState("");
-  const [usdAmount, setUsdAmount] = useState("");
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  const [contactLabel, setContactLabel] = useState("");
-  const [contactAddress, setContactAddress] = useState("");
   const hasPlayedConfetti = useRef(false);
   const optimisticSuccessTimerRef = useRef<number | null>(null);
   const sendAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -189,11 +179,6 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
       // Reset inputs
       setRecipientAddress("");
       setAmount("");
-      setUsdAmount("");
-      setAddressQuery("");
-      setShowAddMenu(false);
-      setContactLabel("");
-      setContactAddress("");
       setSentTransaction(null);
       hasPlayedConfetti.current = false;
     }
@@ -216,17 +201,17 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
   };
 
   const handleNumberPress = (num: string) => {
-    setUsdAmount(prev => {
+    setAmount(prev => {
       if (num === '.' && prev.includes('.')) return prev;
       if (prev === '0' && num !== '.') return num;
       const next = prev + num;
-      if (/^\d*\.?\d{0,2}$/.test(next)) return next;
+      if (/^\d*\.?\d{0,5}$/.test(next)) return next;
       return prev;
     });
   };
 
   const handleDelete = () => {
-    setUsdAmount(prev => prev.slice(0, -1));
+    setAmount(prev => prev.slice(0, -1));
   };
 
   const allTokens = useMemo(() => [...TOKENS, ...customTokens], [customTokens]);
@@ -272,79 +257,7 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
     [profile.walletAddress, recipientAddress],
   );
   const normalizedRecipientAddress = recipientAddress.trim();
-
-  const otherAccounts = useMemo(
-    () => accounts.filter((_, idx) => idx !== currentAccountIndex),
-    [accounts, currentAccountIndex],
-  );
-
-  const normalizedAddressQuery = addressQuery.trim().toLowerCase();
-  const filteredAccounts = useMemo(() => {
-    if (!normalizedAddressQuery) return otherAccounts;
-    return otherAccounts.filter(a =>
-      a.name.toLowerCase().includes(normalizedAddressQuery) ||
-      a.profile.walletAddress.toLowerCase().includes(normalizedAddressQuery)
-    );
-  }, [otherAccounts, normalizedAddressQuery]);
-
-  const filteredContacts = useMemo(() => {
-    if (!normalizedAddressQuery) return addressBook;
-    return addressBook.filter(entry =>
-      entry.name.toLowerCase().includes(normalizedAddressQuery) ||
-      entry.address.toLowerCase().includes(normalizedAddressQuery)
-    );
-  }, [addressBook, normalizedAddressQuery]);
-
-  const handleSelectRecipient = (address: string) => {
-    const error = getRecipientAddressError(address, profile.walletAddress);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-    setRecipientAddress(address.trim());
-    setShowAddMenu(false);
-    setUsdAmount("");
-    setStep("AMOUNT");
-  };
-
-  const canSaveContact = contactLabel.trim().length > 0 && contactAddress.trim().length > 0;
-
-  const selectedTokenBalanceUsd = selectedTokenBalance * selectedTokenPrice;
-  const usdAmountNum = parseFloat(usdAmount) || 0;
-  const tokenEquivalent = selectedTokenPrice > 0
-    ? Math.min(usdAmountNum / selectedTokenPrice, selectedTokenBalance)
-    : 0;
-  const isInsufficientUsd = usdAmountNum > selectedTokenBalanceUsd + 0.005;
-
-  const recipientLabel = useMemo(() => {
-    if (!normalizedRecipientAddress) return "";
-    const account = accounts.find(a => a.profile.walletAddress === normalizedRecipientAddress);
-    if (account) return account.name;
-    const entry = addressBook.find(e => e.address === normalizedRecipientAddress);
-    return entry?.name || truncateAddress(normalizedRecipientAddress);
-  }, [accounts, addressBook, normalizedRecipientAddress]);
-
-  const handlePercentPress = (pct: number) => {
-    const usd = Math.floor(selectedTokenBalanceUsd * pct * 100) / 100;
-    setUsdAmount(usd > 0 ? String(usd) : "");
-  };
-
-  const handleAmountNext = () => {
-    if (usdAmountNum <= 0 || isInsufficientUsd || selectedTokenPrice <= 0) return;
-    const tokenAmount = Math.min(parseFloat(tokenEquivalent.toFixed(5)), selectedTokenBalance);
-    if (tokenAmount <= 0) return;
-    setAmount(String(tokenAmount));
-    setStep("CONFIRM");
-  };
-
-  const handleSaveContact = () => {
-    if (!canSaveContact) return;
-    addContact(contactAddress.trim(), contactLabel.trim());
-    toast.success("Contact saved");
-    setContactLabel("");
-    setContactAddress("");
-    setStep("ADDRESS");
-  };
+  const canAdvanceAddress = normalizedRecipientAddress.length > 0 && !recipientAddressError;
 
   const handleSend = async () => {
     unlockSendAudio();
@@ -463,6 +376,16 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
     }
   };
 
+  const getTimeAgo = (timestamp?: number) => {
+    if (!timestamp) return "Used recently";
+    const diff = Date.now() - timestamp;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Used today";
+    if (days < 30) return `Used ${days}d ago`;
+    const months = Math.floor(days / 30);
+    return `Used ${months}mo${months > 1 ? "s" : ""} ago`;
+  };
+
   if (!visible) return null;
 
   return (
@@ -486,10 +409,13 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
             : "slideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards",
         }}
       >
-        <div className="w-full pt-3 flex-shrink-0 bg-[#000000]"></div>
+        {/* Grabber */}
+        <div className="w-full flex justify-center pt-3 pb-3 flex-shrink-0 relative z-50 bg-[#000000]">
+          <div className="w-9 h-[5px] rounded-full bg-[#333333]"></div>
+        </div>
 
         {/* Step Header */}
-        {step !== "TOKEN_SELECT" && step !== "ADDRESS" && step !== "ADD_CONTACT" && step !== "AMOUNT" && step !== "CONFIRM" && step !== "VIEW_TX" && (
+        {step !== "TOKEN_SELECT" && step !== "ADDRESS" && step !== "AMOUNT" && step !== "CONFIRM" && step !== "VIEW_TX" && (
           <div className="flex items-center justify-between px-4 py-4 flex-shrink-0 relative">
             <button
               onClick={() => {
@@ -550,8 +476,7 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
                           key={token.symbol}
                           onClick={() => {
                             setSelectedToken(token);
-                            setUsdAmount("");
-                            setStep(normalizedRecipientAddress ? "AMOUNT" : "ADDRESS");
+                            setStep("ADDRESS");
                           }}
                           className="flex items-center gap-4 bg-[#141414] rounded-[24px] p-4 border-none cursor-pointer text-left w-full active:scale-[0.98] transition-all group"
                         >
@@ -587,159 +512,48 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
                 exit={{ opacity: 0, x: -20 }}
                 className="h-full bg-[#000000] flex flex-col absolute inset-0"
               >
-                {/* Header: X + Send title + plus */}
-                <div className="bg-[#000000] flex-shrink-0 flex items-center justify-between px-4 py-3 relative z-30">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => {
-                        if (initialTokenSymbol) handleClose();
-                        else setStep("TOKEN_SELECT");
-                      }}
-                      className="bg-[#1c1c1e] w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-70 transition-opacity"
-                    >
-                      <X size={22} className="text-white" />
-                    </button>
-                    <span className="text-[18px] font-semibold text-white tracking-wide">Send</span>
-                  </div>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowAddMenu(v => !v)}
-                      aria-label="Add"
-                      className="bg-[#1c1c1e] w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-70 transition-opacity"
-                    >
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                <div className="bg-[#000000] flex-shrink-0 flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => {
+                      if (initialTokenSymbol) handleClose();
+                      else setStep("TOKEN_SELECT");
+                    }} className="bg-[#1c1c1e] w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6"></path>
                       </svg>
                     </button>
-                    {showAddMenu && (
-                      <div className="absolute right-0 top-[52px] z-40">
-                        <button
-                          onClick={() => {
-                            setShowAddMenu(false);
-                            setContactLabel("");
-                            setContactAddress("");
-                            setStep("ADD_CONTACT");
-                          }}
-                          className="flex items-center justify-between gap-8 bg-[#1c1c1e] rounded-[18px] px-5 py-3.5 border-none cursor-pointer whitespace-nowrap shadow-lg shadow-black/50 active:opacity-80 transition-opacity w-[240px]"
-                        >
-                          <span className="text-[17px] font-medium text-white">Add Contact</span>
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="4" y="3" width="16" height="18" rx="2"></rect>
-                            <circle cx="12" cy="10" r="2.2"></circle>
-                            <path d="M8.5 16.5c.7-1.6 2-2.4 3.5-2.4s2.8.8 3.5 2.4"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    )}
+                    <span className="text-[18px] font-semibold text-[#eeeeee]">{selectedToken.symbol}</span>
                   </div>
+                  <button
+                    disabled={!canAdvanceAddress}
+                    onClick={() => setStep("AMOUNT")}
+                    className="bg-transparent border-none p-1 cursor-pointer text-[16px] font-semibold text-[#ab9ff2] disabled:text-[#4a3b75] disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
                 </div>
-
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto" onClick={() => showAddMenu && setShowAddMenu(false)}>
-                  {normalizedAddressQuery && (
-                    <button
-                      onClick={() => handleSelectRecipient(addressQuery)}
-                      className="flex items-center gap-4 px-4 py-3.5 bg-transparent border-none cursor-pointer w-full text-left active:bg-white/5 transition-colors"
-                    >
-                      <div className="w-11 h-11 rounded-full bg-[#1c1c1e] flex items-center justify-center flex-shrink-0">
-                        <Send size={18} className="text-[#eeeeee]" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[17px] font-semibold text-white block truncate">
-                          {truncateAddress(addressQuery.trim())}
-                        </span>
-                        <span className="text-[14px] font-normal text-[#a0a0a0] block mt-0.5">Send to this address</span>
-                      </div>
-                    </button>
-                  )}
-
-                  {filteredAccounts.length > 0 && (
-                    <>
-                      <div className="px-4 pt-4 pb-2">
-                        <span className="text-[20px] font-bold text-white">Accounts</span>
-                      </div>
-                      {filteredAccounts.map((account) => (
-                        <button
-                          key={account.id}
-                          onClick={() => handleSelectRecipient(account.profile.walletAddress)}
-                          className="flex items-center gap-4 px-4 py-3.5 bg-transparent border-none cursor-pointer w-full text-left active:bg-white/5 transition-colors"
-                        >
-                          <div className="w-11 h-11 rounded-full bg-[#1c1c1e] flex items-center justify-center flex-shrink-0">
-                            <span className="text-[15px] font-semibold text-[#eeeeee]">
-                              {getNameInitials(account.name)}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[17px] font-semibold text-white block truncate">{account.name}</span>
-                            <span className="text-[15px] font-normal text-[#a0a0a0] block mt-0.5">
-                              {truncateAddress(account.profile.walletAddress)}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </>
-                  )}
-
-                  {filteredContacts.length > 0 && (
-                    <>
-                      <div className="px-4 pt-4 pb-2">
-                        <span className="text-[20px] font-bold text-white">Contacts</span>
-                      </div>
-                      {filteredContacts.map((entry, idx) => (
-                        <button
-                          key={`${entry.address}-${idx}`}
-                          onClick={() => handleSelectRecipient(entry.address)}
-                          className="flex items-center gap-4 px-4 py-3.5 bg-transparent border-none cursor-pointer w-full text-left active:bg-white/5 transition-colors"
-                        >
-                          <div className="w-11 h-11 rounded-full bg-[#1c1c1e] flex items-center justify-center flex-shrink-0">
-                            <span className="text-[15px] font-semibold text-[#eeeeee]">
-                              {getNameInitials(entry.name || "A")}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[17px] font-semibold text-white block truncate">{entry.name}</span>
-                            <span className="text-[15px] font-normal text-[#a0a0a0] block mt-0.5">
-                              {truncateAddress(entry.address)}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </>
-                  )}
-
-                  {!normalizedAddressQuery && filteredAccounts.length === 0 && filteredContacts.length === 0 && (
-                    <div className="px-4 py-6 text-[#666] text-[15px] font-medium">No accounts or contacts yet</div>
-                  )}
-                </div>
-
-                {/* Bottom search bar */}
-                <div className="flex-shrink-0 px-4 py-3 mt-auto" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
-                  <div className="flex items-center gap-3.5 bg-[#1c1c1e] rounded-full h-[52px] pl-6 pr-[14px]">
-                    <Search size={23} strokeWidth={1.8} className="text-[#8e8e93] flex-shrink-0" />
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex items-center px-4 py-3">
                     <input
-                      placeholder="@username or wallet"
+                      placeholder="To: username or address"
                       type="text"
-                      value={addressQuery}
-                      onChange={(e) => setAddressQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && addressQuery.trim()) handleSelectRecipient(addressQuery);
-                      }}
+                      value={recipientAddress}
+                      onChange={(e) => setRecipientAddress(e.target.value)}
                       onPaste={(e) => {
                         const text = e.clipboardData?.getData("text");
                         if (text) {
                           e.preventDefault();
-                          setAddressQuery(text.trim());
+                          setRecipientAddress(text.trim());
                         }
                       }}
                       onBlur={() => setTimeout(() => window.scrollTo(0, 0), 100)}
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
-                      className="flex-1 bg-transparent border-none outline-none text-[#eeeeee] text-[18px] placeholder:text-[18px] font-normal placeholder:text-[#8e8e93] min-w-0"
+                      className="flex-1 bg-transparent border-none outline-none text-[#eeeeee] text-[16px] font-normal leading-5 placeholder:text-[#a0a0a0]"
                     />
-                    <button type="button" aria-label="Scan address" className="p-2 rounded-lg bg-[#29292c] flex items-center justify-center border-none cursor-pointer flex-shrink-0 active:opacity-60 transition-opacity">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <button type="button" aria-label="Scan address" className="bg-transparent border-none p-1 cursor-pointer flex-shrink-0 active:opacity-60 transition-opacity">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 7v-4h4"></path>
                         <path d="M21 7v-4h-4"></path>
                         <path d="M3 17v4h4"></path>
@@ -747,89 +561,88 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
                       </svg>
                     </button>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                  {normalizedRecipientAddress && recipientAddressError ? (
+                    <div className="px-4 pt-0 text-[13px] leading-5">
+                      <span className="text-[#F80633]">
+                        {recipientAddressError}
+                      </span>
+                    </div>
+                  ) : null}
 
-            {step === "ADD_CONTACT" && (
-              <motion.div
-                key="add-contact"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="h-full bg-[#000000] flex flex-col absolute inset-0"
-              >
-                {/* Header */}
-                <div className="bg-[#000000] flex-shrink-0 flex items-center gap-4 px-4 py-3">
-                  <button
-                    onClick={() => setStep("ADDRESS")}
-                    className="bg-[#1c1c1e] w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-70 transition-opacity"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M15 18l-6-6 6-6"></path>
+                  <div className="px-4 pt-5 pb-2 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 6v6l4 2"></path>
                     </svg>
-                  </button>
-                  <span className="text-[18px] font-semibold text-white tracking-wide">Add Contact</span>
-                </div>
-
-                <div className="flex-1 overflow-y-auto space-y-4 px-4 pt-2">
-                  <div className="text-[19px] font-normal text-white mb-3">Network</div>
-                  <button className="w-full flex items-center justify-between bg-[#1c1c1e] rounded-full px-6 h-[54px] border-none cursor-pointer  active:opacity-80 transition-opacity">
-                    <span className="text-[19px] font-semibold text-white">Solana</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 18l6-6-6-6"></path>
-                    </svg>
-                  </button>
-
-                  <div className="text-[19px] font-normal text-white mb-3">Label</div>
-                  <div className="w-full bg-[#1c1c1e] rounded-full px-6 h-[54px] flex items-center ">
-                    <input
-                      placeholder="Label"
-                      type="text"
-                      value={contactLabel}
-                      onChange={(e) => setContactLabel(e.target.value)}
-                      className="flex-1 bg-transparent border-none outline-none text-[#eeeeee] text-[18px] font-normal placeholder:text-[#7d7d7d] placeholder:text-[18px] min-w-0"
-                    />
+                    <span className="text-[15px] font-semibold text-[#a0a0a0]">Recently Used</span>
                   </div>
 
-                  <div className="text-[19px] font-normal text-white mb-3">Address</div>
-                  <div className="w-full bg-[#1c1c1e] rounded-full pl-6 pr-4 h-[54px] flex items-center gap-2">
-                    <input
-                      placeholder="Address"
-                      type="text"
-                      value={contactAddress}
-                      onChange={(e) => setContactAddress(e.target.value)}
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      className="flex-1 bg-transparent placeholder:text-[18px] border-none outline-none text-[#eeeeee] text-[18px] font-normal placeholder:text-[#7d7d7d] min-w-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard?.readText?.()
-                          .then((text) => { if (text) setContactAddress(text.trim()); })
-                          .catch(() => toast.error("Clipboard unavailable"));
-                      }}
-                      className="bg-[#2c2c2e] text-white text-[17px] font-bold px-3 py-1 rounded-full border-none cursor-pointer flex-shrink-0 active:opacity-70 transition-opacity"
-                    >
-                      Paste
-                    </button>
+                  {recentAddresses.length > 0 ? (
+                    recentAddresses.map((entry, idx) => (
+                      <button
+                        key={`${entry.address}-${idx}`}
+                        onClick={() => setRecipientAddress(entry.address)}
+                        className="flex items-center gap-4 px-4 py-3.5 bg-transparent border-none cursor-pointer w-full text-left active:bg-white/5 transition-colors"
+                      >
+                        <div className="w-[42px] h-[42px] rounded-full bg-[#1c1c1e] flex items-center justify-center flex-shrink-0">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" fill="#eeeeee"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <span className="text-[16px] font-semibold text-[#eeeeee] block">
+                            {entry.name || (entry.address.length > 12 ? `${entry.address.slice(0, 4)}...${entry.address.slice(-4)}` : entry.address)}
+                          </span>
+                          <span className="text-[14px] font-normal text-[#a0a0a0] block mt-0.5">
+                            {getTimeAgo(entry.timestamp)}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-4 text-[#666] text-[15px] font-medium">No recent addresses</div>
+                  )}
+
+                  <div className="px-4 pt-5 pb-2 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span className="text-[15px] font-semibold text-[#a0a0a0]">Address Book</span>
                   </div>
+
+                  {addressBook.length > 0 ? (
+                    addressBook.map((entry, idx) => (
+                      <button
+                        key={`${entry.address}-${idx}`}
+                        onClick={() => setRecipientAddress(entry.address)}
+                        className="flex items-center gap-4 px-4 py-3.5 bg-transparent border-none cursor-pointer w-full text-left active:bg-white/5 transition-colors"
+                      >
+                        <div className="w-[42px] h-[42px] rounded-full bg-[#1c1c1e] flex items-center justify-center flex-shrink-0">
+                          <span className="text-[16px] font-semibold text-[#eeeeee]">
+                            {(entry.name || "A").slice(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[16px] font-semibold text-[#eeeeee] block">{entry.name}</span>
+                          <span className="text-[14px] font-normal text-[#a0a0a0] block mt-0.5">
+                            {entry.address.length > 12 ? `${entry.address.slice(0, 4)}...${entry.address.slice(-4)}` : entry.address}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-4 text-[#666] text-[15px] font-medium">Address book is empty</div>
+                  )}
                 </div>
 
-                {/* Footer */}
-                <div className="flex-shrink-0 px-4 py-3" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}>
+                <div className="flex-shrink-0 px-4 py-3 mt-auto" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
                   <button
-                    disabled={!canSaveContact}
-                    onClick={handleSaveContact}
-                    className="w-full h-[58px] rounded-full border-none text-[22px] font-bold cursor-pointer transition-colors text-black disabled:cursor-not-allowed"
-                    style={{
-                      backgroundColor: canSaveContact ? "#ab9ff2" : "#6b6590",
-                      // color: canSaveContact ? "#ffffff" : "#ffffff",
-                    }}
+                    disabled={!canAdvanceAddress}
+                    onClick={() => setStep("AMOUNT")}
+                    className="w-full h-[56px] rounded-[18px] border-none bg-[#4a3b75] text-[#888] text-[17px] font-semibold cursor-pointer transition-colors disabled:cursor-not-allowed"
+                    style={{ backgroundColor: canAdvanceAddress ? '#ab9ff2' : undefined, color: canAdvanceAddress ? '#000000' : undefined }}
                   >
-                    Save Contact
+                    Next
                   </button>
                 </div>
               </motion.div>
@@ -845,81 +658,78 @@ function IosSendModal({ visible, onClose, initialTokenSymbol, onOpenActivity, on
               >
                 {/* Header */}
                 <div className="bg-[#000000] flex-shrink-0 flex items-center justify-between px-4 py-3 sticky top-0 z-20">
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => setStep("ADDRESS")} className="bg-[#1c1c1e] w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-70 transition-opacity">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setStep("ADDRESS")} className="bg-[#1c1c1e] w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-60 transition-opacity">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eeeeee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M15 18l-6-6 6-6"></path>
                       </svg>
                     </button>
-                    <div className="flex flex-col">
-                      <span className="text-[17px] font-bold text-white leading-tight">Send</span>
-                      <span className="text-[15px] font-normal text-[#a0a0a0] leading-tight">{recipientLabel}</span>
-                    </div>
+                    <span className="text-[18px] font-semibold text-[#eeeeee]">Enter Amount</span>
                   </div>
-                  <button className="bg-[#1c1c1e] w-11 h-11 rounded-full flex items-center justify-center border-none cursor-pointer active:opacity-70 transition-opacity">
-                    <SlidersHorizontal size={20} className="text-white rotate-90" />
+                  <button
+                    disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > selectedTokenBalance}
+                    onClick={() => setStep("CONFIRM")}
+                    className="bg-transparent border-none p-1 font-semibold text-[16px] disabled:text-[#666666] text-[#ab9ff2] disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    Next
                   </button>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 pb-0 overflow-y-auto">
                   <div className="flex-1 min-h-[24px]" />
 
-                  {/* USD Amount */}
-                  <div className="px-5 flex-shrink-0 overflow-hidden">
-                    <span
-                      className={` tracking-tight whitespace-nowrap ${usdAmountNum > 0 ? "text-white" : "text-[#a0a0a0]"}`}
-                      style={{ fontSize: usdAmount.length > 6 ? "64px" : "88px", lineHeight: "96px" }}
-                    >
-                      ${usdAmount || "0"}
-                    </span>
-                    <div className={`text-[18px] font-normal text-[#F80633] mt-4 transition-opacity ${isInsufficientUsd ? "opacity-100" : "opacity-0"}`}>
-                      Insufficient balance
+                  {/* Amount Input Area */}
+                  <div className="px-5 pt-2 pb-6 flex items-center flex-shrink-0 justify-start min-h-0 transition-all duration-150">
+                    <div className="w-full flex justify-center">
+                      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center justify-center max-w-full w-full">
+                        <div />
+
+                        <div className="flex flex-col items-center justify-center min-h-[110px] min-w-0 justify-self-center">
+                          <div className="inline-flex items-baseline justify-center gap-6 whitespace-nowrap max-w-full font-tabular-nums">
+                            <div className="flex items-baseline min-w-0">
+                              <div
+                                style={{ fontSize: "64px", lineHeight: "74px" }}
+                                className={`font-sans font-semibold text-right caret-[#ab9ff2] appearance-none rounded-none font-tabular-nums flex-shrink-0 ${(parseFloat(amount) || 0) > selectedTokenBalance ? "text-[#F80633]" : "text-[#eeeeee]"}`}
+                              >
+                                {amount || "0"}
+                              </div>
+                            </div>
+                            <span className={`text-[64px] leading-[50px] font-semibold flex-shrink-0 ${(parseFloat(amount) || 0) > selectedTokenBalance ? "text-[#F80633]" : "text-[#eeeeee]"}`}>
+                              {selectedToken.symbol}
+                            </span>
+                          </div>
+                          <div className="text-[22px] leading-[24px] font-medium text-[#888888] mt-2 text-center self-center">
+                            ~{formatCurrency(usdValue, baseCurrency)}
+                          </div>
+                        </div>
+                        <div />
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex-1 min-h-[12px]" />
 
-                  {/* Token Row */}
-                  <button
-                    onClick={() => setStep("TOKEN_SELECT")}
-                    className="px-5 py-4 flex items-center justify-between w-full bg-transparent border-none cursor-pointer active:opacity-70 transition-opacity flex-shrink-0"
-                  >
-                    <span className="text-[19px] font-semibold text-white">
-                      {selectedToken.symbol}
-                      <span className="text-[#a0a0a0] font-normal"> · {formatCurrency(selectedTokenBalanceUsd, baseCurrency)}</span>
-                    </span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-                  </button>
-
-                  {/* Percent chips / Review */}
-                  <div className="px-4 mb-2 min-h-[56px] flex flex-col justify-center flex-shrink-0">
-                    {usdAmountNum > 0 ? (
-                      <button
-                        disabled={isInsufficientUsd || selectedTokenPrice <= 0}
-                        onClick={handleAmountNext}
-                        className="w-full py-4 rounded-full font-bold text-[18px] text-[#0c0814] transition-all border-none flex items-center justify-center cursor-pointer disabled:pointer-events-none disabled:cursor-not-allowed"
-                        style={{
-                          background: isInsufficientUsd ? "#55496a" : "#AB9FF2",
-                        }}
-                      >
-                        Review
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => handlePercentPress(0.25)} className="flex-1 py-3.5 rounded-full bg-[#131315] active:bg-[#2c2c2e] text-[#7b7b7b] text-[16px] font-medium transition-colors border-none cursor-pointer">25%</button>
-                        <button onClick={() => handlePercentPress(0.5)} className="flex-1 py-3.5 rounded-full bg-[#131315] active:bg-[#2c2c2e] text-[#7b7b7b] text-[16px] font-medium transition-colors border-none cursor-pointer">50%</button>
-                        <button onClick={() => handlePercentPress(1)} className="flex-1 py-3.5 rounded-full bg-[#131315] active:bg-[#2c2c2e] text-[#7b7b7b] text-[16px] font-medium transition-colors border-none cursor-pointer">100%</button>
+                  {/* Available To Send */}
+                  <div className="px-5 py-4 flex items-center gap-3 flex-shrink-0 justify-between">
+                    <div>
+                      <div className="text-[13px] text-[#a0a0a0] mb-0.5">Available To Send</div>
+                      <div className="text-[15px] font-semibold text-[#eeeeee]">
+                        {formatBalance(selectedTokenBalance)} {selectedToken.symbol}
                       </div>
-                    )}
+                    </div>
+                    <button
+                      onClick={() => setAmount(selectedTokenBalance.toString())}
+                      className="bg-[#1c1c1e] text-[#eeeeee] font-medium text-[14px] px-3.5 py-1.5 rounded-full border-none cursor-pointer active:opacity-80 transition-opacity"
+                    >
+                      Max
+                    </button>
                   </div>
 
-                  {/* Keypad */}
+                  {/* Custom Number Pad */}
                   <div
-                    className="flex-shrink-0 w-full"
+                    className="flex-shrink-0 w-full bg-[#2c2c2e]"
                     style={{
-                      paddingBottom: "calc(16px + env(safe-area-inset-bottom))"
+                      paddingBottom: "calc(24px + env(safe-area-inset-bottom))"
                     }}
                   >
                     <NumberPad onNumberPress={handleNumberPress} onDelete={handleDelete} />
