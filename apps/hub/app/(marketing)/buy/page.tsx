@@ -68,7 +68,7 @@ function BuyContent() {
   const initialPlan = searchParams.get("plan");
   const validPlanId = initialPlan && PLANS.some((p) => p.id === initialPlan) ? initialPlan : "starter";
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(validPlanId);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("crypto");
   const [showCodes, setShowCodes] = useState(false);
   const [checkoutPhase, setCheckoutPhase] = useState<CheckoutPhase>("idle");
   const [checkoutError, setCheckoutError] = useState("");
@@ -338,14 +338,14 @@ function BuyContent() {
 
   const providerLabel = paymentMethod === "card" ? "Payblis" : "NOWPayments";
 
-  // Card | Crypto segmented control with a method-aware caption. Rendered above the pay
+  // Crypto | Card segmented control with a method-aware caption. Rendered above the pay
   // button in both the main block and the sticky bar; `compact` shrinks it for the sticky.
   const renderMethodToggle = (compact: boolean) => (
     <div className={compact ? "w-full" : "w-full"}>
       <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#8b5cf6]/25 bg-white/[0.04] p-1" role="tablist" aria-label="Payment method">
         {([
-          { id: "card" as const, label: "Card", Icon: CreditCard },
           { id: "crypto" as const, label: "Crypto", Icon: null },
+          { id: "card" as const, label: "Card", Icon: CreditCard },
         ]).map(({ id, label, Icon }) => {
           const active = paymentMethod === id;
           return (
