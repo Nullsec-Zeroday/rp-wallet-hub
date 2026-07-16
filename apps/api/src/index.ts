@@ -1046,6 +1046,13 @@ function isFulfilledNowPaymentsStatus(status: string) {
 app.post("/payments/payblis/checkout", async (c) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   try {
+    // Keep webhook processing active for existing orders while preventing new
+    // Payblis checkouts during provider incidents.
+    if (c.env.PAYBLIS_CHECKOUT_ENABLED !== "true") {
+      console.warn("[payblis-checkout] Card checkout is temporarily disabled", { requestId });
+      return c.json({ error: "Card payments are temporarily unavailable. Please pay with crypto.", requestId }, 503);
+    }
+
     if (!c.env.PAYBLIS_MERCHANT_KEY || !c.env.PAYBLIS_SECRET_KEY) {
       console.error("[payblis-checkout] PAYBLIS_MERCHANT_KEY/PAYBLIS_SECRET_KEY is not set", { requestId });
       return c.json({ error: "Payment provider is not configured", requestId }, 503);

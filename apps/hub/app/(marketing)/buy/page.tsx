@@ -22,6 +22,7 @@ import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
 
 const PLANS = Object.values(PRICING_PLANS);
+const CARD_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_PAYBLIS_CHECKOUT_ENABLED === "true";
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
 type PaymentMethod = "card" | "crypto";
 const STICKY_CHECKOUT_HIDE_DISTANCE = 160;
@@ -342,40 +343,49 @@ function BuyContent() {
   // button in both the main block and the sticky bar; `compact` shrinks it for the sticky.
   const renderMethodToggle = (compact: boolean) => (
     <div className={compact ? "w-full" : "w-full"}>
-      <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#8b5cf6]/25 bg-white/[0.04] p-1" role="tablist" aria-label="Payment method">
-        {([
-          { id: "crypto" as const, label: "Crypto", Icon: null },
-          { id: "card" as const, label: "Card", Icon: CreditCard },
-        ]).map(({ id, label, Icon }) => {
-          const active = paymentMethod === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              disabled={checkoutLocked}
-              onClick={() => {
-                setPaymentMethod(id);
-                trackEvent("payment_method_selected", { method: id, plan: selectedPlanId });
-              }}
-              className={`flex items-center justify-center gap-2 rounded-lg font-semibold transition-all ${compact ? "py-2 text-sm" : "py-2.5 text-[15px]"} ${active
-                ? "bg-[#8b5cf6]/20 text-white ring-1 ring-[#a78bfa]/50 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
-                : "text-white/50 hover:text-white/80"
-                }`}
-            >
-              {Icon ? (
-                <Icon size={compact ? 15 : 17} className={active ? "text-[#c7bdff]" : "text-white/40"} />
-              ) : (
-                <BitcoinIcon className={compact ? "w-[15px] h-[15px]" : "w-[17px] h-[17px]"} />
-              )}
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {CARD_PAYMENTS_ENABLED ? (
+        <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-[#8b5cf6]/25 bg-white/[0.04] p-1" role="tablist" aria-label="Payment method">
+          {([
+            { id: "crypto" as const, label: "Crypto", Icon: null },
+            { id: "card" as const, label: "Card", Icon: CreditCard },
+          ]).map(({ id, label, Icon }) => {
+            const active = paymentMethod === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                disabled={checkoutLocked}
+                onClick={() => {
+                  setPaymentMethod(id);
+                  trackEvent("payment_method_selected", { method: id, plan: selectedPlanId });
+                }}
+                className={`flex items-center justify-center gap-2 rounded-lg font-semibold transition-all ${compact ? "py-2 text-sm" : "py-2.5 text-[15px]"} ${active
+                  ? "bg-[#8b5cf6]/20 text-white ring-1 ring-[#a78bfa]/50 shadow-[0_0_16px_rgba(139,92,246,0.25)]"
+                  : "text-white/50 hover:text-white/80"
+                  }`}
+              >
+                {Icon ? (
+                  <Icon size={compact ? 15 : 17} className={active ? "text-[#c7bdff]" : "text-white/40"} />
+                ) : (
+                  <BitcoinIcon className={compact ? "w-[15px] h-[15px]" : "w-[17px] h-[17px]"} />
+                )}
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className={`flex items-center justify-center gap-2 rounded-xl border border-[#8b5cf6]/25 bg-white/[0.04] font-semibold text-white/80 ${compact ? "py-2 text-sm" : "py-2.5 text-[15px]"}`}>
+          <BitcoinIcon className={compact ? "h-[15px] w-[15px]" : "h-[17px] w-[17px]"} />
+          Crypto payments
+        </div>
+      )}
       <p className={`text-center text-white/45 font-medium ${compact ? "mt-1.5 text-[11px]" : "mt-2 text-[12px]"}`}>
-        {paymentMethod === "card" ? "Card, Apple Pay & Google Pay accepted" : "Pay with BTC, ETH, USDT & more"}
+        {CARD_PAYMENTS_ENABLED
+          ? (paymentMethod === "card" ? "Card, Apple Pay & Google Pay accepted" : "Pay with BTC, ETH, USDT & more")
+          : "Card payments are temporarily unavailable"}
       </p>
     </div>
   );

@@ -17,6 +17,7 @@ export interface ApiEnv {
   NOWPAYMENTS_IPN_SECRET?: string;
   PAYBLIS_MERCHANT_KEY?: string;
   PAYBLIS_SECRET_KEY?: string;
+  PAYBLIS_CHECKOUT_ENABLED?: string;
   PAYBLIS_SANDBOX?: string;
   PAYBLIS_IPN_ORIGIN?: string;
   SELLAUTH_API_KEY?: string;
