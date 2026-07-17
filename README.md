@@ -53,6 +53,38 @@ Check types:
 npm run typecheck
 ```
 
+## SellAuth card checkout
+
+The buy page offers crypto through NOWPayments and card payments through the same SellAuth embed used by the sibling `rp-wallet-nextjs` project. Whop is configured as the payment method in SellAuth; the app does not select a gateway itself.
+
+```bash
+# apps/hub build environment
+NEXT_PUBLIC_SELLAUTH_SHOP_ID=253501
+NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID=796131
+NEXT_PUBLIC_SELLAUTH_STARTER_VARIANT_ID=1356114
+NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID=796135
+NEXT_PUBLIC_SELLAUTH_MONTHLY_VARIANT_ID=1356121
+NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID=796138
+NEXT_PUBLIC_SELLAUTH_YEARLY_VARIANT_ID=1356127
+
+# apps/api Worker environment
+SELLAUTH_WEBHOOK_SECRET=
+SELLAUTH_SHOP_ID=253501
+SELLAUTH_STARTER_PRODUCT_ID=796131
+SELLAUTH_MONTHLY_PRODUCT_ID=796135
+SELLAUTH_YEARLY_PRODUCT_ID=796138
+```
+
+No SellAuth API key, gateway, or payment-method environment variable is needed for checkout. The embed uses SellAuth's ALTCHA verification and redirects the current page to the hosted checkout, matching the sibling project's iOS flow. Enable Whop on the corresponding products/variants in the SellAuth dashboard.
+
+Configure every SellAuth product/variant for Dynamic Delivery with this production callback URL:
+
+```text
+https://api.rpwallet.us/webhooks/sellauth
+```
+
+Use the webhook secret from SellAuth Storefront → Configure → Miscellaneous as `SELLAUTH_WEBHOOK_SECRET`. The callback must return plain text; this API returns the generated RPWallet license key and safely reuses it when SellAuth retries delivery.
+
 ## Next implementation target
 
 The API now supports both in-memory local development and Neon-backed persistence when `DATABASE_URL` is provided to the Worker environment.

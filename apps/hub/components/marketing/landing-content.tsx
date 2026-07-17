@@ -286,12 +286,12 @@ export default function LandingContent() {
             initial={isMobile ? false : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="font-display max-w-5xl text-center text-[2.6rem] font-semibold leading-none tracking-tight md:text-6xl lg:text-7xl"
+            className="font-display max-w-5xl text-center text-[2.7rem] font-semibold leading-none tracking-tight md:text-6xl lg:text-7xl"
           >
             <>
-              Fake it till you make it,{" "}
+              Fake it{" "}
               <span className="bg-gradient-to-r from-[#e9d5ff] via-[#c084fc] to-[#8b5cf6] bg-clip-text text-transparent drop-shadow-[0_0_28px_rgba(139,92,246,0.45)]">
-                larp like a pro.
+                till you make it.
               </span>
             </>
           </motion.h1>

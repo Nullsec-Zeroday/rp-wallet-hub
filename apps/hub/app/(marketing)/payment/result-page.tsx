@@ -2,13 +2,15 @@ import { Check, Clock3, LifeBuoy, Mail, MessageCircle, RotateCcw, ShieldCheck, X
 import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
 
 type ResultKind = "success" | "cancelled";
+type PaymentProvider = "nowpayments" | "sellauth";
 
 interface PaymentResultPageProps {
   kind: ResultKind;
+  provider?: PaymentProvider;
 }
 
 const resultCopy = {
-  success: {
+  nowpayments: {
     eyebrow: "Payment submitted",
     title: "We are confirming your crypto payment.",
     body:
@@ -34,6 +36,35 @@ const resultCopy = {
         icon: MessageCircle,
         title: "Need help?",
         body: "Join Telegram or message support with the email you used at checkout.",
+      },
+    ],
+  },
+  sellauth: {
+    eyebrow: "Payment successful",
+    title: "Your card payment is confirmed.",
+    body:
+      "SellAuth has confirmed your payment through Whop. Your RPWallet license key is generated automatically and sent to the email used during checkout.",
+    accent: "emerald",
+    icon: Check,
+    primaryHref: "/dashboard",
+    primaryLabel: "Activate your license",
+    secondaryHref: "/buy",
+    secondaryLabel: "Back to plans",
+    steps: [
+      {
+        icon: ShieldCheck,
+        title: "Payment confirmed",
+        body: "Your card payment was securely completed through the Whop payment method configured in SellAuth.",
+      },
+      {
+        icon: Mail,
+        title: "Check your email",
+        body: "Your unique RPWallet license key is sent automatically to the email you entered at checkout.",
+      },
+      {
+        icon: MessageCircle,
+        title: "Didn't receive your key?",
+        body: "Check your spam folder first, then contact Telegram support with your SellAuth order details.",
       },
     ],
   },
@@ -66,7 +97,7 @@ const resultCopy = {
       },
     ],
   },
-} satisfies Record<ResultKind, {
+} satisfies Record<PaymentProvider | "cancelled", {
   eyebrow: string;
   title: string;
   body: string;
@@ -83,8 +114,8 @@ const resultCopy = {
   }>;
 }>;
 
-export function PaymentResultPage({ kind }: PaymentResultPageProps) {
-  const copy = resultCopy[kind];
+export function PaymentResultPage({ kind, provider = "nowpayments" }: PaymentResultPageProps) {
+  const copy = kind === "success" ? resultCopy[provider] : resultCopy.cancelled;
   const Icon = copy.icon;
   const isSuccess = kind === "success";
 

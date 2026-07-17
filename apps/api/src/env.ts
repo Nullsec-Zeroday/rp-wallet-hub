@@ -20,7 +20,6 @@ export interface ApiEnv {
   PAYBLIS_CHECKOUT_ENABLED?: string;
   PAYBLIS_SANDBOX?: string;
   PAYBLIS_IPN_ORIGIN?: string;
-  SELLAUTH_API_KEY?: string;
   SELLAUTH_WEBHOOK_SECRET?: string;
   SELLAUTH_SHOP_ID?: string;
   NEXT_PUBLIC_SELLAUTH_SHOP_ID?: string;

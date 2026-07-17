@@ -1301,6 +1301,11 @@ async function handleSellAuthWebhook(c: Context<HonoEnv>) {
     return c.text("Invalid JSON", 400);
   }
 
+  const event = normalizePayloadString(payload.event)?.toUpperCase();
+  if (event && event !== "INVOICE.ITEM.DELIVER-DYNAMIC") {
+    return c.text("Ignored");
+  }
+
   const expectedShopId = c.env.SELLAUTH_SHOP_ID || c.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID;
   const payloadShopId = payload.shop_id ?? payload.shopId ?? payload.data?.shop_id ?? payload.data?.shopId;
   if (expectedShopId && payloadShopId?.toString() !== expectedShopId.toString()) {
@@ -1315,12 +1320,16 @@ async function handleSellAuthWebhook(c: Context<HonoEnv>) {
   }
 
   const plan = resolveSellAuthPlan(c.env, payload);
-  const licenseKey = await generateLicenseKeyForOrder(orderId, secret);
-  const now = Date.now();
-  const expiresAt = new Date(now + plan.durationDays * 24 * 60 * 60 * 1000);
-  const buyerEmail = extractSellAuthEmail(payload);
-
   const store = getPlatformStore(c.env.DATABASE_URL);
+  const licenseKey = await generateLicenseKeyForOrder(orderId, secret);
+  const buyerEmail = extractSellAuthEmail(payload);
+  const emailAttribution = buyerEmail
+    ? await store.getAffiliateAttributionByBuyerEmail(buyerEmail)
+    : null;
+  const referralBonusDays = emailAttribution ? getReferralBonusDays(plan.id) : 0;
+  const now = Date.now();
+  const expiresAt = new Date(now + (plan.durationDays + referralBonusDays) * 24 * 60 * 60 * 1000);
+
   const license = await store.createPurchasedLicense({
     licenseKey,
     email: buyerEmail,
@@ -1332,7 +1341,8 @@ async function handleSellAuthWebhook(c: Context<HonoEnv>) {
   c.executionCtx.waitUntil(
     store
       .createAffiliateConversion({
-        affiliateCode: extractSellAuthAffiliateCode(payload),
+        affiliateCode: extractSellAuthAffiliateCode(payload) || emailAttribution?.affiliateCode,
+        checkoutIntentId: emailAttribution?.checkoutIntentId,
         sellauthOrderId: orderId,
         licenseId: license.id,
         buyerEmail,
@@ -2494,14 +2504,18 @@ function extractSellAuthVariantId(payload: Record<string, any>) {
 
 function extractSellAuthAmount(payload: Record<string, any>) {
   const value =
+    payload.paid ??
     payload.total ??
     payload.total_usd ??
-    payload.amount ??
+    payload.item?.total_price ??
     payload.price ??
+    payload.data?.paid ??
     payload.data?.total ??
     payload.data?.total_usd ??
-    payload.data?.amount ??
-    payload.data?.price;
+    payload.data?.item?.total_price ??
+    payload.data?.price ??
+    payload.amount ??
+    payload.data?.amount;
   if (value === undefined || value === null) return undefined;
   const normalized = Number(String(value).replace(/[^0-9.]/g, ""));
   return Number.isFinite(normalized) ? normalized.toFixed(2) : undefined;

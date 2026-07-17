@@ -10,6 +10,8 @@ export interface PricingPlan {
   badgeText: string;
   popular?: boolean;
   originalPrice?: string;
+  sellauthProductId?: number;
+  sellauthVariantId?: number;
 }
 
 export const PRICING_PLANS: Record<string, PricingPlan> = {
@@ -30,6 +32,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
       { text: "Early access to new features", included: false },
     ],
     badgeText: "STARTER",
+    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_STARTER_PRODUCT_ID || 0),
+    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_STARTER_VARIANT_ID || 0),
   },
   popular: {
     id: "popular",
@@ -49,6 +53,8 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     ],
     badgeText: "MOST POPULAR",
     popular: true,
+    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_PRODUCT_ID || 0),
+    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_MONTHLY_VARIANT_ID || 0),
   },
   yearly: {
     id: "yearly",
@@ -68,5 +74,7 @@ export const PRICING_PLANS: Record<string, PricingPlan> = {
     ],
     badgeText: "BEST VALUE",
     originalPrice: "$299",
+    sellauthProductId: Number(process.env.NEXT_PUBLIC_SELLAUTH_YEARLY_PRODUCT_ID || 0),
+    sellauthVariantId: Number(process.env.NEXT_PUBLIC_SELLAUTH_YEARLY_VARIANT_ID || 0),
   },
 };

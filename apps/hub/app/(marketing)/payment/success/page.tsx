@@ -2,14 +2,23 @@ import type { Metadata } from "next";
 import { PaymentResultPage } from "../result-page";
 
 export const metadata: Metadata = {
-  title: "Payment Submitted",
-  description: "Your RPWallet crypto payment has been submitted and is waiting for blockchain confirmation.",
+  title: "Payment Successful",
+  description: "Your RPWallet payment was submitted successfully.",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default function PaymentSuccessPage() {
-  return <PaymentResultPage kind="success" />;
+interface PaymentSuccessPageProps {
+  searchParams: Promise<{
+    provider?: string | string[];
+  }>;
+}
+
+export default async function PaymentSuccessPage({ searchParams }: PaymentSuccessPageProps) {
+  const params = await searchParams;
+  const providerParam = Array.isArray(params.provider) ? params.provider[0] : params.provider;
+  const provider = providerParam?.toLowerCase() === "sellauth" ? "sellauth" : "nowpayments";
+  return <PaymentResultPage kind="success" provider={provider} />;
 }

@@ -20,9 +20,15 @@ import { useInView, motion, AnimatePresence } from "framer-motion";
 import { trackEvent } from "@/lib/track";
 import { HUB_API_BASE_URL } from "@/lib/api-base-url";
 import { SupportTicketForm } from "@/components/marketing/support-ticket-form";
+import { useSellAuthEmbed } from "@/hooks/useSellAuthEmbed";
 
 const PLANS = Object.values(PRICING_PLANS);
-const CARD_PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_PAYBLIS_CHECKOUT_ENABLED === "true";
+const SELLAUTH_SHOP_ID = Number(process.env.NEXT_PUBLIC_SELLAUTH_SHOP_ID || 0);
+const CARD_PAYMENTS_ENABLED =
+  SELLAUTH_SHOP_ID > 0
+  && PLANS.every((plan) =>
+    Boolean(plan.sellauthProductId && plan.sellauthVariantId && plan.sellauthProductId > 0 && plan.sellauthVariantId > 0),
+  );
 type CheckoutPhase = "idle" | "preparing" | "opening" | "error";
 type PaymentMethod = "card" | "crypto";
 const STICKY_CHECKOUT_HIDE_DISTANCE = 160;
@@ -65,6 +71,10 @@ function BuyContent() {
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("error") === "expired";
   const api = React.useMemo(() => new RpWalletApiClient(HUB_API_BASE_URL), []);
+  const {
+    checkout: openSellAuthCheckout,
+    isLoading: isSellAuthLoading,
+  } = useSellAuthEmbed();
 
   const initialPlan = searchParams.get("plan");
   const validPlanId = initialPlan && PLANS.some((p) => p.id === initialPlan) ? initialPlan : "starter";
@@ -89,7 +99,7 @@ function BuyContent() {
   const showSticky = isCheckoutAreaFarBelow && !isButtonInView && selectedPlanId;
   const selectedPlan = PLANS.find((plan) => plan.id === selectedPlanId);
   const selectedPlanLabel = selectedPlanId === "starter" ? "7 Days Access" : selectedPlanId === "popular" ? "1 Month Access" : "1 Year Access";
-  const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening";
+  const checkoutLocked = checkoutPhase === "preparing" || checkoutPhase === "opening" || isSellAuthLoading;
   const getPlanDisplayPrice = (plan: (typeof PLANS)[number]) => plan.price;
   const selectedPlanDisplayPrice = selectedPlan ? getPlanDisplayPrice(selectedPlan) : undefined;
   const selectedReferralBonusDays = referralOffer && selectedPlanId ? getReferralBonusDays(selectedPlanId) : 0;
@@ -256,7 +266,7 @@ function BuyContent() {
     const plan = selectedPlan;
     if (!plan) return;
     window.dispatchEvent(new Event("rp-wallet:checkout-started"));
-    const provider = paymentMethod === "card" ? "payblis" : "nowpayments";
+    const provider = paymentMethod === "card" ? "sellauth" : "nowpayments";
     trackEvent("checkout_started", {
       plan: plan.id,
       price: getPlanDisplayPrice(plan),
@@ -312,9 +322,35 @@ function BuyContent() {
         email: normalizedEmail,
         referralToken: attribution?.referralToken,
       };
-      const result = paymentMethod === "card"
-        ? await api.createPayblisCheckout(checkoutPayload)
-        : await api.createNowPaymentsCheckout(checkoutPayload);
+
+      if (paymentMethod === "card") {
+        if (!plan.sellauthProductId || !plan.sellauthVariantId || SELLAUTH_SHOP_ID <= 0) {
+          throw new Error("SellAuth checkout is not configured for this plan.");
+        }
+        if (attribution?.referralToken) {
+          await api.createAffiliateCheckoutIntent({
+            referralToken: attribution.referralToken,
+            plan: plan.id,
+            productId: plan.sellauthProductId,
+            variantId: plan.sellauthVariantId,
+            buyerEmail: normalizedEmail,
+          });
+        }
+        await openSellAuthCheckout({
+          cart: [{
+            productId: plan.sellauthProductId,
+            variantId: plan.sellauthVariantId,
+            quantity: 1,
+          }],
+          shopId: SELLAUTH_SHOP_ID,
+        });
+        clearSlowTimer();
+        setCheckoutPhase("idle");
+        trackEvent("checkout_url_ready", { plan: plan.id, provider });
+        return;
+      }
+
+      const result = await api.createNowPaymentsCheckout(checkoutPayload);
       setCheckoutPhase("opening");
       trackEvent("checkout_url_ready", { plan: plan.id, provider });
       window.location.href = result.checkoutUrl;
@@ -337,7 +373,7 @@ function BuyContent() {
     }
   }, [searchParams]);
 
-  const providerLabel = paymentMethod === "card" ? "Payblis" : "NOWPayments";
+  const providerLabel = paymentMethod === "card" ? "SellAuth" : "NOWPayments";
 
   // Crypto | Card segmented control with a method-aware caption. Rendered above the pay
   // button in both the main block and the sticky bar; `compact` shrinks it for the sticky.
@@ -384,7 +420,7 @@ function BuyContent() {
       )}
       <p className={`text-center text-white/45 font-medium ${compact ? "mt-1.5 text-[11px]" : "mt-2 text-[12px]"}`}>
         {CARD_PAYMENTS_ENABLED
-          ? (paymentMethod === "card" ? "Card, Apple Pay & Google Pay accepted" : "Pay with BTC, ETH, USDT & more")
+          ? (paymentMethod === "card" ? "SellAuth checkout powered by Whop" : "Pay with BTC, ETH, USDT & more")
           : "Card payments are temporarily unavailable"}
       </p>
     </div>
@@ -578,6 +614,11 @@ function BuyContent() {
               <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
             </div>
           </label>
+          {paymentMethod === "card" && (
+            <p className="-mt-2 w-full text-center text-[11px] text-white/40">
+              Use this same email in the SellAuth checkout so we can deliver your license and referral bonus.
+            </p>
+          )}
           {emailError && (
             <div className="text-amber-400 text-sm -mt-2 mb-1 w-full text-center animate-pulse font-medium">
               {emailError}
