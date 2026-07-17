@@ -118,7 +118,7 @@ type PaymentPlan = SellAuthPlan & {
 
 const PAYMENT_PLANS: Record<string, PaymentPlan> = {
   starter: { ...SELLAUTH_PLANS.starter, priceAmount: "14.00" },
-  popular: { ...SELLAUTH_PLANS.popular, priceAmount: "29.00" },
+  popular: { ...SELLAUTH_PLANS.popular, priceAmount: "39.00" },
   yearly: { ...SELLAUTH_PLANS.yearly, priceAmount: "99.00" },
 };
 const EMAIL_FROM = "RPWallet <noreply@rpwallet.app>";
