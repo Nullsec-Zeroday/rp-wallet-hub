@@ -14,7 +14,19 @@ export default defineConfig({
  },
  },
  server: {
- middlewareMode: true,
+ middlewareMode: false,
+ host: "0.0.0.0",
+ port: 5173,
+ allowedHosts: [
+ "rp-wallettrust-production.up.railway.app",
+ "localhost",
+ "127.0.0.1",
+ ],
+ },
+ preview: {
+ middlewareMode: false,
+ host: "0.0.0.0",
+ port: 5173,
  allowedHosts: [
  "rp-wallettrust-production.up.railway.app",
  "localhost",
