@@ -14,4 +14,11 @@ export default defineConfig({
       "next/navigation": fileURLToPath(new URL("./src/shims/next-navigation.ts", import.meta.url)),
     },
   },
+  server: {
+    allowedHosts: [
+      "rp-walletphantom-production.up.railway.app",
+      "localhost",
+    ],
+  },
 });
+
