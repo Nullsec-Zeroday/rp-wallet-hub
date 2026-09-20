@@ -1,0 +1,43 @@
+# Base44 development environment for the RPWallet platform monorepo.
+# Single-origin wiring: only the hub (port 3000) is public. The hub proxies
+# /api/rp/* to the internal api service (Hono on wrangler, port 8787).
+services:
+  install:
+    image: node:22
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: npm install
+    # One-shot: installs all workspace dependencies into the bind-mounted repo.
+
+  api:
+    image: node:22
+    working_dir: /app/apps/api
+    volumes:
+      - .:/app
+    command: npx wrangler dev src/index.ts --local --port 8787 --ip 0.0.0.0
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    # Internal only (no host port). The hub reaches it at http://api:8787.
+    # wrangler reads non-secret defaults from apps/api/wrangler.jsonc; storage
+    # falls back to in-memory when DATABASE_URL is absent.
+
+  hub:
+    image: node:22
+    working_dir: /app/apps/hub
+    volumes:
+      - .:/app
+    command: npx next dev --webpack --port 3000 --hostname 0.0.0.0
+    ports:
+      - "3000:3000"
+    depends_on:
+      install:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
+    environment:
+      # Server-side proxy target for /api/rp/* -> internal api service.
+      - API_PROXY_TARGET_URL=http://api:8787
+      # Lets Next.js dev accept the preview origin for assets/HMR.
+      - BASE44_PUBLIC_HOST_SUFFIX

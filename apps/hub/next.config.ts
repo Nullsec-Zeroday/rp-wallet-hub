@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const base44Origin = process.env.BASE44_PUBLIC_HOST_SUFFIX
+  ? `https://3000-${process.env.BASE44_PUBLIC_HOST_SUFFIX}`
+  : undefined;
+
 const nextConfig: NextConfig = {
+  allowedDevOrigins: base44Origin ? [base44Origin] : [],
   transpilePackages: ["@rp-wallet/api-client", "@rp-wallet/auth", "@rp-wallet/config", "@rp-wallet/types"],
   async redirects() {
     return [

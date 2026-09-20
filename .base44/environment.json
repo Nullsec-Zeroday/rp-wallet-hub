@@ -1,0 +1,42 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "DATABASE_URL",
+      "description": "Neon Postgres connection string for the API (apps/api). Optional: the API falls back to in-memory storage when unset. Set to enable persistent license/wallet data.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "REFERRAL_SIGNING_SECRET",
+      "description": "Secret used to sign/verify affiliate referral tokens in the API. Optional at boot; referral endpoints log a warning and return unsigned tokens when unset.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "RESEND_API_KEY",
+      "description": "Resend API key for transactional email (license delivery, support tickets) in the API. Optional; email sending is skipped when unset.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "COINGECKO_API_KEY",
+      "description": "CoinGecko Demo API key for crypto price/search endpoints. Optional; public rate-limited endpoints are used when unset.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "NOWPAYMENTS_API_KEY",
+      "description": "NOWPayments API key for crypto checkout. Optional; crypto checkout is unavailable when unset.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "NOWPAYMENTS_IPN_SECRET",
+      "description": "NOWPayments IPN webhook secret for verifying payment notifications. Optional.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "SELLAUTH_WEBHOOK_SECRET",
+      "description": "SellAuth webhook secret for the Dynamic Delivery callback that returns generated license keys. Optional; webhook signature verification is skipped when unset.",
+      "requiredAtBoot": false
+    }
+  ]
+}
