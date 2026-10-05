@@ -19,7 +19,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     allowedHosts: [
+      "rp-walletphantom-production-f612.up.railway.app",
       "rp-walletphantom-production.up.railway.app",
+      ".up.railway.app",
       "localhost",
       "127.0.0.1",
     ],
@@ -29,9 +31,12 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     allowedHosts: [
+      "rp-walletphantom-production-f612.up.railway.app",
       "rp-walletphantom-production.up.railway.app",
+      ".up.railway.app",
       "localhost",
       "127.0.0.1",
     ],
   },
 });
+
