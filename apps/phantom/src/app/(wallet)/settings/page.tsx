@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronLeft, Search, ChevronRight, Layers, CreditCard, Bell, SlidersHorizontal, Shield, Lock, Globe, Users, Terminal, HelpCircle, LogOut, Loader2 } from "lucide-react";
+import { ChevronLeft, Search, ChevronRight, Layers, CreditCard, Bell, SlidersHorizontal, Shield, Lock, Globe, Users, Terminal, HelpCircle, Loader2 } from "lucide-react";
 import { useWalletStore } from "@/lib/wallet-store";
-import { AVATAR_IMAGES } from "@/lib/wallet-data";
 import Avatar from "../_components/avatar";
 import { useRouter } from "next/navigation";
 
@@ -43,91 +42,15 @@ export default function SettingsPage() {
   const {
     walletName,
     profile,
-    setIsKeyVerified,
     coingeckoApiKey,
     updateCoingeckoApiKey,
     dexscreenerApiKey,
     updateDexscreenerApiKey,
-    licensePlan,
-    licenseExpiration,
-    updateLicenseInfo
+    licenseExpiration
   } = useWalletStore();
 
   const [search, setSearch] = useState("");
-  const [activationKey, setActivationKey] = useState("");
-  const [currentKey, setCurrentKey] = useState("");
-  const [activating, setActivating] = useState(false);
-  const isActivatingRef = React.useRef(false);
-  const [error, setError] = useState("");
   const router = useRouter();
-
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentKey(localStorage.getItem("wallet_key") || "");
-    }
-  }, []);
-
-  const performActivation = async () => {
-    if (!activationKey.trim() || activating || isActivatingRef.current) return;
-
-    setError("");
-    setActivating(true);
-    isActivatingRef.current = true;
-
-    try {
-      // If re-entering the same key that's already active, don't count as a new redemption
-      const cleanInput = activationKey.trim().replace(/-/g, "").toUpperCase();
-      const isReactivatingSameKey = cleanInput === currentKey.toUpperCase();
-
-      const res = await fetch("/api/auth/verify-key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          key: cleanInput,
-          isRedeeming: !isReactivatingSameKey
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 401) {
-          localStorage.removeItem("wallet_key");
-        }
-        throw new Error(data.error || "Invalid License Key");
-      }
-
-      const cleanKey = activationKey.trim().replace(/-/g, "");
-      localStorage.setItem("wallet_key", cleanKey);
-      setIsKeyVerified(true);
-
-      if (data.plan && data.expirationDate) {
-        const formattedDate = new Date(data.expirationDate).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric'
-        });
-        updateLicenseInfo(data.plan, formattedDate);
-      }
-
-      router.replace("/home")
-    } catch (err: any) {
-      if (err.message === "Key has expired") {
-        router.push('/buy?error=expired');
-        return;
-      }
-      setError(err.message || "Failed to activate license.");
-      setActivating(false);
-      isActivatingRef.current = false;
-    }
-  };
-
-  const handleActivate = () => {
-    if (!activationKey.trim() || activating || isActivatingRef.current) return;
-
-    performActivation();
-  };
-
 
   const displayName = profile.username || walletName || "rpwallet.us";
 
