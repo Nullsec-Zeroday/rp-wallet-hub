@@ -34,7 +34,7 @@
     "SELLAUTH_STARTER_PRODUCT_ID": "796131",
     "SELLAUTH_MONTHLY_PRODUCT_ID": "796135",
     "SELLAUTH_YEARLY_PRODUCT_ID": "796138",
-    "DEMO_ENABLED": "false",
+    "DEMO_ENABLED": "true",
     "DEMO_DURATION_MINUTES": "5",
     // Set PAYBLIS_MERCHANT_KEY and PAYBLIS_SECRET_KEY with `wrangler secret put`.
     // "false" = real charges. Only set "true" for sandbox testing (sandbox issues real licenses on the test IPN).

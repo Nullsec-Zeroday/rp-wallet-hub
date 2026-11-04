@@ -54,7 +54,7 @@ export default function DashboardClient() {
         licenseKey,
         deviceId: getDeviceId(),
       });
-      setSession(response);
+      await openPhantomAfterActivation(response, "License activated.");
     } catch (activationError) {
       setError(getFriendlyApiError(activationError, "Unable to activate this license key."));
     } finally {
@@ -71,8 +71,8 @@ export default function DashboardClient() {
       const response = await api.activateDemo({
         deviceId: getDeviceId(),
       });
-      setSession(response);
-      setNotice(`Demo activated for ${response.access?.expiresAt ? formatRemainingMinutes(response.access.expiresAt) : "a few minutes"}.`);
+      const demoNotice = `Demo activated for ${response.access?.expiresAt ? formatRemainingMinutes(response.access.expiresAt) : "a few minutes"}.`;
+      await openPhantomAfterActivation(response, demoNotice);
     } catch (demoError) {
       setError(getFriendlyApiError(demoError, "Unable to start demo mode on this device."));
     } finally {
@@ -101,6 +101,25 @@ export default function DashboardClient() {
       walletAppId,
       returnTo: WALLET_RETURN_TO[walletAppId],
     });
+  }
+
+  async function openPhantomAfterActivation(response: HubSessionResponse, successMessage: string) {
+    setSession(response);
+
+    const phantom = response.wallets.find((wallet) => wallet.id === "phantom");
+    if (!phantom?.enabled) {
+      setError(`${successMessage} Phantom is not available for this session. Choose an available wallet below.`);
+      return;
+    }
+
+    setNotice(`${successMessage} Opening Phantom…`);
+    try {
+      const launch = await createWalletLaunch("phantom");
+      window.location.href = launch.launchUrl;
+    } catch {
+      setNotice("");
+      setError(`${successMessage} Phantom could not be opened. Use the Open Wallet button below to try again.`);
+    }
   }
 
   async function copyWalletLaunchToken(walletAppId: WalletAppId) {
@@ -275,7 +294,7 @@ export default function DashboardClient() {
       <main className="relative z-10 flex w-full max-w-[340px] flex-col justify-center gap-6 py-12 animate-in fade-in duration-300">
         <div className="flex flex-col items-center gap-4">
           <Image src="/logo_white.webp" alt="RPWallet Logo" width={64} height={64} className="height-14 aspect-auto" />
-          <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Enter License Key</h1>
+          <h1 className="text-center text-[22px] font-semibold tracking-tight text-white">Activate Phantom</h1>
           {error && <p className="mx-auto mt-1 max-w-[280px] text-center text-[13px] font-medium leading-normal text-[#ef4444] animate-in fade-in duration-300">{error}</p>}
         </div>
 
@@ -299,7 +318,7 @@ export default function DashboardClient() {
             disabled={loading || !licenseKey.trim()}
             className="flex h-[54px] w-full cursor-pointer items-center justify-center rounded-lg bg-[#9c8df6] text-sm font-semibold text-white transition-all duration-300 hover:bg-[#aba0f7] disabled:opacity-50 active:scale-[0.98]"
           >
-            {loading ? <Loader2 size={18} className="animate-spin text-white" /> : "Activate License"}
+            {loading ? <Loader2 size={18} className="animate-spin text-white" /> : "Activate & Open Phantom"}
           </button>
 
           {isDemoFeatureEnabled() && demoConfig?.enabled && (
